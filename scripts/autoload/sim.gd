@@ -130,25 +130,34 @@ func launch_check(design: Dictionary) -> Array:
 	var mission := GameData.get_mission(design.get("mission_id", ""))
 	var checks: Array = []
 
-	var missing: Array = []
-	for key in ["launch_vehicle", "bus", "battery", "antenna", "storage", "network"]:
-		if str(design.get(key, "")) == "":
-			missing.append(key.replace("_", " "))
-	if design.get("power", []).is_empty():
-		missing.append("power source")
-	checks.append(_check("complete", missing.is_empty(),
-		"Every system is chosen." if missing.is_empty() else "Missing: %s." % ", ".join(missing),
-		"Pick one part for every system.", "director"))
+	# One "complete" check per station, so each station shows its own missing parts.
+	var needed := {
+		"director": {"launch_vehicle": "a rocket"},
+		"engineer": {"bus": "a spacecraft bus", "power": "a power source", "battery": "a battery"},
+		"science": {"instruments": "at least one instrument"},
+		"comms": {"antenna": "an antenna", "storage": "data storage", "network": "a ground network"},
+	}
+	for station in needed:
+		var missing: Array = []
+		for key in needed[station]:
+			var v = design.get(key, "")
+			if (typeof(v) == TYPE_ARRAY and v.is_empty()) or (typeof(v) != TYPE_ARRAY and str(v) == ""):
+				missing.append(needed[station][key])
+		checks.append(_check("complete_" + station, missing.is_empty(),
+			"All %s parts chosen." % station,
+			"Still needed: %s." % ", ".join(missing), station))
 
 	var cap := float(s["launcher_capacity_kg"])
-	checks.append(_check("rocket_reaches", cap > 0.0,
-		"The rocket can reach %s." % mission.get("destination", "the target"),
-		"This rocket is not powerful enough to escape Earth's gravity for this destination. Choose a bigger rocket.",
-		"director"))
-	checks.append(_check("fits_rocket", cap > 0.0 and s["wet_mass_kg"] <= cap,
-		"Launch mass %d kg fits the rocket (max %d kg)." % [s["wet_mass_kg"], cap],
-		"Launch mass %d kg is too heavy for this rocket (max %d kg). Choose a bigger rocket or remove mass." % [s["wet_mass_kg"], cap],
-		"director"))
+	if str(design.get("launch_vehicle", "")) != "":
+		checks.append(_check("rocket_reaches", cap > 0.0,
+			"The rocket can reach %s." % mission.get("destination", "the target"),
+			"This rocket is not powerful enough to reach %s. Choose a bigger rocket." % mission.get("destination", "this target"),
+			"director"))
+		if cap > 0.0:
+			checks.append(_check("fits_rocket", s["wet_mass_kg"] <= cap,
+				"Launch mass %d kg fits the rocket (max %d kg)." % [s["wet_mass_kg"], cap],
+				"Launch mass %d kg is too heavy for this rocket (max %d kg). Choose a bigger rocket or remove mass." % [s["wet_mass_kg"], cap],
+				"director"))
 	checks.append(_check("fits_bus", s["slots_used"] <= s["slots_max"],
 		"Parts fit in the spacecraft (%d/%d slots)." % [s["slots_used"], s["slots_max"]],
 		"Too many parts for this spacecraft (%d/%d slots). Choose a bigger bus or remove parts." % [s["slots_used"], s["slots_max"]],

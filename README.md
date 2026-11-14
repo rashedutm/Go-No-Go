@@ -24,7 +24,8 @@ We are 3 people working in parallel and merging through **GitHub**. Each person 
 | Milestone | Status |
 |---|---|
 | **M1 Skeleton** | ✅ **Done.** Godot project, all `data/*.json`, the 3 autoloads (`GameData`, `MissionState`, `Sim`), and placeholder screens. The whole flow Title → Campaign → Briefing → Design → Launch Check → Launch → Mission Control → Debrief is clickable. On the Design screen, press **"Use test design"**. `tests/sim_test.tscn` checks that every mission's test design is GO. |
-| M2–M3 Design + Launch check | ⏳ Member A, next |
+| **M2 Design screen** | ✅ **Done.** 4 stations with part cards (hover for plain-English "why it matters"), a live resource bar (budget, launch mass, power, shadow energy, science data, slots), a cartoon spacecraft that updates as you add parts, an issue count per station, and buttons to load an example design or clear. Preview: `godot --path . res://tests/design_preview.tscn -- mars engineer` |
+| M3 Launch check screen | ⏳ Member A, next. The placeholder works already. |
 | M4–M6 Mission Control, Events, Debrief | ⏳ Member B (Emon). Until your scenes exist, the game uses `scenes/placeholders/` automatically. |
 
 ### 🛠️ Getting started (everyone)
