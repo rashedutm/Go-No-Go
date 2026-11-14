@@ -19,8 +19,6 @@ var _holo: Node3D
 var _holo_orbit: Node3D
 var _ring: MeshInstance3D
 var _robots: Array = []
-var _tele_labels: Array = []
-var _tele_t := 0.0
 var _t := 0.0
 var _rng := RandomNumberGenerator.new()
 
@@ -88,12 +86,6 @@ func build(p_mc: Node, p_sim: MissionSim) -> void:
 	_ring.scale = Vector3(1, 0.05, 1)
 	_ring.position = ped + Vector3(0, 0.02, 0)
 	add_child(_ring)
-
-	# ---- robot colleagues + telemetry at the decorative desks
-	for p in [Vector3(-6, 0, 2.5), Vector3(-4, 0, 6.0), Vector3(4, 0, 6.0)]:
-		var lab := MCBuild.label(self, "", p + Vector3(0, 1.25, -0.18), Color(0.4, 1.0, 0.6), 22, 0.0028)
-		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		_tele_labels.append(lab)
 
 	# ---- posters on the back wall (seen when you turn around)
 	var facts := [
@@ -221,17 +213,6 @@ func update(delta: float) -> void:
 	var goal := maxf(float(sim.mission.get("data_goal_gb", 1)), 1.0)
 	_status.text = "STATUS: %s\nDATA %d%%\nHEALTH %d%%" % [state, int(100.0 * sim.data_returned_gb / goal), int(sim.health)]
 	_status.modulate = col
-
-	# ---- telemetry scroll on the robots' monitors
-	_tele_t -= delta
-	if _tele_t <= 0.0:
-		_tele_t = 0.35
-		for lab in _tele_labels:
-			var lines: PackedStringArray = lab.text.split("\n") if lab.text != "" else PackedStringArray()
-			lines.append("%s %04X %+.2f" % [["PWR", "TMP", "ATT", "RX", "TX", "GYR"][_rng.randi() % 6], _rng.randi() % 65536, _rng.randf_range(-9, 9)])
-			while lines.size() > 7:
-				lines.remove_at(0)
-			lab.text = "\n".join(lines)
 
 	# ---- sample graphs
 	_sample -= delta

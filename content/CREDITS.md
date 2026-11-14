@@ -10,6 +10,12 @@
 
 - **Launch rumble:** `audio/jerryblessed-space-rocket-launch-rumble-544846.wav` (drop-in file; confirm source + license here). If the file is missing, `scenes/launch_anim/launch_anim.gd` falls back to a procedural brown-noise rumble, so the game still runs with no audio at all.
 
+## Mission Control — 3D props
+
+- **Sci-fi computer (`art/models/mission_control/Prop_Computer.gltf`)** — from [Modular Sci-Fi MegaKit (Standard)](https://store.godotengine.org/asset/quaternius/modular-sci-fi-megakit/) by [Quaternius](https://quaternius.com/), downloaded from the Godot Asset Store. **CC0 1.0 Universal**; license text in `art/models/mission_control/LICENSE-Quaternius-Megakit.txt`.
+- **Office chair (`art/models/mission_control/chair_office.glb`)** — from [Lowpoly Furniture Asset Pack](https://store.godotengine.org/asset/abstract-duck/texture-pack/) by **Abstract_Duck**, downloaded from the Godot Asset Store. **MIT**; license text in `art/models/mission_control/LICENSE-AbstractDuck-Furniture.txt`.
+- Both models were re-oriented/scaled in code to fit the Mission Control consoles. No other changes were made.
+
 ## UI fonts
 
 - **Barlow, Barlow Condensed and IBM Plex Mono** — [Google Fonts](https://fonts.google.com/), licensed under the [SIL Open Font License 1.1](https://openfontlicense.org/). License texts are in `ui/fonts/OFL-Barlow.txt`, `OFL-BarlowCondensed.txt` and `OFL-IBMPlexMono.txt`.

@@ -4,6 +4,8 @@
 class_name ConsoleStation
 extends Node3D
 
+const Props := preload("res://scripts/mission_control/mission_props.gd")
+
 var key := ""
 var title := ""
 var color := Color.WHITE
@@ -23,18 +25,20 @@ func setup(p_key: String, p_title: String, p_color: Color) -> void:
 	MCBuild.box(self, Vector3(2.2, 0.85, 1.0), Vector3(0, 0.425, 0), Color(0.28, 0.32, 0.42), true)
 	MCBuild.box(self, Vector3(2.25, 0.05, 1.05), Vector3(0, 0.875, 0), Color(0.1, 0.11, 0.14))
 	MCBuild.box(self, Vector3(2.2, 0.06, 0.06), Vector3(0, 0.86, 0.52), p_color, false, 1.5)   # accent strip
-	# monitors
-	MCBuild.box(self, Vector3(1.5, 0.85, 0.08), Vector3(0, 1.4, -0.25), Color(0.08, 0.08, 0.1))
-	var screen := MCBuild.box(self, Vector3(1.38, 0.73, 0.02), Vector3(0, 1.4, -0.2), p_color.darkened(0.4), false, 1.2)
-	_screen_mat = screen.mesh.material
-	for side in [-1.0, 1.0]:
-		MCBuild.box(self, Vector3(0.6, 0.45, 0.06), Vector3(side * 0.95, 1.2, -0.15), Color(0.08, 0.08, 0.1))
-		MCBuild.box(self, Vector3(0.54, 0.39, 0.02), Vector3(side * 0.95, 1.2, -0.11), p_color.darkened(0.6), false, 0.8)
-	# chair
-	MCBuild.box(self, Vector3(0.55, 0.08, 0.55), Vector3(0, 0.5, 0.95), Color(0.15, 0.15, 0.18))
-	MCBuild.box(self, Vector3(0.55, 0.6, 0.08), Vector3(0, 0.85, 1.22), Color(0.15, 0.15, 0.18))
+	# desk clutter: keyboard + mouse
+	MCBuild.box(self, Vector3(0.72, 0.035, 0.24), Vector3(0, 0.91, 0.18), Color(0.05, 0.06, 0.08), true)
+	MCBuild.box(self, Vector3(0.11, 0.03, 0.17), Vector3(0.55, 0.91, 0.18), Color(0.05, 0.06, 0.08), true)
+	# monitors (Asset Store sci-fi computer with a small console UI)
+	var computer := Props.computer(color, p_title)
+	computer.position = Vector3(0, 0, -0.62)
+	add_child(computer)
+	_screen_mat = computer.get_meta("screen_material", null) as StandardMaterial3D
+	# chair (Asset Store low-poly office chair, facing the desk)
+	var chair := Props.chair()
+	chair.position = Vector3(0.78, 0, 0.98)
+	add_child(chair)
 	# sign
-	MCBuild.label(self, p_title, Vector3(0, 1.98, -0.25), p_color, 56, 0.005)
+	MCBuild.label(self, p_title, Vector3(0, 2.3, -0.25), p_color, 56, 0.005)
 	# light
 	_light = OmniLight3D.new()
 	_light.position = Vector3(0, 1.9, 0.4)
@@ -44,11 +48,15 @@ func setup(p_key: String, p_title: String, p_color: Color) -> void:
 	add_child(_light)
 
 
+func _reset_screen() -> void:
+	if _screen_mat:
+		_screen_mat.albedo_color = Color.WHITE
+
+
 func set_alert(on: bool) -> void:
 	alert = on
 	if not on:
-		_screen_mat.albedo_color = color.darkened(0.4)
-		_screen_mat.emission = color.darkened(0.4)
+		_reset_screen()
 		_light.light_color = color
 		_light.light_energy = 0.8
 
@@ -58,9 +66,8 @@ func _process(delta: float) -> void:
 		return
 	_t += delta
 	var on := fmod(_t, 0.6) < 0.3
-	var c := Color(1.0, 0.15, 0.1) if on else Color(0.35, 0.05, 0.05)
-	_screen_mat.albedo_color = c
-	_screen_mat.emission = c
+	if _screen_mat:
+		_screen_mat.albedo_color = Color(1.0, 0.22, 0.18) if on else Color(0.22, 0.03, 0.02)
 	_light.light_color = Color(1, 0.2, 0.1)
 	_light.light_energy = 2.5 if on else 0.6
 
