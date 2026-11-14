@@ -1,0 +1,462 @@
+[
+  {
+    "id": "solar_storm",
+    "category": "space_weather",
+    "console": "engineer",
+    "status": "solar_storm",
+    "title": "SOLAR STORM",
+    "destinations": [
+      "earth",
+      "moon",
+      "mars",
+      "jupiter",
+      "saturn"
+    ],
+    "weight": 3,
+    "timer_s": 20,
+    "text": "The Sun just threw out a cloud of fast charged particles. It will hit the spacecraft in a few hours.",
+    "choices": [
+      {
+        "label": "Enter SAFE MODE for 15 days",
+        "effects": {
+          "safe_days": 15
+        },
+        "effect": "Protected the spacecraft but lost 15 days of science"
+      },
+      {
+        "label": "Keep observing",
+        "effects": {
+          "health_risk": {
+            "p": 0.75,
+            "health": -30
+          }
+        },
+        "effect": "Risked radiation damage to keep collecting science"
+      }
+    ],
+    "default": 1
+  },
+  {
+    "id": "micrometeoroid",
+    "category": "space_weather",
+    "console": "engineer",
+    "status": "damaged",
+    "title": "MICROMETEOROID HIT",
+    "destinations": [
+      "earth",
+      "moon",
+      "mars",
+      "jupiter",
+      "saturn"
+    ],
+    "weight": 2,
+    "timer_s": 20,
+    "text": "A dust grain smaller than a grain of sand hit the spacecraft at 10 km/s and damaged a power cable.",
+    "choices": [
+      {
+        "label": "Reroute power ($10 M)",
+        "effects": {
+          "reserve": -10
+        },
+        "effect": "Engineers rerouted power; no lasting damage"
+      },
+      {
+        "label": "Live with it",
+        "effects": {
+          "power_penalty": 0.25
+        },
+        "effect": "25% of the power is lost for the rest of the mission"
+      }
+    ],
+    "default": 1
+  },
+  {
+    "id": "battery_aging",
+    "category": "hardware",
+    "console": "engineer",
+    "status": "normal",
+    "title": "BATTERY WEARING OUT",
+    "destinations": [
+      "earth",
+      "moon",
+      "mars"
+    ],
+    "weight": 2,
+    "timer_s": 20,
+    "text": "After thousands of trips through the planet's shadow, some battery cells are wearing out.",
+    "choices": [
+      {
+        "label": "Turn off the hungriest instrument",
+        "effects": {
+          "instrument_off": "max_power"
+        },
+        "effect": "Saved power but lost one instrument's science"
+      },
+      {
+        "label": "Accept a smaller battery",
+        "effects": {
+          "battery_max_frac": -0.3
+        },
+        "effect": "The battery now holds 30% less energy for the shadows"
+      }
+    ],
+    "default": 1
+  },
+  {
+    "id": "stuck_panel",
+    "category": "hardware",
+    "console": "engineer",
+    "status": "damaged",
+    "requires": "solar",
+    "title": "SOLAR WING STUCK",
+    "destinations": [
+      "earth",
+      "moon",
+      "mars",
+      "jupiter"
+    ],
+    "weight": 2,
+    "timer_s": 20,
+    "text": "A solar wing motor jammed. The wing is no longer facing the Sun properly.",
+    "choices": [
+      {
+        "label": "Try a 'wiggle' fix ($15 M, 70% chance)",
+        "effects": {
+          "reserve": -15,
+          "power_risk": {
+            "p": 0.3,
+            "power_penalty": 0.3
+          }
+        },
+        "effect": "Engineers tried to free the wing by rocking it back and forth"
+      },
+      {
+        "label": "Live with it",
+        "effects": {
+          "power_penalty": 0.3
+        },
+        "effect": "30% of the solar power is lost"
+      }
+    ],
+    "default": 1
+  },
+  {
+    "id": "radiation_belt",
+    "category": "space_weather",
+    "console": "engineer",
+    "status": "solar_storm",
+    "title": "RADIATION SPIKE",
+    "destinations": [
+      "jupiter"
+    ],
+    "weight": 3,
+    "timer_s": 18,
+    "text": "This orbit passes through a part of Jupiter's radiation belts that is much stronger than predicted.",
+    "choices": [
+      {
+        "label": "SAFE MODE for 12 days",
+        "effects": {
+          "safe_days": 12
+        },
+        "effect": "Hid from the radiation but lost 12 days of science"
+      },
+      {
+        "label": "Push through",
+        "effects": {
+          "health_risk": {
+            "p": 0.8,
+            "health": -30
+          }
+        },
+        "effect": "Risked electronics damage to keep working"
+      }
+    ],
+    "default": 1
+  },
+  {
+    "id": "ground_outage",
+    "category": "comms",
+    "console": "comms",
+    "status": "normal",
+    "title": "GROUND STATION DOWN",
+    "destinations": [
+      "earth",
+      "moon",
+      "mars",
+      "jupiter",
+      "saturn"
+    ],
+    "weight": 2,
+    "timer_s": 20,
+    "text": "A big storm on Earth wrecked your ground station antenna. No contact for 40 days unless you find another antenna.",
+    "choices": [
+      {
+        "label": "Rent a partner agency's antenna ($6 M)",
+        "effects": {
+          "reserve": -6
+        },
+        "effect": "Another space agency's antenna kept the data flowing"
+      },
+      {
+        "label": "Wait it out",
+        "effects": {
+          "blackout_days": 40
+        },
+        "effect": "40 days with no data sent to Earth (memory overflowed)"
+      }
+    ],
+    "default": 1
+  },
+  {
+    "id": "memory_error",
+    "category": "comms",
+    "console": "comms",
+    "status": "damaged",
+    "title": "MEMORY ERROR",
+    "destinations": [
+      "earth",
+      "moon",
+      "mars",
+      "jupiter",
+      "saturn"
+    ],
+    "weight": 2,
+    "timer_s": 20,
+    "text": "The onboard memory reports errors. A bit flipped, maybe from a cosmic ray.",
+    "choices": [
+      {
+        "label": "Reformat memory (delete stored data)",
+        "effects": {
+          "storage_clear": true
+        },
+        "effect": "Lost the data waiting in memory, but the memory is healthy again"
+      },
+      {
+        "label": "Ignore it",
+        "effects": {
+          "health_risk": {
+            "p": 0.6,
+            "health": -25
+          }
+        },
+        "effect": "Risked the computer crashing"
+      }
+    ],
+    "default": 1
+  },
+  {
+    "id": "budget_cut",
+    "category": "budget",
+    "console": "director",
+    "status": "normal",
+    "title": "BUDGET CUT",
+    "destinations": [
+      "earth",
+      "moon",
+      "mars",
+      "jupiter",
+      "saturn"
+    ],
+    "weight": 1,
+    "timer_s": 22,
+    "text": "Headquarters cut your operations budget. Pay from your reserve, or end the mission early.",
+    "choices": [
+      {
+        "label": "Pay $20 M from the reserve",
+        "effects": {
+          "reserve": -20
+        },
+        "effect": "The mission continues, but less money is left over"
+      },
+      {
+        "label": "End the mission 6 months early",
+        "effects": {
+          "end_early_days": 180
+        },
+        "effect": "Saved money, lost 6 months of science"
+      }
+    ],
+    "default": 1
+  },
+  {
+    "id": "wildfire",
+    "category": "science",
+    "console": "science",
+    "status": "normal",
+    "title": "WILDFIRES SPOTTED!",
+    "destinations": [
+      "earth"
+    ],
+    "weight": 3,
+    "timer_s": 15,
+    "text": "Huge wildfires just broke out. Firefighters are asking for images right now!",
+    "choices": [
+      {
+        "label": "Point the camera at the fires",
+        "effects": {
+          "science_bonus": 15,
+          "battery_frac": -0.2
+        },
+        "effect": "Images helped firefighters and earned bonus science"
+      },
+      {
+        "label": "Stay on the normal plan",
+        "effects": {},
+        "effect": "Missed a chance to help and to study the fires"
+      }
+    ],
+    "default": 1
+  },
+  {
+    "id": "lunar_ice",
+    "category": "science",
+    "console": "science",
+    "status": "normal",
+    "title": "POSSIBLE WATER ICE!",
+    "destinations": [
+      "moon"
+    ],
+    "weight": 3,
+    "timer_s": 15,
+    "text": "Your instruments see a hint of water ice inside a permanently dark crater near the south pole.",
+    "choices": [
+      {
+        "label": "Spend $3 M on extra passes",
+        "effects": {
+          "science_bonus": 18,
+          "reserve": -3
+        },
+        "effect": "Confirmed the ice: a big discovery"
+      },
+      {
+        "label": "Stay on the normal plan",
+        "effects": {},
+        "effect": "The hint of ice was never confirmed"
+      }
+    ],
+    "default": 1
+  },
+  {
+    "id": "dust_storm",
+    "category": "science",
+    "console": "science",
+    "status": "normal",
+    "title": "GLOBAL DUST STORM!",
+    "destinations": [
+      "mars"
+    ],
+    "weight": 3,
+    "timer_s": 15,
+    "text": "A dust storm is spreading across all of Mars, a rare chance to study how it grows.",
+    "choices": [
+      {
+        "label": "Point every instrument at it",
+        "effects": {
+          "science_bonus": 18,
+          "battery_frac": -0.4
+        },
+        "effect": "Studied the storm in detail (and drained the battery)"
+      },
+      {
+        "label": "Stay on the normal plan",
+        "effects": {},
+        "effect": "Missed the global dust storm"
+      }
+    ],
+    "default": 1
+  },
+  {
+    "id": "io_volcano",
+    "category": "science",
+    "console": "science",
+    "status": "normal",
+    "title": "VOLCANO ON IO!",
+    "destinations": [
+      "jupiter"
+    ],
+    "weight": 3,
+    "timer_s": 15,
+    "text": "A giant volcano is erupting on Io, Jupiter's moon. Getting closer means more radiation.",
+    "choices": [
+      {
+        "label": "Go for a closer look",
+        "effects": {
+          "science_bonus": 18,
+          "health": -5
+        },
+        "effect": "Captured the eruption, but took some radiation damage"
+      },
+      {
+        "label": "Stay on the normal plan",
+        "effects": {},
+        "effect": "Missed the eruption on Io"
+      }
+    ],
+    "default": 1
+  },
+  {
+    "id": "enceladus_plume",
+    "category": "science",
+    "console": "science",
+    "status": "normal",
+    "title": "ICE PLUME ON ENCELADUS!",
+    "destinations": [
+      "saturn"
+    ],
+    "weight": 3,
+    "timer_s": 15,
+    "text": "Enceladus is spraying ice from an ocean under its surface. Fly through the plume to taste it?",
+    "choices": [
+      {
+        "label": "Fly through the plume",
+        "effects": {
+          "science_bonus": 20,
+          "health_risk": {
+            "p": 0.25,
+            "health": -15
+          }
+        },
+        "effect": "Sampled an alien ocean (with some risk from ice grains)"
+      },
+      {
+        "label": "Stay on the normal plan",
+        "effects": {},
+        "effect": "Missed the chance to sample the plume"
+      }
+    ],
+    "default": 1
+  },
+  {
+    "id": "comet",
+    "category": "science",
+    "console": "science",
+    "status": "normal",
+    "title": "COMET PASSING!",
+    "destinations": [
+      "earth",
+      "moon",
+      "mars",
+      "jupiter",
+      "saturn"
+    ],
+    "weight": 1,
+    "timer_s": 15,
+    "text": "A comet is passing nearby. Turning to watch it costs extra operations time.",
+    "choices": [
+      {
+        "label": "Turn to observe ($5 M)",
+        "effects": {
+          "science_bonus": 10,
+          "reserve": -5
+        },
+        "effect": "Observed the comet: bonus science"
+      },
+      {
+        "label": "Stay on the normal plan",
+        "effects": {},
+        "effect": "Let the comet pass by"
+      }
+    ],
+    "default": 1
+  }
+]

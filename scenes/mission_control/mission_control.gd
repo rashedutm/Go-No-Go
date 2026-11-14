@@ -49,6 +49,14 @@ var paused := false
 var _ending := false
 var _panel_refresh := 0.0
 const SPEEDS := [1.0, 2.0, 4.0]
+var events: EventSystem
+var _alert_banner: Label
+var _toast: Label
+var _toast_time := 0.0
+var _alarm_light: OmniLight3D
+var _alarm_player: AudioStreamPlayer
+var _alarm_repeat := 0.0
+var _status_reset := -1.0
 var _acked := {}           # condition alerts the player already checked (cleared when the problem goes away)
 
 
@@ -69,6 +77,7 @@ func _ready() -> void:
 	player.interact_pressed.connect(_on_interact)
 	_build_ui()
 	sim.add_log("Arrived at %s. Science operations begin." % mission.get("destination", "the target"))
+	_setup_events()
 
 
 # ============================================================== room
@@ -203,6 +212,13 @@ func close_console() -> void:
 
 ## Live text for each console. M4c adds action buttons below it.
 func _console_body(key: String) -> String:
+	var card := ""
+	if events and events.active.get("console", "") == key:
+		card = "[color=#ff6b5e][b]ALERT: %s[/b][/color]\n%s\n[color=#ffb74d]Choose below.[/color]\n\n" % [events.active["title"], events.active["text"]]
+	return card + _console_text(key)
+
+
+func _console_text(key: String) -> String:
 	var f := PartInfo.fmt
 	match key:
 		"engineer":
@@ -252,6 +268,9 @@ func _finish_mission() -> void:
 func _process(delta: float) -> void:
 	if sim == null:
 		return
+	if events:
+		events.update(delta, paused, _open != "" and _open == events.active.get("console", "-"))
+		_update_event_fx(delta)
 	if not paused and not sim.finished:
 		sim.tick(delta * days_per_second * speed)
 	if wall_view and wall_view.has_method("set_time_scale"):
@@ -272,11 +291,14 @@ func _auto_alerts() -> void:
 	var cond := {
 		"engineer": sim.battery_pct() < 25.0 or sim.health < 30.0 or sim.power_load_w > sim.power_gen_w,
 		"comms": sim.storage_pct() > 85.0 or sim.blackout_days > 0.0,
+		"science": false,
+		"director": false,
 	}
+	var ev_key: String = events.active.get("console", "") if events else ""
 	for key in cond:
 		if not cond[key]:
 			_acked.erase(key)
-		set_console_alert(key, cond[key] and not _acked.has(key))
+		set_console_alert(key, (cond[key] and not _acked.has(key)) or key == ev_key)
 
 
 # ============================================================== interaction
@@ -389,6 +411,28 @@ func _build_ui() -> void:
 	_end_banner.size = Vector2(1000, 80)
 	_end_banner.visible = false
 	root.add_child(_end_banner)
+
+	_alert_banner = Label.new()
+	_alert_banner.add_theme_font_size_override("font_size", 26)
+	_alert_banner.add_theme_color_override("font_color", Color(1, 0.4, 0.33))
+	_alert_banner.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	_alert_banner.add_theme_constant_override("outline_size", 8)
+	_alert_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_alert_banner.position = Vector2(330, 14)
+	_alert_banner.size = Vector2(620, 80)
+	_alert_banner.visible = false
+	root.add_child(_alert_banner)
+
+	_toast = Label.new()
+	_toast.add_theme_font_size_override("font_size", 18)
+	_toast.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	_toast.add_theme_constant_override("outline_size", 6)
+	_toast.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_toast.position = Vector2(240, 600)
+	_toast.size = Vector2(800, 80)
+	_toast.visible = false
+	root.add_child(_toast)
 
 	_prompt = Label.new()
 	_prompt.add_theme_font_size_override("font_size", 24)
@@ -523,6 +567,17 @@ func _build_actions(key: String) -> void:
 	for c in _panel_actions.get_children():
 		c.queue_free()
 	var orange := Color(1.0, 0.55, 0.2)
+	if events and events.active.get("console", "") == key:
+		var choices: Array = events.active.get("choices", [])
+		for i in choices.size():
+			var ch: Dictionary = choices[i]
+			var idx := i
+			var cost := MissionSim.effects_cost(ch.get("effects", {}))
+			_action_button(ch["label"], ch.get("effect", ""), Color(1.0, 0.35, 0.3) if i == 0 else Color(0.9, 0.6, 0.3),
+				events.can_afford(ch), func(): events.choose(idx))
+			if cost > 0.0 and not events.can_afford(ch):
+				_panel_actions.get_child(_panel_actions.get_child_count() - 1).tooltip_text = "Not enough reserve money."
+		return
 	match key:
 		"engineer":
 			if sim.safe_mode:
@@ -549,3 +604,81 @@ func _build_actions(key: String) -> void:
 				Color(1.0, 0.82, 0.3), sim.can_repair(), func(): sim.repair())
 			_action_button("End mission now", "Stop the mission early and go to the debrief.", Color(1.0, 0.35, 0.3), true,
 				func(): sim.abort())
+
+
+# ============================================================== events (M5)
+
+func _setup_events() -> void:
+	events = EventSystem.new()
+	add_child(events)
+	events.setup(sim)
+	events.event_started.connect(_on_event_started)
+	events.event_resolved.connect(_on_event_resolved)
+	_alarm_light = OmniLight3D.new()
+	_alarm_light.position = Vector3(0, 5.5, 0)
+	_alarm_light.omni_range = 20
+	_alarm_light.light_color = Color(1, 0.15, 0.1)
+	_alarm_light.light_energy = 0.0
+	add_child(_alarm_light)
+	_alarm_player = AudioStreamPlayer.new()
+	_alarm_player.volume_db = -6.0
+	for path in ["res://audio/alarm.wav", "res://audio/alarm.ogg", "res://audio/alarm.mp3"]:
+		if ResourceLoader.exists(path):
+			_alarm_player.stream = load(path)
+			break
+	if _alarm_player.stream == null:
+		_alarm_player.stream = EventSystem.make_beep()
+	add_child(_alarm_player)
+
+
+func _on_event_started(ev: Dictionary) -> void:
+	_acked.erase(ev.get("console", ""))
+	if wall_view and wall_view.has_method("set_status") and ev.get("status", "normal") != "normal":
+		wall_view.set_status(ev["status"])
+	_alarm_player.play()
+	_alarm_repeat = 3.0
+	if _open != "":
+		_after_action()
+
+
+func _on_event_resolved(ev: Dictionary, choice: Dictionary, outcome: String, timed_out: bool) -> void:
+	var delay := float(mission.get("signal_delay_min", 0))
+	var msg := ("No answer in time! " if timed_out else "") + "%s: %s." % [str(ev["title"]).capitalize(), choice["label"]]
+	if outcome != "":
+		msg += " " + outcome
+	if delay >= 1.0:
+		msg += "\n(Your command takes %d minutes to reach the spacecraft.)" % int(delay)
+	_show_toast(msg, Color(1, 0.55, 0.45) if timed_out else Color(0.6, 1, 0.65))
+	if wall_view and wall_view.has_method("set_status"):
+		wall_view.set_status("safe_mode" if sim.safe_mode else "normal")
+	if _open != "":
+		_after_action()
+
+
+func _show_toast(text: String, color: Color) -> void:
+	_toast.text = text
+	_toast.modulate = color
+	_toast.visible = true
+	_toast_time = 5.0
+
+
+func _update_event_fx(delta: float) -> void:
+	if _toast_time > 0.0:
+		_toast_time -= delta
+		_toast.visible = _toast_time > 0.0
+	if events.active.is_empty():
+		_alert_banner.visible = false
+		_alarm_light.light_energy = 0.0
+		return
+	var st: ConsoleStation = consoles.get(events.active.get("console", ""), null)
+	var where: String = st.title if st else "?"
+	var at_console: bool = _open == events.active.get("console", "-")
+	_alert_banner.visible = true
+	_alert_banner.text = "ALERT: %s\n%s  ·  %d s" % [events.active["title"],
+		"Choose an action on this console" if at_console else "Go to the %s console!" % where, int(ceil(events.time_left))]
+	_alarm_light.light_energy = 0.0 if paused else (2.5 if fmod(Time.get_ticks_msec() / 1000.0, 0.8) < 0.4 else 0.4)
+	if not at_console and not paused:
+		_alarm_repeat -= delta
+		if _alarm_repeat <= 0.0:
+			_alarm_repeat = 3.0
+			_alarm_player.play()

@@ -20,5 +20,13 @@ func _ready() -> void:
 			if shot == "panel":
 				await get_tree().create_timer(0.3).timeout
 				mc.open_console(args[2] if args.size() > 2 else "engineer")
+		"event", "eventpanel":
+			mc.player.position = Vector3(-5.0, 0.1, -1.6)
+			mc.player.cam.rotation.x = -0.25
+			await get_tree().create_timer(0.2).timeout
+			mc.events.start_by_id(args[2] if args.size() > 2 else "solar_storm")
+			if shot == "eventpanel":
+				await get_tree().create_timer(0.3).timeout
+				mc.open_console(mc.events.active["console"])
 		_:
 			mc.player.position = Vector3(0, 0.1, 7.0)

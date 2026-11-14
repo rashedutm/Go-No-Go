@@ -228,10 +228,11 @@ func score(result: Dictionary) -> Dictionary:
 	var goal := maxf(_n(result, "data_goal_gb"), 0.001)
 	var ratio := _n(result, "data_returned_gb") / goal
 	var science := minf(ratio, 1.0) * 85.0 + clampf((ratio - 1.0) / 0.5, 0.0, 1.0) * 15.0
-	science = minf(science + _n(result, "science_bonus"), 100.0)
+	science = minf(science, 100.0)
+	var bonus := _n(result, "science_bonus")   # discoveries from events add straight to the total
 	var survival := minf(_n(result, "lifetime_years") / maxf(_n(result, "target_years"), 0.001), 1.0) * 100.0
 	var budget_pts := clampf(_n(result, "reserve_left_musd") / maxf(_n(result, "budget_musd"), 0.001) * 200.0, 0.0, 100.0)
-	var total := science * 0.5 + survival * 0.3 + budget_pts * 0.2
+	var total := minf(science * 0.5 + survival * 0.3 + budget_pts * 0.2 + bonus * 0.5, 100.0)
 	var stars := 0
 	if total >= 85.0:
 		stars = 3
@@ -243,6 +244,7 @@ func score(result: Dictionary) -> Dictionary:
 		"science": int(round(science)),
 		"survival": int(round(survival)),
 		"budget": int(round(budget_pts)),
+		"bonus": int(round(bonus * 0.5)),
 		"total": int(round(total)),
 		"stars": stars,
 	}

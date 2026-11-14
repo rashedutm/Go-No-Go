@@ -135,6 +135,9 @@ func tick(dt: float) -> void:
 		return
 	day = minf(day + dt, total_days)
 	blackout_days = maxf(blackout_days - dt, 0.0)
+	if safe_until >= 0.0 and day >= safe_until:
+		safe_until = -1.0
+		set_safe_mode(false)
 
 	# ---- power: sunlit balance, then shadows
 	power_gen_w = gen_w()
@@ -264,6 +267,71 @@ func repair() -> bool:
 	add_log("Engineers uploaded a software fix (+%d%% health) for $%d M." % [int(REPAIR_AMOUNT), int(REPAIR_COST)],
 		"Spent reserve on a repair", "The spacecraft lasts longer, but the budget score drops")
 	return true
+
+
+# ================================================================ event effects (M5)
+
+var safe_until := -1.0   # day when an event's timed safe mode ends (-1 = none)
+
+
+## Cost in $M of a choice's effects (for disabling choices the reserve can't pay for).
+static func effects_cost(effects: Dictionary) -> float:
+	return maxf(-float(effects.get("reserve", 0.0)), 0.0)
+
+
+## Apply an event choice. Returns a short extra outcome line ("" if nothing random happened).
+func apply_effects(effects: Dictionary, rng: RandomNumberGenerator) -> String:
+	var outcome := ""
+	for k in effects:
+		var v = effects[k]
+		match k:
+			"reserve":
+				reserve_musd = maxf(reserve_musd + float(v), 0.0)
+			"health":
+				health = clampf(health + float(v), 0.0, 100.0)
+			"health_risk":
+				if rng.randf() < float(v.get("p", 0.5)):
+					health = clampf(health + float(v.get("health", -10)), 0.0, 100.0)
+					outcome = "Bad luck: the spacecraft was damaged (%d%% health)." % int(v.get("health", -10))
+				else:
+					outcome = "Lucky: no damage this time."
+			"power_penalty":
+				power_penalty = clampf(power_penalty + float(v), 0.0, 0.9)
+			"power_risk":
+				if rng.randf() < float(v.get("p", 0.3)):
+					power_penalty = clampf(power_penalty + float(v.get("power_penalty", 0.3)), 0.0, 0.9)
+					outcome = "The fix failed: power is reduced."
+				else:
+					outcome = "The fix worked!"
+			"blackout_days":
+				blackout_days = maxf(blackout_days, float(v))
+			"safe_days":
+				safe_mode = true
+				safe_until = maxf(safe_until, day + float(v))
+			"science_bonus":
+				science_bonus += int(v)
+			"battery_frac":
+				battery_wh = clampf(battery_wh + battery_max * float(v), 0.0, battery_max)
+			"battery_max_frac":
+				battery_max = maxf(battery_max * (1.0 + float(v)), 1.0)
+				battery_wh = minf(battery_wh, battery_max)
+			"storage_clear":
+				data_lost_gb += storage_gb
+				storage_gb = 0.0
+			"end_early_days":
+				total_days = maxf(day + 1.0, total_days - float(v))
+			"instrument_off":
+				var best := ""
+				var best_w := -1.0
+				for i in instruments_on:
+					var w := float(GameData.get_item("instruments", i).get("power_w", 0))
+					if instruments_on[i] and w > best_w:
+						best = i
+						best_w = w
+				if best != "":
+					instruments_on[best] = false
+					outcome = "%s was switched off." % GameData.get_item("instruments", best).get("name", best)
+	return outcome
 
 
 ## Ends the mission now (Director decision / quit).
