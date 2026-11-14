@@ -17,14 +17,14 @@ We are 3 people working in parallel and merging through **GitHub**. Each person 
 | Member | Has AI? | Owns | Read these sections |
 |---|---|---|---|
 | **Member A — Lead / Integrator** (team owner) | Claude | Project setup, shared code, **Design phase**, campaign map, Web export & upload | §A below, then §3–§8 |
-| **Member B — Mission Control dev** | Claude Pro | **Live Mission Control**, **Events**, **Debrief** | §B below, then §6.7–§6.10, §7.6, §8 |
-| **Member C — Content, Art & Pitch** | No AI needed | Art & sound collection, playtesting, **demo video/slides**, submission text | §C below |
+| **Member B — Emon** (Mission Control dev) | Claude Pro | **Live Mission Control**, **Events**, **Debrief** | §B below, then §6.7–§6.10, §7.6, §8 |
+| **Member C — Daniel** (Content, Art & Pitch) | No AI needed | Art & sound collection, playtesting, **demo video/slides**, submission text | §C below |
 
 ### 🛠️ Getting started (everyone)
 
 **Repo:** https://github.com/rashedutm/Go-No-Go (Member A is the owner and adds the others as collaborators. Accept the email invite first.)
 
-**Members A & B (coders):**
+**Members A & B — team owner & Emon (coders):**
 1. Install **Git** and **Godot 4.7.2** (standard version, not .NET).
 2. Clone:
    ```bash
@@ -40,7 +40,7 @@ We are 3 people working in parallel and merging through **GitHub**. Each person 
 6. Daily loop: `git pull` → work → `git add -A` → `git commit -m "short message"` → `git push`.
    Member B pushes with `git push -u origin feat/mission-control` the first time, then opens a Pull Request on GitHub.
 
-**Member C (no coding):** open https://github.com/rashedutm/Go-No-Go in the browser → go into the `content/` folder → **Add file → Upload files** → write a short message → **Commit changes**. That's it.
+**Member C — Daniel (no coding):** open https://github.com/rashedutm/Go-No-Go in the browser → go into the `content/` folder → **Add file → Upload files** → write a short message → **Commit changes**. That's it.
 
 **Backup rule:** if any part is not merged by its checkpoint time (see §9), Member A (or whoever is free) takes it over in a smaller "lite" version. Nobody waits on anybody — always build against the shared contract (§8.1) with fake data if the real part isn't ready.
 
@@ -66,7 +66,7 @@ We are 3 people working in parallel and merging through **GitHub**. Each person 
 
 ---
 
-### §B — Member B: Mission Control developer
+### §B — Member B (Emon): Mission Control developer
 
 **Goal:** the *after-launch* half — the exciting live part and the ending.
 
@@ -78,11 +78,11 @@ We are 3 people working in parallel and merging through **GitHub**. Each person 
 6. **Only read from** `MissionState` / `GameData` / `Sim` — never edit those files. If you need a new shared function, ask Member A (or add it in your own script).
 
 **Prompt to paste into your AI:**
-> "Read README.md fully. I am Member B (Mission Control developer). Build §B: the Live Mission Control scene, events system and debrief, in Godot 4.7.2 GDScript. Use the shared contract in §8.1 as the only interface to the rest of the game, use a fake test design until the real one exists, and only create/edit files in the folders I own (§8.3)."
+> "Read README.md fully. I am Member B (Emon, Mission Control developer). Build §B: the Live Mission Control scene, events system and debrief, in Godot 4.7.2 GDScript. Use the shared contract in §8.1 as the only interface to the rest of the game, use a fake test design until the real one exists, and only create/edit files in the folders I own (§8.3)."
 
 ---
 
-### §C — Member C: Content, Art & Pitch (no AI or coding needed)
+### §C — Member C (Daniel): Content, Art & Pitch (no AI or coding needed)
 
 Small tasks, but each one really matters for the **Presentation** score. Put everything in the repo folder `content/` (upload via the GitHub website: *Add file → Upload files*) or send to Member A.
 
