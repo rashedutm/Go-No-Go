@@ -13,8 +13,10 @@ const _MONO_FONT := preload("res://ui/fonts/IBMPlexMono-Medium.ttf")
 const COMPUTER_SCALE := 1.7
 # The Kenney monitor is authored screen-side at -Z; flip it so the display
 # faces the player, then centre the frame and put the UI quad on the front.
+# The screen itself leans back ~8 degrees; the quad must match that plane.
 const MODEL_OFFSET := Vector3(-0.1965, 0.0, 0.0)
-const SCREEN_CENTER := Vector3(0.1965, 0.1715, -0.033)
+const SCREEN_CENTER := Vector3(0.1965, 0.1718, -0.0500)
+const SCREEN_TILT := -0.1397
 const SCREEN_SIZE := Vector2(0.355, 0.213)
 
 
@@ -109,6 +111,7 @@ static func computer(accent: Color, screen_title: String = "MISSION OPS") -> Nod
 	quad.material = mat
 	screen.mesh = quad
 	screen.position = SCREEN_CENTER
+	screen.rotation.x = SCREEN_TILT
 	root.add_child(screen)
 	comp.set_meta("screen_material", mat)
 	return comp

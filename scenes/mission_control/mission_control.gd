@@ -129,7 +129,6 @@ func _build_room() -> void:
 		MCBuild.box(self, Vector3(0.11, 0.03, 0.17), p + Vector3(0.55, 0.91, 0.18), Color(0.05, 0.06, 0.08), true)
 		var comp := Props.computer(Color(0.3, 0.8, 1.0))
 		comp.position = p + Vector3(0, 0.9, -0.30)
-		comp.rotation.x = 0.08
 		add_child(comp)
 		var chair := Props.chair()
 		chair.position = p + Vector3(0, 0, 1.0)
