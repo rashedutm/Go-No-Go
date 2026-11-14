@@ -33,6 +33,7 @@ Less text, fewer buttons, more *doing*:
 ### 🆕 Latest changes (read this first after every `git pull`)
 | When | What changed | Who it affects |
 |---|---|---|
+| Sun 15 Nov — title satellite | **Title orbit fixed (Member C).** The spacecraft now sits at a safe radius above Earth, so its solar wings no longer clip through the planet. | everyone |
 | Sun 15 Nov — launchpad surroundings | **KSC-style launch complex (Member C).** The pad now sits on green grass with a light concrete hardstand, a diagonal crawlerway, perimeter roads, a flame trench, a distant water band, low buildings, a water tower, lightning masts and a fogged treeline. | everyone |
 | Sat 14 Nov, night | **Daniel's work merged** (launch, space view, planets, debrief, neon UI). **Emon's whole remaining list done by Member A**: difficulty Easy/Normal/Hard with manual repair tools, a first-mission tutorial, 7 new events, and the browser test. | everyone |
 | Sat 14 Nov, late evening — asteroid field | **Real asteroid meshes (Member C).** The cockpit asteroid run now uses KayKit's CC0 rock/asteroid models instead of boxes and spheres, with dark gray/icy materials, varied sizes and small companion fragments. | everyone |
