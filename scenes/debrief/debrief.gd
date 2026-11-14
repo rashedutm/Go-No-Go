@@ -148,17 +148,19 @@ func _build_world() -> void:
 
 	_craft = SpacecraftModel3D.build(design)
 	_craft.name = "Spacecraft"
-	_craft.position = Vector3(2.2, 0.4, 0)
+	_craft.position = Vector3(4.4, 0.4, 0)
 	_craft.rotation = Vector3(0.1, 0.6, 0.08)
 	add_child(_craft)
 	SpacecraftModel3D.deploy_wings(_craft, 1.0)
 
 	var cam := Camera3D.new()
 	cam.fov = 50
-	cam.position = Vector3(2.2, 1.1, 7.2)
+	# Camera sits left of the craft so the report card's 3D subject renders
+	# in the clear strip right of the panel.
+	cam.position = Vector3(2.6, 1.1, 7.2)
 	cam.current = true
 	add_child(cam)
-	cam.look_at(Vector3(2.2, 0.4, 0), Vector3.UP)
+	cam.look_at(Vector3(2.6, 0.4, 0), Vector3.UP)
 
 
 # ===================================================================== UI
@@ -171,46 +173,42 @@ func _build_ui() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(root)
 
-	var title := Label.new()
-	title.text = "%s  ·  %s" % [str(mission.get("name", "")).to_upper(), str(mission.get("destination", "")).to_upper()]
-	title.add_theme_font_size_override("font_size", 22)
-	title.add_theme_color_override("font_color", Color(0.70, 0.82, 1.0))
-	title.position = Vector2(40, 26)
-	root.add_child(title)
-
-	var panel := PanelContainer.new()
+	# --- report card, left column
+	var panel := CineUI.glass(24)
 	panel.set_anchors_preset(Control.PRESET_CENTER_LEFT)
-	panel.offset_left = 40
-	panel.offset_top = -300
-	panel.offset_right = 560
-	panel.offset_bottom = 300
-	panel.custom_minimum_size = Vector2(520, 0)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.03, 0.05, 0.10, 0.88)
-	sb.set_corner_radius_all(16)
-	sb.set_content_margin_all(24)
-	panel.add_theme_stylebox_override("panel", sb)
+	panel.offset_left = 36
+	panel.offset_top = -336
+	panel.offset_right = 616
+	panel.offset_bottom = 336
+	panel.custom_minimum_size = Vector2(580, 0)
 	root.add_child(panel)
 
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
 	panel.add_child(box)
 
-	_title = Label.new()
-	_title.text = str(END_TITLE.get(result.get("end_reason", "completed"), "MISSION OVER"))
-	_title.add_theme_font_size_override("font_size", 30)
-	_title.add_theme_color_override("font_color", Color(0.45, 1.0, 0.55) if result.get("end_reason", "completed") == "completed" else Color(1.0, 0.45, 0.40))
+	# 1 — header: what this is, then the verdict
+	var ok: bool = str(result.get("end_reason", "completed")) == "completed"
+	box.add_child(CineUI.kicker("◆ Mission debrief  ·  " + str(mission.get("name", "")).to_upper()))
+	_title = CineUI.headline(str(END_TITLE.get(result.get("end_reason", "completed"), "MISSION OVER")), 30, CineUI.GOOD if ok else CineUI.BAD)
 	box.add_child(_title)
+	box.add_child(CineUI.rule())
 
-	_score = Label.new()
-	_score.text = "0"
-	_score.add_theme_font_size_override("font_size", 84)
-	_score.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
-	box.add_child(_score)
-
+	# 2 — hero: score + stars side by side
+	var hero := HBoxContainer.new()
+	hero.add_theme_constant_override("separation", 24)
+	hero.alignment = BoxContainer.ALIGNMENT_BEGIN
+	box.add_child(hero)
+	_score = CineUI.headline("0", 84, CineUI.GOLD)
+	_score.custom_minimum_size = Vector2(150, 0)
+	hero.add_child(_score)
+	var heroright := VBoxContainer.new()
+	heroright.add_theme_constant_override("separation", 6)
+	heroright.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hero.add_child(heroright)
 	_star_row = HBoxContainer.new()
 	_star_row.add_theme_constant_override("separation", 8)
-	box.add_child(_star_row)
+	heroright.add_child(_star_row)
 	for i in 3:
 		var l := Label.new()
 		l.text = "★"
@@ -218,98 +216,73 @@ func _build_ui() -> void:
 		l.modulate = Color(0.30, 0.32, 0.38)
 		_star_row.add_child(l)
 		_star_labels.append(l)
+	_sub = CineUI.body("DATA %s / %s Gb  ·  %s" % [_fmt(result.get("data_returned_gb", 0.0)), _fmt(result.get("data_goal_gb", 0.0)), _reason_line()], 16)
+	heroright.add_child(_sub)
+	box.add_child(CineUI.rule())
 
-	_sub = Label.new()
-	_sub.text = "DATA %s / %s Gb  ·  %s" % [_fmt(result.get("data_returned_gb", 0.0)), _fmt(result.get("data_goal_gb", 0.0)), _reason_line()]
-	_sub.add_theme_font_size_override("font_size", 16)
-	_sub.add_theme_color_override("font_color", Color(0.75, 0.82, 0.95))
-	box.add_child(_sub)
-
+	# 3 — score breakdown
 	for key in ["science", "survival", "budget"]:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
 		box.add_child(row)
 		var name := Label.new()
 		name.text = key.capitalize()
-		name.custom_minimum_size = Vector2(90, 0)
+		name.custom_minimum_size = Vector2(80, 0)
 		name.add_theme_font_size_override("font_size", 16)
+		name.add_theme_color_override("font_color", CineUI.TEXT)
 		row.add_child(name)
-		var bar := ProgressBar.new()
-		bar.min_value = 0
-		bar.max_value = 100
+		var bar := CineUI.meter({"science": Color(0.30, 0.75, 1.0), "survival": Color(0.35, 1.0, 0.55), "budget": CineUI.GOLD}[key])
 		bar.value = int(breakdown.get(key, 0))
-		bar.custom_minimum_size = Vector2(280, 20)
-		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		bar.show_percentage = false
-		var bg := StyleBoxFlat.new()
-		bg.bg_color = Color(0.16, 0.19, 0.27)
-		bg.set_corner_radius_all(6)
-		bar.add_theme_stylebox_override("background", bg)
-		var fill_sb := StyleBoxFlat.new()
-		fill_sb.bg_color = {"science": Color(0.30, 0.75, 1.0), "survival": Color(0.35, 1.0, 0.55), "budget": Color(1.0, 0.80, 0.25)}[key]
-		fill_sb.set_corner_radius_all(6)
-		bar.add_theme_stylebox_override("fill", fill_sb)
 		row.add_child(bar)
 		var val := Label.new()
 		val.text = str(int(breakdown.get(key, 0)))
 		val.custom_minimum_size = Vector2(40, 0)
 		val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		val.add_theme_font_size_override("font_size", 16)
+		val.add_theme_color_override("font_color", CineUI.TEXT)
 		row.add_child(val)
 		_bars[key] = bar
 
-	var look_panel := PanelContainer.new()
-	var lsb := StyleBoxFlat.new()
-	lsb.bg_color = Color(0.08, 0.12, 0.20, 0.9)
-	lsb.set_corner_radius_all(12)
-	lsb.set_content_margin_all(14)
-	look_panel.add_theme_stylebox_override("panel", lsb)
+	# 4 — look-alike card, gold-trimmed
+	var look_panel := CineUI.card(Color(1.0, 0.80, 0.30, 0.45))
 	box.add_child(look_panel)
 	var lbox := VBoxContainer.new()
 	lbox.add_theme_constant_override("separation", 4)
 	look_panel.add_child(lbox)
-	_look_title = Label.new()
-	_look_title.text = "YOUR MISSION IS LIKE %s (%d)" % [str(look.get("name", "—")).to_upper(), int(look.get("year", 0))]
-	_look_title.add_theme_font_size_override("font_size", 17)
-	_look_title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.40))
+	lbox.add_child(CineUI.kicker(" Closest real NASA mission"))
+	_look_title = CineUI.headline("%s (%d)" % [str(look.get("name", "—")), int(look.get("year", 0))], 20, CineUI.GOLD)
 	_look_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lbox.add_child(_look_title)
-	_look_fact = Label.new()
-	_look_fact.text = str(look.get("fact", ""))
-	_look_fact.add_theme_font_size_override("font_size", 15)
-	_look_fact.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_look_fact = CineUI.body(str(look.get("fact", "")), 15)
 	lbox.add_child(_look_fact)
 
+	# 5 — flight log
+	box.add_child(CineUI.kicker(" Flight log", CineUI.CYAN))
 	_log_list = VBoxContainer.new()
 	_log_list.add_theme_constant_override("separation", 4)
 	box.add_child(_log_list)
 	for line in _pick_log_lines():
-		var l := Label.new()
-		l.text = "•  " + line
-		l.add_theme_font_size_override("font_size", 15)
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var l := CineUI.body("•  " + line, 15)
 		_log_list.add_child(l)
 
 	var best_stars := int(MissionState.campaign.get("stars", {}).get(result.get("mission_id", ""), 0))
 	var best_score := int(MissionState.campaign.get("best_score", {}).get(result.get("mission_id", ""), 0))
-	_best = Label.new()
-	_best.text = "BEST: %d / 100  ·  %d/3 STARS" % [best_score, best_stars]
-	_best.add_theme_font_size_override("font_size", 15)
-	_best.add_theme_color_override("font_color", Color(0.65, 0.75, 0.90))
+	_best = CineUI.body("BEST: %d / 100  ·  %d/3 STARS" % [best_score, best_stars], 15)
 	box.add_child(_best)
 
+	# 6 — actions: primary next, secondary retry
 	var btns := HBoxContainer.new()
 	btns.add_theme_constant_override("separation", 12)
 	box.add_child(btns)
 	var retry := Button.new()
 	retry.text = "↻  Redesign & retry"
-	retry.add_theme_font_size_override("font_size", 20)
+	CineUI.ghost(retry)
 	retry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	retry.pressed.connect(func(): MissionState.go_to("hangar"))
 	btns.add_child(retry)
 	var nxt := Button.new()
 	nxt.text = "Next mission  →"
-	nxt.add_theme_font_size_override("font_size", 20)
+	CineUI.primary(nxt)
 	nxt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	nxt.pressed.connect(func(): MissionState.go_to("campaign_map"))
 	btns.add_child(nxt)

@@ -58,6 +58,11 @@ var _big: Label
 var _sub: Label
 var _skip: Button
 var _fade: ColorRect
+var _phase := -1
+var _phase_dots: Array[Panel] = []
+var _phase_labels: Array[Label] = []
+
+const PHASES := ["COUNTDOWN", "LIFTOFF", "SEPARATION", "DEPLOY", "ARRIVAL"]
 
 
 func _ready() -> void:
@@ -96,6 +101,7 @@ func _process(delta: float) -> void:
 			_enter_space()
 		_update_space(delta)
 	_update_fade()
+	_update_timeline()
 	if _t >= TOTAL:
 		_finish()
 
@@ -169,7 +175,7 @@ func _update_space(delta: float) -> void:
 		_sep_flash.light_energy = 3.0
 		Sfx.play("snap", -5.0)
 	if _s1_free:
-		var d1 := _sep_motion(sep, 0.8, 1.5, 0.35) * Vector3(-0.45, -0.30, 0.84)
+		var d1 := _sep_motion(sep, 1.0, 3.0, 0.30) * Vector3(-0.68, -0.34, 0.28)
 		_stage1.position = _s1_base + d1
 		_stage1.rotation = Vector3(0.45, 0.10, 0.85) * sep
 		_sep_flash.light_energy = maxf(_sep_flash.light_energy - delta * 9.0, 0.0)
@@ -486,52 +492,96 @@ func _build_ui() -> void:
 	add_child(layer)
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(root)
 
-	var title := Label.new()
-	title.text = "%s  ·  %s" % [str(mission.get("name", "")).to_upper(), str(mission.get("destination", "")).to_upper()]
-	title.add_theme_font_size_override("font_size", 22)
-	title.add_theme_color_override("font_color", Color(0.70, 0.82, 1.0))
-	title.position = Vector2(40, 26)
-	root.add_child(title)
+	# --- mission kicker card, top-left
+	var card := CineUI.glass(16)
+	card.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	card.offset_left = 28
+	card.offset_top = 24
+	card.offset_right = 428
+	card.offset_bottom = 118
+	root.add_child(card)
+	var kbox := VBoxContainer.new()
+	kbox.add_theme_constant_override("separation", 2)
+	card.add_child(kbox)
+	var kick := CineUI.kicker("◆ LAUNCH OPERATIONS")
+	kbox.add_child(kick)
+	var mname := CineUI.headline(str(mission.get("name", "")).to_upper(), 24)
+	kbox.add_child(mname)
+	var dest := CineUI.body("DESTINATION · " + str(mission.get("destination", "")).to_upper(), 14, CineUI.CYAN)
+	kbox.add_child(dest)
 
+	# --- centre captions, lifted above mid-frame so the vehicle stays readable
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(center)
 	var vbox := VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 4)
+	vbox.add_theme_constant_override("separation", 6)
 	center.add_child(vbox)
 
 	_big = Label.new()
 	_big.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_big.add_theme_font_size_override("font_size", 110)
-	_big.add_theme_color_override("font_color", Color(1.0, 0.82, 0.3))
+	_big.add_theme_color_override("font_color", CineUI.GOLD)
 	_big.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	_big.add_theme_constant_override("outline_size", 16)
 	vbox.add_child(_big)
 
 	_sub = Label.new()
 	_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_sub.add_theme_font_size_override("font_size", 26)
-	_sub.add_theme_color_override("font_color", Color(0.85, 0.90, 1.0))
+	_sub.add_theme_font_size_override("font_size", 24)
+	_sub.add_theme_color_override("font_color", CineUI.TEXT)
 	_sub.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	_sub.add_theme_constant_override("outline_size", 8)
 	vbox.add_child(_sub)
 
-	# Lift the captions above the centre so the rocket / spacecraft stays readable.
 	var spacer := Control.new()
-	spacer.custom_minimum_size = Vector2(0, 140)
+	spacer.custom_minimum_size = Vector2(0, 150)
 	vbox.add_child(spacer)
+
+	# --- phase timeline, bottom-centre
+	var track := CineUI.glass(12)
+	track.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	track.offset_left = -330
+	track.offset_right = 330
+	track.offset_top = -96
+	track.offset_bottom = -24
+	root.add_child(track)
+	var phases := HBoxContainer.new()
+	phases.alignment = BoxContainer.ALIGNMENT_CENTER
+	phases.add_theme_constant_override("separation", 22)
+	track.add_child(phases)
+	for pname in PHASES:
+		var cell := VBoxContainer.new()
+		cell.alignment = BoxContainer.ALIGNMENT_CENTER
+		cell.add_theme_constant_override("separation", 4)
+		phases.add_child(cell)
+		var dot := CineUI.dot(0)
+		var dwrap := CenterContainer.new()
+		dwrap.add_child(dot)
+		cell.add_child(dwrap)
+		var pl := Label.new()
+		pl.text = pname
+		pl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		pl.add_theme_font_size_override("font_size", 13)
+		pl.add_theme_color_override("font_color", CineUI.DIM)
+		cell.add_child(pl)
+		_phase_dots.append(dot)
+		_phase_labels.append(pl)
 
 	_skip = Button.new()
 	_skip.text = "SKIP  ▶"
-	_skip.add_theme_font_size_override("font_size", 20)
+	CineUI.ghost(_skip, 18)
 	_skip.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_skip.offset_left = -170
-	_skip.offset_top = -78
-	_skip.offset_right = -30
+	_skip.offset_left = -178
+	_skip.offset_top = -76
+	_skip.offset_right = -28
 	_skip.offset_bottom = -28
+	_skip.mouse_filter = Control.MOUSE_FILTER_STOP
 	_skip.pressed.connect(_finish)
 	root.add_child(_skip)
 
@@ -544,6 +594,39 @@ func _build_ui() -> void:
 	_fade.modulate.a = 0.0
 	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fade_layer.add_child(_fade)
+
+
+func _phase_index() -> int:
+	if _t >= ARRIVE_T:
+		return 4
+	if _t >= DEPLOY_T:
+		return 3
+	if _t >= SEP_T:
+		return 2
+	if _t >= LIFTOFF_T:
+		return 1
+	return 0
+
+
+func _update_timeline() -> void:
+	var idx := _phase_index()
+	if idx == _phase:
+		return
+	_phase = idx
+	for i in PHASES.size():
+		var dot := _phase_dots[i]
+		var lab := _phase_labels[i]
+		var sb := dot.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
+		if i < idx:
+			sb.bg_color = CineUI.CYAN
+			lab.add_theme_color_override("font_color", CineUI.CYAN)
+		elif i == idx:
+			sb.bg_color = CineUI.GOLD
+			lab.add_theme_color_override("font_color", CineUI.GOLD)
+		else:
+			sb.bg_color = Color(0.25, 0.28, 0.36)
+			lab.add_theme_color_override("font_color", CineUI.DIM)
+		dot.add_theme_stylebox_override("panel", sb)
 
 
 # ===================================================================== helpers
