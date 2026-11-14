@@ -4,7 +4,7 @@
 # Skippable with the SKIP button or Space. Owner: Member C (Daniel).
 extends Node3D
 
-const TOTAL := 22.5
+const TOTAL := 23.6
 const LIFTOFF_T := 3.0
 const CUT_T := 7.0
 const CUT_FADE_OUT := 0.8
@@ -13,11 +13,11 @@ const CUT_HOLD := 0.15
 const SEP_T := 7.7
 const DEPLOY_T := 8.0
 const DEPLOY_END := 9.0
-const COCKPIT_IN_T := 8.8
-const CONTROL_T := 9.8
-const CONTROL_END := 18.4
-const ARRIVE_T := 20.5
-const FADE_OUT_T := 21.5
+const COCKPIT_IN_T := 8.2
+const CONTROL_T := 11.0
+const CONTROL_END := 19.6
+const ARRIVE_T := 21.6
+const FADE_OUT_T := 22.6
 const STAGE2_T := 8.5
 const RUMBLE_FILE := "res://audio/jerryblessed-space-rocket-launch-rumble-544846.wav"
 const STARS_MAP := "res://art/planets/2k_stars.jpg"
@@ -322,7 +322,7 @@ func _update_space(delta: float) -> void:
 	elif _t < CONTROL_T:
 		# --- curved dolly around the nose into the cockpit
 		var k := smoothstep(0.0, 1.0, (_t - COCKPIT_IN_T) / (CONTROL_T - COCKPIT_IN_T))
-		_cockpit_vis = clampf((_t - (COCKPIT_IN_T + 0.2)) / 0.8, 0.0, 1.0)
+		_cockpit_vis = clampf((k - 0.55) / 0.40, 0.0, 1.0)
 		var p0 := Vector3(6.0, 3.5, 16.0)
 		var p1 := Vector3(7.0, 3.2, -7.0)
 		var p2 := Vector3(3.0, 1.2, -7.0)
