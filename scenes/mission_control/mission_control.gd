@@ -51,6 +51,9 @@ var _ending := false
 var _panel_refresh := 0.0
 const SPEEDS := [1.0, 2.0, 4.0]
 var events: EventSystem
+var difficulty := "normal"
+var tutorial: MCTutorial
+var _ui_root: Control
 var decor: RoomDecor
 var _alert_banner: Label
 var _toast: Label
@@ -82,6 +85,10 @@ func _ready() -> void:
 	decor = RoomDecor.new()
 	add_child(decor)
 	decor.build(self, sim)
+	if MCTutorial.should_run(mission.get("id", "")):
+		tutorial = MCTutorial.new()
+		add_child(tutorial)
+		tutorial.setup(self, _ui_root)
 	Sfx.start_loop("hum")
 
 
@@ -226,7 +233,12 @@ func close_console() -> void:
 func _console_body(key: String) -> String:
 	var card := ""
 	if events and events.active.get("console", "") == key:
-		card = "[color=#ff6b5e][b]ALERT: %s[/b][/color]\n%s\n[color=#ffb74d]Choose below.[/color]\n\n" % [events.active["title"], events.active["text"]]
+		var how := "Choose below. The green option is recommended."
+		if events.is_manual():
+			var fix: Dictionary = events.active.get("fix", {})
+			var tool: String = "Enter SAFE MODE" if fix.get("type", "") == "safe_mode" else str(fix.get("label", ""))
+			how = "Fix it yourself with the right tool below (wrong tools waste money)." + ("" if difficulty == "hard" else "\nHint: use \"%s\"." % tool)
+		card = "[color=#ff6b5e][b]ALERT: %s[/b][/color]\n%s\n[color=#ffb74d]%s[/color]\n\n" % [events.active["title"], events.active["text"], how]
 	return card + _console_text(key)
 
 
@@ -314,7 +326,7 @@ func _auto_alerts() -> void:
 	for key in cond:
 		if not cond[key]:
 			_acked.erase(key)
-		set_console_alert(key, (cond[key] and not _acked.has(key)) or key == ev_key)
+		set_console_alert(key, (cond[key] and not _acked.has(key)) or (key == ev_key and difficulty != "hard"))
 
 
 # ============================================================== interaction
@@ -382,6 +394,7 @@ func _build_ui() -> void:
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(root)
+	_ui_root = root
 
 	var dot := ColorRect.new()
 	dot.color = Color(1, 1, 1, 0.8)
@@ -579,14 +592,15 @@ func _build_actions(key: String) -> void:
 		_panel_actions.remove_child(c)
 		c.queue_free()
 	var orange := Color(1.0, 0.55, 0.2)
-	if events and events.active.get("console", "") == key:
+	if events and events.active.get("console", "") == key and not events.is_manual():
 		var choices: Array = events.active.get("choices", [])
+		var rec := int(events.active.get("recommended", 0))
 		for i in choices.size():
 			var ch: Dictionary = choices[i]
 			var idx := i
 			var cost := MissionSim.effects_cost(ch.get("effects", {}))
-			_action_button(ch["label"], ch.get("effect", ""), Color(1.0, 0.35, 0.3) if i == 0 else Color(0.9, 0.6, 0.3),
-				events.can_afford(ch), func(): events.choose(idx))
+			_action_button(ch["label"] + ("  (recommended)" if i == rec else ""), ch.get("effect", ""),
+				Color(0.3, 0.9, 0.45) if i == rec else Color(0.55, 0.58, 0.66), events.can_afford(ch), func(): events.choose(idx))
 			if cost > 0.0 and not events.can_afford(ch):
 				_panel_actions.get_child(_panel_actions.get_child_count() - 1).tooltip_text = "Not enough reserve money."
 		return
@@ -597,7 +611,10 @@ func _build_actions(key: String) -> void:
 					func(): sim.set_safe_mode(false))
 			else:
 				_action_button("Enter SAFE MODE", "Turn off all instruments: saves power and halves wear, but no science.",
-					orange, true, func(): sim.set_safe_mode(true))
+					orange, true, func():
+						sim.set_safe_mode(true)
+						if events.is_manual() and events.active.get("fix", {}).get("type", "") == "safe_mode":
+							events.try_fix("safe_mode"))
 		"science":
 			for id in sim.instruments_on:
 				var it := GameData.get_item("instruments", id)
@@ -616,6 +633,13 @@ func _build_actions(key: String) -> void:
 				Color(1.0, 0.82, 0.3), sim.can_repair(), func(): sim.repair())
 			_action_button("End mission now", "Stop the mission early and go to the debrief.", Color(1.0, 0.35, 0.3), true,
 				func(): sim.abort())
+	# Normal / Hard: repair tools for this console (only one of them fixes the current problem)
+	if events and events.is_manual():
+		for tl in events.tools_for(key):
+			var act: String = tl["action"]
+			var label: String = tl["label"]
+			_action_button(label, "A repair tool. Use it only if it fits the problem; the wrong tool wastes money.",
+				Color(0.3, 0.85, 0.85), sim.reserve_musd + 0.001 >= float(tl["cost"]), func(): _use_tool(act, label))
 
 
 # ============================================================== events (M5)
@@ -623,7 +647,9 @@ func _build_actions(key: String) -> void:
 func _setup_events() -> void:
 	events = EventSystem.new()
 	add_child(events)
-	events.setup(sim)
+	difficulty = MissionState.difficulty()
+	events.setup(sim, 0, difficulty)
+	sim.add_log("Difficulty: %s." % difficulty.capitalize())
 	events.event_started.connect(_on_event_started)
 	events.event_resolved.connect(_on_event_resolved)
 	_alarm_light = OmniLight3D.new()
@@ -659,6 +685,15 @@ func _on_event_resolved(ev: Dictionary, choice: Dictionary, outcome: String, tim
 		_after_action()
 
 
+func _use_tool(action: String, label: String) -> void:
+	match events.try_fix(action):
+		"wrong":
+			_show_toast("\"%s\" didn't fix it! Read the alert and think about what is really wrong." % label, Color(1, 0.55, 0.45))
+			Sfx.play("nogo", -4.0)
+		"nothing":
+			_show_toast("Nothing needs fixing right now.", Color(0.75, 0.85, 1.0))
+
+
 func _show_toast(text: String, color: Color) -> void:
 	_toast.text = text
 	_toast.modulate = color
@@ -678,8 +713,12 @@ func _update_event_fx(delta: float) -> void:
 	var where: String = st.title if st else "?"
 	var at_console: bool = _open == events.active.get("console", "-")
 	_alert_banner.visible = true
-	_alert_banner.text = "ALERT: %s\n%s  ·  %d s" % [events.active["title"],
-		"Choose an action on this console" if at_console else "Go to the %s console!" % where, int(ceil(events.time_left))]
+	var line := "Go to the %s console!" % where
+	if difficulty == "hard":
+		line = "Find the right console and fix it!"
+	if at_console:
+		line = "Use the right tool on this console" if events.is_manual() else "Choose an action on this console"
+	_alert_banner.text = "ALERT: %s\n%s  ·  %d s" % [events.active["title"], line, int(ceil(events.time_left))]
 	_alarm_light.light_energy = 0.0 if paused else (2.5 if fmod(Time.get_ticks_msec() / 1000.0, 0.8) < 0.4 else 0.4)
 	if not at_console and not paused:
 		_alarm_repeat -= delta

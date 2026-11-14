@@ -1,0 +1,59 @@
+# Part of Go/No-Go — written with AI assistance (Space Apps 2026).
+# DifficultyPicker: EASY / NORMAL / HARD toggle row with a one-line explanation.
+# Sets MissionState.set_difficulty(); read by EventSystem in Mission Control.
+#  Easy   = pick from choices, recommended choice shown in green, more time
+#  Normal = fix problems yourself with the right console tool (with a hint)
+#  Hard   = no hints, the alarm doesn't say which console, less time, riskier
+class_name DifficultyPicker
+extends VBoxContainer
+
+const LEVELS := [
+	["easy", "EASY", "Pick from choices. The recommended answer is shown in green. More time."],
+	["normal", "NORMAL", "Fix problems yourself with the right console tool. A hint tells you which."],
+	["hard", "HARD", "No hints, the alarm doesn't say where to go, less time, more risk."],
+]
+
+var _buttons := {}
+var _desc: Label
+
+
+func _ready() -> void:
+	add_theme_constant_override("separation", 6)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	add_child(row)
+	var cap := NeonUI.kicker("DIFFICULTY", NeonUI.MUTED, 10)
+	cap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	cap.custom_minimum_size.x = 90
+	row.add_child(cap)
+	for lv in LEVELS:
+		var b := Button.new()
+		b.text = lv[1]
+		b.toggle_mode = true
+		b.custom_minimum_size = Vector2(110, 36)
+		b.tooltip_text = lv[2]
+		NeonUI.ghost(b, 15)
+		var level: String = lv[0]
+		b.pressed.connect(func(): _pick(level))
+		row.add_child(b)
+		_buttons[level] = b
+	_desc = Label.new()
+	NeonUI.caption(_desc, 12, NeonUI.MUTED)
+	_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	add_child(_desc)
+	_refresh()
+
+
+func _pick(level: String) -> void:
+	MissionState.set_difficulty(level)
+	_refresh()
+
+
+func _refresh() -> void:
+	var cur := MissionState.difficulty()
+	for lv in LEVELS:
+		var b: Button = _buttons[lv[0]]
+		b.button_pressed = lv[0] == cur
+		b.modulate = Color(1, 1, 1) if lv[0] == cur else Color(0.6, 0.65, 0.75)
+		if lv[0] == cur:
+			_desc.text = lv[2]

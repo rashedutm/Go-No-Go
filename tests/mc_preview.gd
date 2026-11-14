@@ -8,6 +8,8 @@ func _ready() -> void:
 	var mid := args[0] if args.size() > 0 else "mars"
 	MissionState.current_mission_id = mid
 	MissionState.design = Sim.make_test_design(mid)
+	if args.size() > 3:
+		MissionState.set_difficulty(args[3])
 	var mc = load("res://scenes/mission_control/mission_control.tscn").instantiate()
 	add_child(mc)
 	var shot := args[1] if args.size() > 1 else "front"

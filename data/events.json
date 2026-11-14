@@ -34,7 +34,11 @@
         "effect": "Risked radiation damage to keep collecting science"
       }
     ],
-    "default": 1
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "type": "safe_mode"
+    }
   },
   {
     "id": "micrometeoroid",
@@ -68,7 +72,12 @@
         "effect": "25% of the power is lost for the rest of the mission"
       }
     ],
-    "default": 1
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "reroute_power",
+      "label": "Reroute power ($10 M)"
+    }
   },
   {
     "id": "battery_aging",
@@ -86,21 +95,26 @@
     "text": "After thousands of trips through the planet's shadow, some battery cells are wearing out.",
     "choices": [
       {
-        "label": "Turn off the hungriest instrument",
+        "label": "Charge the battery more gently",
         "effects": {
-          "instrument_off": "max_power"
+          "battery_max_frac": -0.1
         },
-        "effect": "Saved power but lost one instrument's science"
+        "effect": "Gentler charging saved most of the battery (10% capacity lost)"
       },
       {
-        "label": "Accept a smaller battery",
+        "label": "Keep charging normally",
         "effects": {
-          "battery_max_frac": -0.3
+          "battery_max_frac": -0.35
         },
-        "effect": "The battery now holds 30% less energy for the shadows"
+        "effect": "The battery lost 35% of its capacity"
       }
     ],
-    "default": 1
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "gentle_charge",
+      "label": "Switch to gentle battery charging"
+    }
   },
   {
     "id": "stuck_panel",
@@ -138,7 +152,12 @@
         "effect": "30% of the solar power is lost"
       }
     ],
-    "default": 1
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "wiggle_panel",
+      "label": "Wiggle the stuck solar wing ($15 M)"
+    }
   },
   {
     "id": "radiation_belt",
@@ -171,7 +190,11 @@
         "effect": "Risked electronics damage to keep working"
       }
     ],
-    "default": 1
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "type": "safe_mode"
+    }
   },
   {
     "id": "ground_outage",
@@ -205,7 +228,12 @@
         "effect": "40 days with no data sent to Earth (memory overflowed)"
       }
     ],
-    "default": 1
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "rent_antenna",
+      "label": "Rent a partner antenna ($6 M)"
+    }
   },
   {
     "id": "memory_error",
@@ -242,7 +270,12 @@
         "effect": "Risked the computer crashing"
       }
     ],
-    "default": 1
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "reformat_memory",
+      "label": "Reformat memory"
+    }
   },
   {
     "id": "budget_cut",
@@ -276,7 +309,12 @@
         "effect": "Saved money, lost 6 months of science"
       }
     ],
-    "default": 1
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "pay_budget",
+      "label": "Pay the cut from the reserve ($20 M)"
+    }
   },
   {
     "id": "wildfire",
@@ -305,7 +343,12 @@
         "effect": "Missed a chance to help and to study the fires"
       }
     ],
-    "default": 1
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "retarget",
+      "label": "Point the instruments at the target"
+    }
   },
   {
     "id": "lunar_ice",
@@ -334,7 +377,12 @@
         "effect": "The hint of ice was never confirmed"
       }
     ],
-    "default": 1
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "retarget",
+      "label": "Point the instruments at the target"
+    }
   },
   {
     "id": "dust_storm",
@@ -363,7 +411,12 @@
         "effect": "Missed the global dust storm"
       }
     ],
-    "default": 1
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "retarget",
+      "label": "Point the instruments at the target"
+    }
   },
   {
     "id": "io_volcano",
@@ -392,7 +445,12 @@
         "effect": "Missed the eruption on Io"
       }
     ],
-    "default": 1
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "retarget",
+      "label": "Point the instruments at the target"
+    }
   },
   {
     "id": "enceladus_plume",
@@ -424,7 +482,12 @@
         "effect": "Missed the chance to sample the plume"
       }
     ],
-    "default": 1
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "retarget",
+      "label": "Point the instruments at the target"
+    }
   },
   {
     "id": "comet",
@@ -457,6 +520,282 @@
         "effect": "Let the comet pass by"
       }
     ],
-    "default": 1
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "retarget",
+      "label": "Point the instruments at the target"
+    }
+  },
+  {
+    "id": "mars_conjunction",
+    "category": "comms",
+    "console": "comms",
+    "status": "normal",
+    "title": "SOLAR CONJUNCTION",
+    "destinations": [
+      "mars"
+    ],
+    "weight": 2,
+    "timer_s": 20,
+    "text": "The Sun is moving between Earth and Mars. Its radio noise will scramble all signals for about 2 weeks. This really happens every 26 months!",
+    "choices": [
+      {
+        "label": "Pause all commands and let the spacecraft wait safely",
+        "effects": {
+          "safe_days": 14,
+          "blackout_days": 14
+        },
+        "effect": "No commands for 2 weeks, but the spacecraft stayed safe"
+      },
+      {
+        "label": "Keep sending commands through the noise",
+        "effects": {
+          "blackout_days": 14,
+          "health_risk": {
+            "p": 0.5,
+            "health": -20
+          }
+        },
+        "effect": "Garbled commands risked confusing the spacecraft"
+      }
+    ],
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "pause_commands",
+      "label": "Pause commands for the conjunction"
+    }
+  },
+  {
+    "id": "star_tracker",
+    "category": "hardware",
+    "console": "engineer",
+    "status": "damaged",
+    "title": "STAR TRACKER BLINDED",
+    "destinations": [
+      "earth",
+      "moon",
+      "mars",
+      "jupiter",
+      "saturn"
+    ],
+    "weight": 2,
+    "timer_s": 20,
+    "text": "The star tracker, the camera that tells the spacecraft which way it is pointing, is blinded by sunlight.",
+    "choices": [
+      {
+        "label": "Switch to backup gyroscopes ($5 M)",
+        "effects": {
+          "reserve": -5
+        },
+        "effect": "Gyroscopes kept the spacecraft pointed correctly"
+      },
+      {
+        "label": "Wait for it to recover",
+        "effects": {
+          "safe_days": 10,
+          "health": -5
+        },
+        "effect": "Drifted for 10 days with no science"
+      }
+    ],
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "backup_gyros",
+      "label": "Switch to backup gyroscopes ($5 M)"
+    }
+  },
+  {
+    "id": "thruster_leak",
+    "category": "hardware",
+    "console": "engineer",
+    "status": "damaged",
+    "title": "THRUSTER LEAK",
+    "destinations": [
+      "earth",
+      "moon",
+      "mars",
+      "jupiter",
+      "saturn"
+    ],
+    "weight": 2,
+    "timer_s": 20,
+    "text": "A small thruster valve is stuck open and propellant is leaking, slowly spinning the spacecraft.",
+    "choices": [
+      {
+        "label": "Close the valve, use backup thrusters ($8 M)",
+        "effects": {
+          "reserve": -8
+        },
+        "effect": "Leak stopped; backup thrusters took over"
+      },
+      {
+        "label": "Ignore it",
+        "effects": {
+          "health_risk": {
+            "p": 0.7,
+            "health": -25
+          }
+        },
+        "effect": "The spinning spacecraft risked serious damage"
+      }
+    ],
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "close_valve",
+      "label": "Close the leaking valve ($8 M)"
+    }
+  },
+  {
+    "id": "software_bug",
+    "category": "hardware",
+    "console": "director",
+    "status": "damaged",
+    "title": "SOFTWARE CRASH",
+    "destinations": [
+      "earth",
+      "moon",
+      "mars",
+      "jupiter",
+      "saturn"
+    ],
+    "weight": 2,
+    "timer_s": 22,
+    "text": "The flight computer crashed and rebooted itself. Engineers found the bug that caused it.",
+    "choices": [
+      {
+        "label": "Upload a software patch ($6 M)",
+        "effects": {
+          "reserve": -6
+        },
+        "effect": "The patched software runs smoothly"
+      },
+      {
+        "label": "Reboot and hope it doesn't happen again",
+        "effects": {
+          "safe_days": 5,
+          "health_risk": {
+            "p": 0.5,
+            "health": -15
+          }
+        },
+        "effect": "The bug was still there"
+      }
+    ],
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "upload_patch",
+      "label": "Upload a software patch ($6 M)"
+    }
+  },
+  {
+    "id": "ring_crossing",
+    "category": "science",
+    "console": "science",
+    "status": "normal",
+    "title": "RING-PLANE CROSSING!",
+    "destinations": [
+      "saturn"
+    ],
+    "weight": 3,
+    "timer_s": 15,
+    "text": "The orbit crosses Saturn's ring plane: a rare chance to measure ring particles up close (tiny grains might hit).",
+    "choices": [
+      {
+        "label": "Measure the rings",
+        "effects": {
+          "science_bonus": 15,
+          "health_risk": {
+            "p": 0.3,
+            "health": -10
+          }
+        },
+        "effect": "Measured the ring particles: big science"
+      },
+      {
+        "label": "Stay on the normal plan",
+        "effects": {},
+        "effect": "Missed the ring-plane crossing"
+      }
+    ],
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "retarget",
+      "label": "Point the instruments at the target"
+    }
+  },
+  {
+    "id": "europa_flyby",
+    "category": "science",
+    "console": "science",
+    "status": "normal",
+    "title": "EUROPA FLYBY!",
+    "destinations": [
+      "jupiter"
+    ],
+    "weight": 3,
+    "timer_s": 15,
+    "text": "The orbit passes close to Europa, an icy moon with an ocean under its ice. Closer means more radiation.",
+    "choices": [
+      {
+        "label": "Image Europa up close",
+        "effects": {
+          "science_bonus": 15,
+          "health": -6
+        },
+        "effect": "Mapped Europa's cracked ice shell"
+      },
+      {
+        "label": "Stay on the normal plan",
+        "effects": {},
+        "effect": "Missed the Europa flyby"
+      }
+    ],
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "retarget",
+      "label": "Point the instruments at the target"
+    }
+  },
+  {
+    "id": "relay_offer",
+    "category": "comms",
+    "console": "comms",
+    "status": "normal",
+    "title": "RELAY OFFER",
+    "destinations": [
+      "moon",
+      "mars"
+    ],
+    "weight": 2,
+    "timer_s": 18,
+    "text": "A partner agency's orbiter offers to relay your data to Earth: more contact time for a small fee.",
+    "choices": [
+      {
+        "label": "Accept the relay ($3 M)",
+        "effects": {
+          "reserve": -3,
+          "contact_hours": 3
+        },
+        "effect": "+3 hours a day of contact through the partner's orbiter"
+      },
+      {
+        "label": "No thanks",
+        "effects": {},
+        "effect": "Declined the relay offer"
+      }
+    ],
+    "default": 1,
+    "recommended": 0,
+    "fix": {
+      "action": "accept_relay",
+      "label": "Accept the relay offer ($3 M)"
+    }
   }
 ]

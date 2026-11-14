@@ -32,5 +32,19 @@ func _ready() -> void:
 	for mid in ["earth", "moon", "mars", "jupiter", "saturn"]:
 		_fly(mid, "ignore", 11)
 		_fly(mid, "first", 11)
+	# manual fixing (Normal): wrong tool costs money and does not fix; right tool fixes
+	var s := MissionSim.new(Sim.make_test_design("mars"))
+	var es := EventSystem.new()
+	es.setup(s, 5, "normal")
+	es.start_by_id("micrometeoroid")
+	var r0 := s.reserve_musd
+	var wrong := es.try_fix("wiggle_panel")
+	var still_active := not es.active.is_empty()
+	var right := es.try_fix("reroute_power")
+	print("manual fix: wrong=%s (still active %s, paid $%d M)  right=%s  active now %s" % [wrong, still_active, int(r0 - s.reserve_musd) - 10, right, not es.active.is_empty()])
+	es.start_by_id("solar_storm")
+	s.set_safe_mode(true)
+	print("safe-mode fix: ", es.try_fix("safe_mode"), "  hard timer x", EventSystem.new().timer_mult)
+	es.free()
 	print("RESULT: events test finished")
 	get_tree().quit()
