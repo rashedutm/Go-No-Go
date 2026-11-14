@@ -92,7 +92,7 @@ func _fill() -> void:
 			for m in GameData.get_missions_in_order():
 				var id: String = m["id"]
 				var stars := int(MissionState.campaign["stars"].get(id, 0))
-				var b := _add_button("%d. %s %s" % [m["order"], m["name"], "★".repeat(stars)], "briefing",
+				var b := _add_button("%d. %s %s" % [m["order"], m["name"], "(%d/3 stars)" % stars], "briefing",
 					func(): MissionState.start_mission(id))
 				b.disabled = not MissionState.is_unlocked(id)
 			_add_button("Back", "title")
@@ -137,7 +137,7 @@ func _fill() -> void:
 			var s := Sim.score(r)
 			var look := Sim.find_lookalike(MissionState.design)
 			_body.text = "Score: %d   %s\nScience %d  •  Survival %d  •  Budget %d\n\nYour mission is like [b]%s[/b] (%s): %s" % [
-				s["total"], "★".repeat(s["stars"]) if s["stars"] > 0 else "(failed)", s["science"], s["survival"], s["budget"],
+				s["total"], ("%d/3 stars" % s["stars"]) if s["stars"] > 0 else "(failed)", s["science"], s["survival"], s["budget"],
 				look.get("name", "—"), str(look.get("year", "")), look.get("fact", "")]
 			MissionState.record_result(r.get("mission_id", MissionState.current_mission_id), s["stars"], s["total"])
 			_add_button("Redesign & retry", "hangar")
