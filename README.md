@@ -20,6 +20,13 @@ We are 3 people working in parallel and merging through **GitHub**. Each person 
 | **Member B — Emon** (Mission Control dev) | Claude Pro | **Live Mission Control**, **Events**, **Debrief** | §B below, then §6.7–§6.10, §7.6, §8 |
 | **Member C — Daniel** (Content, Art & Pitch) | No AI needed | Art & sound collection, playtesting, **demo video/slides**, submission text | §C below |
 
+### 📍 Project status
+| Milestone | Status |
+|---|---|
+| **M1 Skeleton** | ✅ **Done.** Godot project, all `data/*.json`, the 3 autoloads (`GameData`, `MissionState`, `Sim`), and placeholder screens. The whole flow Title → Campaign → Briefing → Design → Launch Check → Launch → Mission Control → Debrief is clickable. On the Design screen, press **"Use test design"**. `tests/sim_test.tscn` checks that every mission's test design is GO. |
+| M2–M3 Design + Launch check | ⏳ Member A, next |
+| M4–M6 Mission Control, Events, Debrief | ⏳ Member B (Emon). Until your scenes exist, the game uses `scenes/placeholders/` automatically. |
+
 ### 🛠️ Getting started (everyone)
 
 **Repo:** https://github.com/rashedutm/Go-No-Go (Member A is the owner and adds the others as collaborators. Accept the email invite first.)
@@ -165,17 +172,17 @@ Title ─► Campaign Map ─► Mission Briefing ─► DESIGN (4 stations) ─
 
 ## 4. Campaign missions
 
-| # | Mission | Destination | Objective (science goal) | Budget | Min. lifetime | Data goal | Difficulty |
-|---|---|---|---|---|---|---|---|
-| 1 | **Fire Watch** | Low Earth Orbit (500 km) | Map wildfires & vegetation | $150 M | 2 yr | 500 Gb | ★ |
-| 2 | **Moon Mapper** | Lunar orbit (50 km) | Map the surface, look for water ice at the poles | $350 M | 1 yr | 300 Gb | ★★ |
-| 3 | **Red Planet Weather** | Mars orbit | Study Mars atmosphere & dust storms | $600 M | 2 yr | 200 Gb | ★★★ |
-| 4 | **Giant's Secret** | Jupiter orbit | Study Jupiter's interior, magnetic field, radiation | $1,100 M | 2 yr | 40 Gb | ★★★★ |
-| 5 | **Ringworld** | Saturn orbit | Study rings and moons (Titan, Enceladus) | $1,500 M | 4 yr | 30 Gb | ★★★★★ |
+Source of truth: `data/missions.json`.
 
-Each mission also lists **required instrument types** (at least one must be carried) — see `missions.json` in §7.
+| # | Mission | Destination | Objective (science goal) | Budget | Min. lifetime | Data goal | Required instrument types | Difficulty |
+|---|---|---|---|---|---|---|---|---|
+| 1 | **Fire Watch** | Low Earth Orbit (500 km) | Map wildfires & forest health | $150 M | 2 yr | 12,000 Gb | imaging | ★ |
+| 2 | **Moon Mapper** | Lunar orbit (50 km) | Map the surface, find water ice at the poles | $300 M | 1 yr | 12,000 Gb | imaging + spectro | ★★ |
+| 3 | **Red Planet Weather** | Mars orbit | Study Mars atmosphere & dust storms | $550 M | 2 yr | 50,000 Gb | spectro | ★★★ |
+| 4 | **Giant's Secret** | Jupiter orbit | Jupiter's interior, magnetic field, radiation | $900 M | 2 yr | 4,000 Gb | interior + fields | ★★★★ |
+| 5 | **Ringworld** | Saturn orbit | Rings and the icy plumes of Enceladus | $1,200 M | 4 yr | 2,500 Gb | imaging + sampling | ★★★★★ |
 
----
+Each mission has a balanced reference design in `Sim.make_test_design(id)` that passes the launch check (verified by `tests/sim_test.tscn`).
 
 ## 5. The four role stations (design phase)
 
@@ -276,7 +283,7 @@ Each outcome writes a cause→effect line into the log, reused in the debrief.
 ### 6.9 Scoring
 | Component | Weight | Formula |
 |---|---|---|
-| **Science returned** | 50 % | `min(data_returned / data_goal, 1.5) / 1.5 × 100` (bonus for over-delivery) + event science bonuses |
+| **Science returned** | 50 % | `ratio = data_returned / data_goal` → `min(ratio,1) × 85 + clamp((ratio−1)/0.5, 0, 1) × 15` (goal met = 85, 1.5× goal = 100) + event science bonus, max 100 |
 | **Mission survival** | 30 % | `min(actual_lifetime / target_lifetime, 1) × 100` |
 | **Budget efficiency** | 20 % | `(reserve_left / budget) × 200`, capped at 100 |
 
@@ -291,86 +298,88 @@ Stars: ★ ≥ 40 · ★★ ≥ 65 · ★★★ ≥ 85. A mission with 0 stars =
 
 ---
 
-## 7. Data tables (put these in `data/*.json`)
+## 7. Data tables
 
-Numbers are simplified and rounded for gameplay, but chosen to be in realistic proportion.
+**The JSON files in `data/` are the source of truth.** Change balance there, not in code. The tables below are a summary (✓C = allowed in a CubeSat).
 
-### 7.1 Launch vehicles (generic names — do not use real company logos/brands)
+### 7.1 Launch vehicles — `launch_vehicles.json` (made-up names, no real brands)
 | id | Name | Cost $M | LEO kg | Moon kg | Mars kg | Jupiter kg | Saturn kg |
 |---|---|---|---|---|---|---|---|
-| small | Sparrow (small launcher) | 10 | 300 | – | – | – | – |
+| rideshare | CubeSat Rideshare | 1 | 24 | – | – | – | – |
+| small | Sparrow (small launcher) | 8 | 300 | – | – | – | – |
 | medium | Kestrel (medium launcher) | 70 | 15,000 | 3,500 | 2,500 | 900 | – |
-| heavy | Heavy-lift | 150 | 50,000 | 14,000 | 10,000 | 4,500 | 3,500 |
-| super | Super heavy | 400 | 90,000 | 27,000 | 20,000 | 9,000 | 7,000 |
-| rideshare | CubeSat rideshare | 2 | 50 | – | – | – | – |
+| heavy | Condor (heavy-lift) | 150 | 50,000 | 14,000 | 10,000 | 4,500 | 3,500 |
+| super | Titanhawk (super heavy) | 450 | 90,000 | 27,000 | 20,000 | 9,000 | 7,000 |
 
-### 7.2 Spacecraft bus
-| id | Name | Cost $M | Mass kg | Base power W | Part slots |
+### 7.2 Spacecraft bus — `buses.json`
+| id | Name | Cost $M | Mass kg | Base power W | Part slots (instruments + power sources) |
 |---|---|---|---|---|---|
-| cube | 12U CubeSat | 3 | 24 | 10 | 3 |
-| small | Small bus | 40 | 300 | 120 | 6 |
-| medium | Medium bus | 90 | 900 | 300 | 9 |
-| large | Large bus | 180 | 2,000 | 500 | 12 |
+| cube | 12U CubeSat | 2 | 6 | 5 | 3 (only ✓C parts; whole CubeSat ≤ 24 kg per NASA CubeSat 101: ~1.33 kg per 1U) |
+| small | Small bus | 50 | 150 | 60 | 6 |
+| medium | Medium bus | 150 | 900 | 150 | 9 |
+| large | Large bus | 300 | 2,000 | 250 | 12 |
 
-(12U CubeSat max mass ~24 kg follows NASA CubeSat 101: ~1.33 kg per 1U.)
-
-### 7.3 Power, battery, shielding
-| id | Name | Cost $M | Mass kg | Output W @1 AU | Notes |
-|---|---|---|---|---|---|
-| solar_s | Small solar array | 5 | 20 | 300 | |
-| solar_m | Medium solar array | 12 | 60 | 1,500 | |
-| solar_l | Large solar array | 30 | 150 | 5,000 | |
-| solar_xl | Giant solar wings | 70 | 340 | 14,000 | Juno-style, only realistic option for solar at Jupiter |
-| rtg | RTG (nuclear) | 120 | 45 | 110 constant | Does not depend on sunlight, −1.5 %/yr |
-| batt_s / m / l | Battery 200 / 800 / 2,000 Wh | 1 / 3 / 7 | 4 / 15 / 35 | – | |
-| shield_none / med / heavy | Radiation shielding | 0 / 25 / 60 | 0 / 80 / 200 | – | Jupiter needs ≥ med |
+### 7.3 Power, battery, shielding — `power.json` (`kind`: solar / rtg / battery / shielding)
+| id | Name | Cost $M | Mass kg | Value |
+|---|---|---|---|---|
+| solar_cube ✓C | CubeSat solar panels | 0.5 | 2 | 40 W @1 AU |
+| solar_s | Small solar array | 5 | 20 | 300 W @1 AU |
+| solar_m | Medium solar array | 12 | 60 | 1,500 W @1 AU |
+| solar_l | Large solar array | 30 | 150 | 5,000 W @1 AU |
+| solar_xl | Giant solar wings (Juno-style) | 70 | 340 | 14,000 W @1 AU (≈ 520 W at Jupiter) |
+| rtg | RTG (nuclear) | 100 | 56 | 290 W anywhere, −1.5 %/yr |
+| batt_s ✓C / batt_m / batt_l | Battery | 1 / 3 / 7 | 4 / 15 / 35 | 200 / 800 / 2,000 Wh |
+| shield_none ✓C / shield_med / shield_heavy | Radiation vault | 0 / 25 / 60 | 0 / 80 / 200 | level 0 / 1 / 2 (Jupiter needs ≥ 1) |
 
 Heater load by destination (W): Earth 0 · Moon 20 · Mars 40 · Jupiter 120 · Saturn 150.
 
-### 7.4 Instruments
-| id | Name | Type | Cost $M | Mass kg | Power W | Data Gb/day | Science pts | Plain-English description |
-|---|---|---|---|---|---|---|---|---|
-| cam_wide | Wide camera | imaging | 8 | 15 | 20 | 1.5 | 10 | Takes color pictures of large areas. |
-| cam_hires | High-resolution camera | imaging | 25 | 60 | 60 | 4.0 | 25 | Sees small details — makes lots of data. |
-| ir_spec | Infrared spectrometer | spectro | 30 | 35 | 40 | 1.0 | 25 | Detects heat & what surfaces are made of (e.g. water ice). |
-| radar | Radar sounder | radar | 40 | 90 | 150 | 2.0 | 30 | Sees under the surface and through clouds/dust. |
-| magnet | Magnetometer | fields | 6 | 5 | 5 | 0.05 | 12 | Measures magnetic fields — tells us about the inside of planets. |
-| particle | Particle & radiation detector | fields | 10 | 10 | 10 | 0.1 | 12 | Measures charged particles and radiation. |
-| microwave | Microwave radiometer | interior | 35 | 50 | 40 | 0.3 | 30 | Looks deep into giant-planet atmospheres. |
-| altimeter | Laser altimeter | mapping | 18 | 20 | 35 | 0.5 | 18 | Measures height of mountains and craters. |
-| dust | Dust analyzer | sampling | 15 | 15 | 15 | 0.05 | 15 | Catches & analyses dust and plume particles. |
+### 7.4 Instruments — `instruments.json`
+| id | Name | Type | Cost $M | Mass kg | Power W | Data Gb/day | Science pts |
+|---|---|---|---|---|---|---|---|
+| cam_mini ✓C | Mini camera | imaging | 1 | 1.5 | 5 | 2 | 5 |
+| cam_wide | Wide camera | imaging | 15 | 15 | 20 | 20 | 10 |
+| cam_hires | High-resolution camera | imaging | 50 | 60 | 60 | 80 | 25 |
+| ir_spec | Infrared spectrometer | spectro | 45 | 35 | 40 | 15 | 25 |
+| radar | Radar sounder | radar | 70 | 90 | 150 | 40 | 30 |
+| magnet ✓C | Magnetometer | fields | 8 | 5 | 5 | 0.1 | 12 |
+| particle | Particle & radiation detector | fields | 15 | 10 | 10 | 0.2 | 12 |
+| microwave | Microwave radiometer | interior | 60 | 50 | 40 | 2 | 30 |
+| altimeter | Laser altimeter | mapping | 30 | 20 | 35 | 3 | 18 |
+| dust | Dust analyzer | sampling | 25 | 15 | 15 | 0.1 | 15 |
 
-### 7.5 Comms & ground
-| id | Name | Cost $M | Mass kg | Power W | Max rate (Mbps @1 AU) |
-|---|---|---|---|---|---|
-| lga | Low-gain antenna | 2 | 3 | 15 | 0.05 |
-| mga | Medium-gain antenna | 10 | 15 | 40 | 1 |
-| hga | High-gain dish | 30 | 60 | 80 | 20 |
-| stor_s / m / l | Storage 32 / 256 / 1,000 Gb | 1 / 3 / 8 | 1 / 3 / 6 | 2 / 5 / 10 | – |
-| net_basic | Basic ground network | 3/yr | – | – | 4 h contact/day |
-| net_deep | 3-site deep-space network | 12/yr | – | – | 16 h contact/day |
+Plain-English descriptions are in the JSON `description` field (shown as tooltips).
 
-Operations cost: $8 M/year near Earth, $20 M/year deep space.
+### 7.5 Comms & ground — `comms.json` (`kind`: antenna / storage / network)
+| id | Name | Cost $M | Mass kg | Power W | Rate near Earth / Moon | Rate @1 AU (falls with distance²) |
+|---|---|---|---|---|---|---|
+| lga ✓C | Low-gain antenna | 2 | 3 | 15 | 1 Mbps | 0.02 Mbps |
+| mga | Medium-gain antenna | 10 | 15 | 40 | 10 Mbps | 0.5 Mbps |
+| hga | High-gain dish | 30 | 60 | 80 | 100 Mbps | 6 Mbps |
+| stor_s ✓C / stor_m / stor_l | Storage 32 / 256 / 1,000 Gb | 1 / 3 / 8 | 1 / 3 / 6 | 2 / 5 / 10 | – | – |
+| net_basic | Basic ground station | 2 /yr | – | – | 4 h contact/day | |
+| net_deep | Deep-space network (3 sites) | 15 /yr | – | – | 10 h contact/day | |
 
-### 7.6 NASA look-alike matches (debrief)
-Pick the entry with the same destination whose traits best match the player's design.
-| Destination | Real mission | Match trait | Fun fact (keep wording short) |
+Moon uses `near_rate_factor` 0.3 (weaker signal than Earth orbit). Operations cost: $10 M/yr near Earth, $30 M/yr deep space.
+
+### 7.6 NASA look-alike matches — `lookalikes.json`
+`Sim.find_lookalike()` picks the row with the same destination that shares the most `traits` (instrument ids, power kind `solar`/`rtg`, bus, antenna, shielding).
+| Destination | Real mission | Key traits | Fun fact |
 |---|---|---|---|
-| Earth | **Landsat 9** (2021) | cameras/imaging | Part of a 50-year record of Earth images. |
-| Earth | **PACE** (2024) | spectrometer | Studies ocean color, tiny plankton and aerosols. |
-| Moon | **Lunar Reconnaissance Orbiter** (2009) | cameras + altimeter | Has mapped the Moon in detail for over 15 years. |
-| Mars | **Mars Reconnaissance Orbiter** (2005) | hi-res camera + radar | Has sent back more data than all earlier Mars missions combined. |
-| Mars | **MAVEN** (2013) | particle/fields | Studies how Mars lost its atmosphere to space. |
-| Jupiter | **Juno** (2011) | solar + microwave/magnet | First solar-powered spacecraft to operate at Jupiter. |
-| Jupiter | **Europa Clipper** (2024) | radar + shielding | Uses huge solar arrays and a radiation vault to study icy Europa. |
-| Saturn | **Cassini** (1997) | RTG + many instruments | Orbited Saturn for 13 years and ended with a "Grand Finale" dive in 2017. |
-
----
+| Earth | **Landsat 9** (2021) | cameras, solar | Part of a 50-year record of Earth images. |
+| Earth | **PACE** (2024) | spectrometer | Studies ocean color, plankton, clouds and aerosols. |
+| Earth | **NASA CubeSat Launch Initiative** (2011–) | CubeSat, mini camera | Over 150 student/university CubeSats launched. |
+| Moon | **Lunar Reconnaissance Orbiter** (2009) | cameras, altimeter, spectrometer | Has mapped the Moon in detail for over 15 years. |
+| Mars | **Mars Reconnaissance Orbiter** (2005) | hi-res camera, radar, high-gain dish | More data than all earlier Mars missions combined. |
+| Mars | **MAVEN** (2013) | particles, magnetometer | Studies how Mars lost its atmosphere. |
+| Jupiter | **Juno** (2011) | solar, microwave, magnetometer, vault | First solar-powered spacecraft at Jupiter. |
+| Jupiter | **Europa Clipper** (2024) | solar, radar, dust, heavy vault | Huge solar arrays + radiation vault to study Europa. |
+| Saturn | **Cassini** (1997) | RTG, many instruments | 13 years at Saturn, "Grand Finale" dive in 2017. |
 
 ## 8. Tech plan (Godot)
 
 - **Godot 4.7.2**, GDScript, 2D only, resolution 1280×720 stretch (`canvas_items`, `expand`).
-- **Web export** (HTML5) — requires installing **Web export templates** (Editor → Manage Export Templates). Use the *no-threads* variant for easy hosting (itch.io / GitHub Pages).
+- **Web export** (HTML5) — requires installing **Web export templates** (Editor → Manage Export Templates). Use the *no-threads* variant for easy hosting (itch.io / GitHub Pages). ⚠️ In the Web export preset set **Resources → Filters to export non-resource files: `data/*.json`**, otherwise the game loads no data in the browser.
+- Test the math anytime: `godot --headless --path . res://tests/sim_test.tscn` (prints each mission's budget/mass/power/data and `RESULT: ALL TEST DESIGNS GO`).
 - Autoloads (singletons):
   - `GameData` — loads all `data/*.json` at startup.
   - `MissionState` — current mission, current design, campaign progress, save/load.
@@ -467,6 +476,24 @@ func make_test_design(mission_id: String = "mars") -> Dictionary   # a valid des
 `res://scenes/title/title.tscn`, `campaign_map/campaign_map.tscn`, `briefing/briefing.tscn`, `design/design.tscn`, `launch_check/launch_check.tscn`, `launch_anim/launch_anim.tscn`, **`mission_control/mission_control.tscn`**, **`debrief/debrief.tscn`**.
 Launch animation → Mission Control → (writes `MissionState.last_result`) → Debrief → "Retry" goes to `design.tscn` (design kept), "Next" goes to `campaign_map.tscn`.
 
+**Extra helpers (already implemented, safe to use):**
+```gdscript
+MissionState.go_to(screen_key)            # "title", "campaign_map", "briefing", "design", "launch_check",
+                                          # "launch_anim", "mission_control", "debrief"
+                                          # mission_control/debrief fall back to scenes/placeholders/ until Member B's scenes exist
+MissionState.start_mission(mission_id)    # sets current mission, fresh design if mission changed
+MissionState.set_design_value(key, value) # edits design + emits design_changed
+MissionState.empty_design(mission_id)
+MissionState.is_unlocked(mission_id) / reset_progress()
+GameData.get_missions_in_order()          # missions sorted by "order"
+GameData.get_by_kind(table, kind)         # e.g. get_by_kind("power", "solar"), get_by_kind("comms", "antenna")
+Sim.is_go(design) -> bool
+Sim.downlink_rate_mbps(antenna, mission)  # useful for Mission Control ticks
+Sim.source_power_w(source, distance_sun_au, years_elapsed)   # solar 1/d², RTG decay over time
+```
+`Sim.summarize()` also returns `budget_musd, launcher_capacity_kg, downlink_rate_mbps, data_goal_gb, slots_used, slots_max`.
+**Debrief must call** `MissionState.record_result(mission_id, stars, score)` so the next mission unlocks (the placeholder already does).
+
 ### 8.2 `.gitignore` (repo root)
 ```
 .godot/
@@ -480,7 +507,7 @@ Commit `*.import` and `*.uid` files (Godot 4 needs them).
 ### 8.3 Folder ownership (only edit what you own)
 | Owner | Folders / files |
 |---|---|
-| **A** | `project.godot`, `export_presets.cfg`, `scripts/autoload/`, `data/` (except `events.json`), `ui/`, `scenes/title/`, `scenes/campaign_map/`, `scenes/briefing/`, `scenes/design/`, `scenes/launch_check/`, `scenes/launch_anim/` |
+| **A** | `project.godot`, `export_presets.cfg`, `scripts/autoload/`, `data/` (except `events.json`), `ui/`, `scenes/title/`, `scenes/campaign_map/`, `scenes/briefing/`, `scenes/design/`, `scenes/launch_check/`, `scenes/launch_anim/`, `scenes/placeholders/`, `scripts/ui/`, `tests/` |
 | **B** | `scenes/mission_control/`, `scenes/debrief/`, `scripts/events/`, `data/events.json`, `scripts/mission_control/` |
 | **C** | `content/` (CREDITS.md, facts.md, bugs.md, submission.md, raw art & sounds) |
 | A imports C's files into | `art/`, `audio/` |

@@ -1,0 +1,11 @@
+[
+  {"id": "landsat9", "name": "Landsat 9", "destination": "earth", "year": 2021, "traits": ["cam_wide", "cam_hires", "solar"], "fact": "Part of a 50-year record of Earth images used to track forests, farms, cities and fires."},
+  {"id": "pace", "name": "PACE", "destination": "earth", "year": 2024, "traits": ["ir_spec", "solar"], "fact": "Studies ocean color, tiny plankton, clouds and aerosols."},
+  {"id": "cubesats", "name": "NASA CubeSat Launch Initiative missions", "destination": "earth", "year": 2011, "traits": ["cube", "cam_mini", "magnet"], "fact": "Since 2011, NASA has launched over 150 small CubeSats built by students and universities."},
+  {"id": "lro", "name": "Lunar Reconnaissance Orbiter", "destination": "moon", "year": 2009, "traits": ["cam_wide", "cam_hires", "altimeter", "ir_spec"], "fact": "Has mapped the Moon in detail for over 15 years."},
+  {"id": "mro", "name": "Mars Reconnaissance Orbiter", "destination": "mars", "year": 2005, "traits": ["cam_hires", "radar", "ir_spec", "hga"], "fact": "Has sent back more data than all earlier Mars missions combined."},
+  {"id": "maven", "name": "MAVEN", "destination": "mars", "year": 2013, "traits": ["particle", "magnet", "ir_spec"], "fact": "Studies how Mars lost most of its atmosphere to space."},
+  {"id": "juno", "name": "Juno", "destination": "jupiter", "year": 2011, "traits": ["solar", "microwave", "magnet", "particle", "cam_wide", "shield_med"], "fact": "First solar-powered spacecraft to operate at Jupiter, with its electronics inside a titanium radiation vault."},
+  {"id": "clipper", "name": "Europa Clipper", "destination": "jupiter", "year": 2024, "traits": ["solar", "radar", "ir_spec", "cam_hires", "dust", "shield_heavy"], "fact": "Uses huge solar arrays and a radiation vault to study the icy moon Europa."},
+  {"id": "cassini", "name": "Cassini", "destination": "saturn", "year": 1997, "traits": ["rtg", "cam_wide", "ir_spec", "radar", "dust", "magnet"], "fact": "Orbited Saturn for 13 years and ended with a 'Grand Finale' dive into Saturn in 2017."}
+]

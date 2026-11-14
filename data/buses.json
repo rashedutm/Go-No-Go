@@ -1,0 +1,42 @@
+[
+  {
+    "id": "cube",
+    "name": "12U CubeSat",
+    "description": "A shoebox-sized satellite built from standard 10 cm cubes. Cheap and light, but it only fits tiny parts.",
+    "cost_musd": 2,
+    "mass_kg": 6,
+    "power_w": 5,
+    "slots": 3,
+    "cubesat": true
+  },
+  {
+    "id": "small",
+    "name": "Small bus",
+    "description": "A fridge-sized spacecraft frame with its computer, wiring and thrusters.",
+    "cost_musd": 50,
+    "mass_kg": 150,
+    "power_w": 60,
+    "slots": 6,
+    "cubesat": false
+  },
+  {
+    "id": "medium",
+    "name": "Medium bus",
+    "description": "A car-sized spacecraft frame. Room for many instruments and big power systems.",
+    "cost_musd": 150,
+    "mass_kg": 900,
+    "power_w": 150,
+    "slots": 9,
+    "cubesat": false
+  },
+  {
+    "id": "large",
+    "name": "Large bus",
+    "description": "A bus-sized flagship spacecraft frame. Lots of room, lots of mass and a big price tag.",
+    "cost_musd": 300,
+    "mass_kg": 2000,
+    "power_w": 250,
+    "slots": 12,
+    "cubesat": false
+  }
+]

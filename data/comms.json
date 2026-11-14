@@ -1,0 +1,10 @@
+[
+  {"id": "lga", "kind": "antenna", "name": "Low-gain antenna", "description": "A simple antenna that works in any direction. Slow, especially far from Earth.", "cost_musd": 2, "mass_kg": 3, "power_w": 15, "rate_near_mbps": 1, "rate_1au_mbps": 0.02, "cubesat_ok": true},
+  {"id": "mga", "kind": "antenna", "name": "Medium-gain antenna", "description": "A good antenna for missions near Earth and the Moon.", "cost_musd": 10, "mass_kg": 15, "power_w": 40, "rate_near_mbps": 10, "rate_1au_mbps": 0.5, "cubesat_ok": false},
+  {"id": "hga", "kind": "antenna", "name": "High-gain dish", "description": "A big dish that must point right at Earth. The only way to send lots of data from deep space.", "cost_musd": 30, "mass_kg": 60, "power_w": 80, "rate_near_mbps": 100, "rate_1au_mbps": 6, "cubesat_ok": false},
+  {"id": "stor_s", "kind": "storage", "name": "Storage 32 Gb", "description": "Onboard memory that holds data until it can be sent to Earth.", "cost_musd": 1, "mass_kg": 1, "power_w": 2, "capacity_gb": 32, "cubesat_ok": true},
+  {"id": "stor_m", "kind": "storage", "name": "Storage 256 Gb", "description": "More memory, so less data is lost when Earth is out of contact.", "cost_musd": 3, "mass_kg": 3, "power_w": 5, "capacity_gb": 256, "cubesat_ok": false},
+  {"id": "stor_l", "kind": "storage", "name": "Storage 1000 Gb", "description": "Big memory for data-hungry instruments.", "cost_musd": 8, "mass_kg": 6, "power_w": 10, "capacity_gb": 1000, "cubesat_ok": false},
+  {"id": "net_basic", "kind": "network", "name": "Basic ground station", "description": "One ground antenna. You can talk to the spacecraft about 4 hours a day.", "cost_musd_year": 2, "contact_hours_day": 4},
+  {"id": "net_deep", "kind": "network", "name": "Deep-space network (3 sites)", "description": "Three big antennas spread around the world, so one can always see the spacecraft. About 10 hours a day of contact are shared with your mission.", "cost_musd_year": 15, "contact_hours_day": 10}
+]

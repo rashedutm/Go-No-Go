@@ -1,0 +1,123 @@
+[
+  {
+    "id": "solar_cube",
+    "kind": "solar",
+    "name": "CubeSat solar panels",
+    "description": "Small fold-out panels for a CubeSat.",
+    "cost_musd": 0.5,
+    "mass_kg": 2,
+    "output_w": 40,
+    "cubesat_ok": true
+  },
+  {
+    "id": "solar_s",
+    "kind": "solar",
+    "name": "Small solar array",
+    "description": "Turns sunlight into electricity. Power drops fast the farther you go from the Sun.",
+    "cost_musd": 5,
+    "mass_kg": 20,
+    "output_w": 300,
+    "cubesat_ok": false
+  },
+  {
+    "id": "solar_m",
+    "kind": "solar",
+    "name": "Medium solar array",
+    "description": "A good all-round solar array for Earth, the Moon and Mars.",
+    "cost_musd": 12,
+    "mass_kg": 60,
+    "output_w": 1500,
+    "cubesat_ok": false
+  },
+  {
+    "id": "solar_l",
+    "kind": "solar",
+    "name": "Large solar array",
+    "description": "Large wings for power-hungry spacecraft or missions far from the Sun.",
+    "cost_musd": 30,
+    "mass_kg": 150,
+    "output_w": 5000,
+    "cubesat_ok": false
+  },
+  {
+    "id": "solar_xl",
+    "kind": "solar",
+    "name": "Giant solar wings",
+    "description": "Huge wings like Juno's. The only way to use solar power at Jupiter.",
+    "cost_musd": 70,
+    "mass_kg": 340,
+    "output_w": 14000,
+    "cubesat_ok": false
+  },
+  {
+    "id": "rtg",
+    "kind": "rtg",
+    "name": "RTG (nuclear power)",
+    "description": "Makes electricity from the heat of decaying plutonium. Works anywhere, even far from the Sun, and slowly weakens over the years.",
+    "cost_musd": 100,
+    "mass_kg": 56,
+    "output_w": 290,
+    "decay_pct_year": 1.5,
+    "cubesat_ok": false
+  },
+  {
+    "id": "batt_s",
+    "kind": "battery",
+    "name": "Small battery (200 Wh)",
+    "description": "Stores energy for when the spacecraft is in shadow.",
+    "cost_musd": 1,
+    "mass_kg": 4,
+    "capacity_wh": 200,
+    "cubesat_ok": true
+  },
+  {
+    "id": "batt_m",
+    "kind": "battery",
+    "name": "Medium battery (800 Wh)",
+    "description": "Enough to get most spacecraft through a long eclipse.",
+    "cost_musd": 3,
+    "mass_kg": 15,
+    "capacity_wh": 800,
+    "cubesat_ok": false
+  },
+  {
+    "id": "batt_l",
+    "kind": "battery",
+    "name": "Large battery (2000 Wh)",
+    "description": "A big battery for power-hungry spacecraft and long shadows.",
+    "cost_musd": 7,
+    "mass_kg": 35,
+    "capacity_wh": 2000,
+    "cubesat_ok": false
+  },
+  {
+    "id": "shield_none",
+    "kind": "shielding",
+    "name": "No radiation shielding",
+    "description": "Fine near Earth, the Moon and Mars.",
+    "cost_musd": 0,
+    "mass_kg": 0,
+    "shield_level": 0,
+    "cubesat_ok": true
+  },
+  {
+    "id": "shield_med",
+    "kind": "shielding",
+    "name": "Radiation vault",
+    "description": "A thick metal box that protects the electronics. Needed at Jupiter.",
+    "cost_musd": 25,
+    "mass_kg": 80,
+    "shield_level": 1,
+    "cubesat_ok": false
+  },
+  {
+    "id": "shield_heavy",
+    "kind": "shielding",
+    "name": "Heavy radiation vault",
+    "description": "Extra-thick protection. The spacecraft survives longer in Jupiter's radiation.",
+    "cost_musd": 60,
+    "mass_kg": 200,
+    "shield_level": 2,
+    "cubesat_ok": false
+  }
+]

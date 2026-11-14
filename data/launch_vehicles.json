@@ -1,0 +1,37 @@
+[
+  {
+    "id": "rideshare",
+    "name": "CubeSat Rideshare",
+    "description": "Hitch a ride as a small passenger on someone else's rocket. Very cheap, but only for a tiny CubeSat going to Low Earth Orbit.",
+    "cost_musd": 1,
+    "capacity_kg": {"earth": 24, "moon": 0, "mars": 0, "jupiter": 0, "saturn": 0}
+  },
+  {
+    "id": "small",
+    "name": "Sparrow (small launcher)",
+    "description": "A small rocket for small satellites. It can reach Low Earth Orbit but cannot escape Earth's gravity.",
+    "cost_musd": 8,
+    "capacity_kg": {"earth": 300, "moon": 0, "mars": 0, "jupiter": 0, "saturn": 0}
+  },
+  {
+    "id": "medium",
+    "name": "Kestrel (medium launcher)",
+    "description": "A workhorse rocket. Strong enough for the Moon and Mars, and for very light spacecraft going to Jupiter.",
+    "cost_musd": 70,
+    "capacity_kg": {"earth": 15000, "moon": 3500, "mars": 2500, "jupiter": 900, "saturn": 0}
+  },
+  {
+    "id": "heavy",
+    "name": "Condor (heavy-lift)",
+    "description": "A big rocket that can send a heavy spacecraft to the outer planets.",
+    "cost_musd": 150,
+    "capacity_kg": {"earth": 50000, "moon": 14000, "mars": 10000, "jupiter": 4500, "saturn": 3500}
+  },
+  {
+    "id": "super",
+    "name": "Titanhawk (super heavy)",
+    "description": "The most powerful rocket available. It can launch almost anything, but it is very expensive.",
+    "cost_musd": 450,
+    "capacity_kg": {"earth": 90000, "moon": 27000, "mars": 20000, "jupiter": 9000, "saturn": 7000}
+  }
+]
