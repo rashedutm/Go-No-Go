@@ -7,6 +7,9 @@ extends Node3D
 const TOTAL := 22.5
 const LIFTOFF_T := 3.0
 const CUT_T := 7.0
+const CUT_FADE_OUT := 0.8
+const CUT_FADE_IN := 1.0
+const CUT_HOLD := 0.15
 const SEP_T := 7.7
 const DEPLOY_T := 8.0
 const DEPLOY_END := 9.0
@@ -233,7 +236,7 @@ func _enter_space() -> void:
 		_hit_flash.modulate.a = 0.0
 	_apply_cockpit_vis()
 	_apply_letterbox()
-	_fade.color = Color.WHITE
+	_fade.color = Color.BLACK
 	_fade.modulate.a = 1.0
 	if _rumble:
 		_rumble.stop()
@@ -552,12 +555,15 @@ func _apply_letterbox() -> void:
 
 func _update_fade() -> void:
 	var a := 0.0
-	if _space:
-		if _t < CUT_T + 0.6:
-			a = 1.0 - clampf((_t - CUT_T) / 0.6, 0.0, 1.0)
+	if not _space:
+		# --- pad: ease down to black just before the cut to space
+		a = smoothstep(0.0, 1.0, clampf((_t - (CUT_T - CUT_FADE_OUT)) / CUT_FADE_OUT, 0.0, 1.0))
+	else:
+		# --- space: hold black for a beat, then ease in; hold clear until the ending
+		a = 1.0 - smoothstep(0.0, 1.0, clampf((_t - (CUT_T + CUT_HOLD)) / CUT_FADE_IN, 0.0, 1.0))
 		if _t > FADE_OUT_T:
 			_fade.color = Color.BLACK
-			a = clampf((_t - FADE_OUT_T) / 0.6, 0.0, 1.0)
+			a = smoothstep(0.0, 1.0, clampf((_t - FADE_OUT_T) / 1.0, 0.0, 1.0))
 	_fade.modulate.a = a
 
 
@@ -579,7 +585,8 @@ func _input(event: InputEvent) -> void:
 	if _cockpit_on and event is InputEventMouseMotion:
 		var mm := event as InputEventMouseMotion
 		_mouse_steer.x = clampf(_mouse_steer.x + mm.relative.x * 0.0065, -1.0, 1.0)
-		_mouse_steer.y = clampf(_mouse_steer.y + mm.relative.y * 0.0065, -1.0, 1.0)
+		# mouse down = ship down (screen-space, not flight-stick pitch)
+		_mouse_steer.y = clampf(_mouse_steer.y - mm.relative.y * 0.0065, -1.0, 1.0)
 
 
 # ===================================================================== world
@@ -959,7 +966,7 @@ func _build_ui() -> void:
 	add_child(fade_layer)
 	_fade = ColorRect.new()
 	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_fade.color = Color.WHITE
+	_fade.color = Color.BLACK
 	_fade.modulate.a = 0.0
 	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fade_layer.add_child(_fade)
