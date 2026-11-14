@@ -16,6 +16,10 @@
 - **Office chair (`art/models/mission_control/chair_office.glb`)** — from [Lowpoly Furniture Asset Pack](https://store.godotengine.org/asset/abstract-duck/texture-pack/) by **Abstract_Duck**, downloaded from the Godot Asset Store. **MIT**; license text in `art/models/mission_control/LICENSE-AbstractDuck-Furniture.txt`.
 - Both models were re-oriented/scaled in code to fit the Mission Control consoles. The monitor's screen is a viewport texture; no changes were made to the model itself.
 
+## Launch — asteroid models
+
+- **Asteroid rocks (`art/models/asteroids/`)** — from [KayKit Space Base Bits](https://godotengine.org/asset-library/asset/2124) by **KayKit Game Assets**, downloaded from the Godot Asset Library. **CC0 1.0 Universal**; license text in `art/models/asteroids/LICENSE-KayKit-Space-Base.txt`. The orange atlas is overridden with dark gray/icy asteroid materials in code.
+
 ## UI fonts
 
 - **Barlow, Barlow Condensed and IBM Plex Mono** — [Google Fonts](https://fonts.google.com/), licensed under the [SIL Open Font License 1.1](https://openfontlicense.org/). License texts are in `ui/fonts/OFL-Barlow.txt`, `OFL-BarlowCondensed.txt` and `OFL-IBMPlexMono.txt`.

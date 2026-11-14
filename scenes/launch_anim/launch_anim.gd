@@ -21,6 +21,12 @@ const FADE_OUT_T := 21.5
 const STAGE2_T := 8.5
 const RUMBLE_FILE := "res://audio/jerryblessed-space-rocket-launch-rumble-544846.wav"
 const STARS_MAP := "res://art/planets/2k_stars.jpg"
+const ASTEROID_MODELS := [
+	preload("res://art/models/asteroids/rock_A.gltf"),
+	preload("res://art/models/asteroids/rock_B.gltf"),
+	preload("res://art/models/asteroids/rocks_A.gltf"),
+	preload("res://art/models/asteroids/rocks_B.gltf"),
+]
 
 var design: Dictionary
 var mission: Dictionary
@@ -407,33 +413,53 @@ func _update_space(delta: float) -> void:
 	_apply_letterbox()
 
 
-func _rock_mesh(kind: int, col: Color) -> PrimitiveMesh:
-	var mesh: PrimitiveMesh
-	match kind:
-		0:
-			var sm := SphereMesh.new()
-			sm.radius = 1.0
-			sm.height = 2.0
-			sm.radial_segments = 7
-			sm.rings = 5
-			mesh = sm
-		1:
-			var bm := BoxMesh.new()
-			bm.size = Vector3(1.7, 1.45, 1.6)
-			mesh = bm
-		_:
-			var cm := CylinderMesh.new()
-			cm.top_radius = 0.72
-			cm.bottom_radius = 1.0
-			cm.height = 1.9
-			cm.radial_segments = 7
-			cm.rings = 1
-			mesh = cm
-	var m := StandardMaterial3D.new()
-	m.albedo_color = col
-	m.roughness = 1.0
-	mesh.material = m
-	return mesh
+func _rock_color() -> Color:
+	if randf() < 0.18:
+		return Color(0.36, 0.44, 0.52)   # icy
+	var g := randf_range(0.18, 0.34)
+	return Color(g * randf_range(0.95, 1.08), g * randf_range(0.92, 1.0), g * randf_range(0.82, 0.95))
+
+
+func _paint_rock(root: Node, col: Color) -> void:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = col
+	mat.roughness = 1.0
+	mat.metallic = 0.0
+	for n in root.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		if mi.mesh:
+			mi.material_override = mat
+
+
+func _rock_aabb(root: Node) -> AABB:
+	var out := AABB()
+	var first := true
+	for n in root.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		if mi.mesh == null:
+			continue
+		var box := mi.transform * mi.get_aabb()
+		if first:
+			out = box
+			first = false
+		else:
+			out = out.merge(box)
+	return out
+
+
+func _make_rock(radius: float) -> Node3D:
+	var wrap := Node3D.new()
+	var scene: PackedScene = ASTEROID_MODELS[randi() % ASTEROID_MODELS.size()]
+	var model := scene.instantiate() as Node3D
+	wrap.add_child(model)
+	var box := _rock_aabb(model)
+	var size := box.size
+	var base := maxf(size.x, maxf(size.y, size.z)) * 0.5
+	model.position = -box.get_center()
+	var s := radius / maxf(base, 0.001)
+	wrap.scale = Vector3(s, s * randf_range(1.0, 1.35), s)
+	_paint_rock(wrap, _rock_color())
+	return wrap
 
 
 func _spawn_asteroid() -> void:
@@ -441,26 +467,16 @@ func _spawn_asteroid() -> void:
 		return
 	var node := Node3D.new()
 	node.name = "Asteroid"
-	var r := randf_range(0.45, 1.15)
-	var icy := randf() < 0.22
-	var g := randf_range(0.26, 0.46)
-	var col := Color(0.62, 0.74, 0.86) if icy else Color(g * randf_range(1.0, 1.18), g * randf_range(0.92, 1.02), g * randf_range(0.74, 0.90))
-	var mi := MeshInstance3D.new()
-	mi.mesh = _rock_mesh(randi() % 3, col)
-	mi.rotation = Vector3(randf_range(0, TAU), randf_range(0, TAU), randf_range(0, TAU))
-	node.add_child(mi)
+	var r := randf_range(0.55, 1.15)
+	node.add_child(_make_rock(r))
 
 	# --- companion fragments: broken-off chunks that travel with the rock
-	if randf() < 0.5:
+	if randf() < 0.55:
 		for i in randi_range(1, 2):
-			var frag := MeshInstance3D.new()
-			frag.mesh = _rock_mesh(randi() % 3, col.darkened(randf_range(0.0, 0.18)))
-			frag.position = Vector3(randf_range(-1.5, 1.5), randf_range(-1.2, 1.2), randf_range(-1.4, 1.4))
-			frag.scale = Vector3.ONE * randf_range(0.16, 0.34)
-			frag.rotation = Vector3(randf_range(0, TAU), randf_range(0, TAU), randf_range(0, TAU))
+			var frag := _make_rock(r * randf_range(0.28, 0.48))
+			frag.position = Vector3(randf_range(-1.2, 1.2), randf_range(-0.9, 0.9), randf_range(-1.2, 1.2))
 			node.add_child(frag)
 
-	node.scale = Vector3(r, r, r) * Vector3(randf_range(0.82, 1.20), randf_range(0.72, 1.12), randf_range(0.82, 1.20))
 	node.position = Vector3(randf_range(-4.6, 4.6), randf_range(-2.8, 2.8), -randf_range(48.0, 68.0))
 	node.rotation = Vector3(randf_range(0, TAU), randf_range(0, TAU), randf_range(0, TAU))
 	_asteroid_root.add_child(node)

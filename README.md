@@ -33,6 +33,7 @@ Less text, fewer buttons, more *doing*:
 ### 🆕 Latest changes (read this first after every `git pull`)
 | When | What changed | Who it affects |
 |---|---|---|
+| Sat 14 Nov, late evening — asteroid field | **Real asteroid meshes (Member C).** The cockpit asteroid run now uses KayKit's CC0 rock/asteroid models instead of boxes and spheres, with dark gray/icy materials, varied sizes and small companion fragments. | everyone |
 | Sat 14 Nov, late evening — mission select | **Smooth planet camera + selection highlight (Member C).** The campaign map camera now glides between planets on a critically damped spring at a **constant distance** (no more zoom pop). The selected/hovered planet gets a subtle gold/cyan **circular selection ring** with a soft shadow. | everyone |
 | Sat 14 Nov, late evening — global menu | **Esc menu (Member C, UI-wide).** The top-right corner is now a single **menu icon** (or **Esc**): **Resume**, **Mission Select**, **Home Screen**, **Sound on/off**, **Fullscreen**, and **Exit Game** (desktop only; hidden on web). The old Fullscreen/Sound corner buttons are gone; **F11** and **M** still work. | everyone |
 | Sat 14 Nov, late evening — Mission Control props | **Real 3D furniture in Mission Control (Member C).** The four interactive consoles and three side desks now use Kenney's CC0 **Computer Screen** and an MIT **office chair** from Abstract_Duck's *Lowpoly Furniture Asset Pack*. The monitor screen shows a small mission-control UI tinted to the station colour. Credits and licences are in `content/CREDITS.md`. | everyone |
