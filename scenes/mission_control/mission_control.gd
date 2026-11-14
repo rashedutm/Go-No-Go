@@ -50,6 +50,7 @@ var _ending := false
 var _panel_refresh := 0.0
 const SPEEDS := [1.0, 2.0, 4.0]
 var events: EventSystem
+var decor: RoomDecor
 var _alert_banner: Label
 var _toast: Label
 var _toast_time := 0.0
@@ -77,6 +78,9 @@ func _ready() -> void:
 	_build_ui()
 	sim.add_log("Arrived at %s. Science operations begin." % mission.get("destination", "the target"))
 	_setup_events()
+	decor = RoomDecor.new()
+	add_child(decor)
+	decor.build(self, sim)
 	Sfx.start_loop("hum")
 
 
@@ -101,8 +105,6 @@ func _build_room() -> void:
 	MCBuild.box(self, Vector3(24, 6.2, 0.3), Vector3(0, 3, 9.2), wall_c, true)                      # back wall
 	MCBuild.box(self, Vector3(0.3, 6.2, 20), Vector3(-11.2, 3, 0), wall_c, true)                    # left
 	MCBuild.box(self, Vector3(0.3, 6.2, 20), Vector3(11.2, 3, 0), wall_c, true)                     # right
-	for x in range(-10, 11, 4):   # wall ribs
-		MCBuild.box(self, Vector3(0.25, 6, 0.25), Vector3(x, 3, 9.0), Color(0.16, 0.18, 0.24))
 	for z in range(-8, 9, 4):
 		MCBuild.box(self, Vector3(0.25, 6, 0.25), Vector3(-11.0, 3, z), Color(0.16, 0.18, 0.24))
 		MCBuild.box(self, Vector3(0.25, 6, 0.25), Vector3(11.0, 3, z), Color(0.16, 0.18, 0.24))
@@ -119,9 +121,6 @@ func _build_room() -> void:
 	for x in [-8.0, 8.0]:
 		MCBuild.box(self, Vector3(0.08, 0.01, 16), Vector3(x, 0.01, 0), Color(0.2, 0.5, 1.0), false, 1.5)
 	# side wall info panels (decoration)
-	for z in [-5.0, 0.0, 5.0]:
-		MCBuild.box(self, Vector3(0.05, 1.4, 2.4), Vector3(-10.95, 3.2, z), Color(0.1, 0.25, 0.45), false, 0.7)
-		MCBuild.box(self, Vector3(0.05, 1.4, 2.4), Vector3(10.95, 3.2, z), Color(0.1, 0.25, 0.45), false, 0.7)
 	# decorative desks (non-interactive)
 	for p in [Vector3(-6, 0, 2.5), Vector3(-4, 0, 6.0), Vector3(4, 0, 6.0)]:
 		MCBuild.box(self, Vector3(2.4, 0.85, 1.0), p + Vector3(0, 0.425, 0), Color(0.15, 0.17, 0.22), true)
@@ -279,6 +278,8 @@ func _process(delta: float) -> void:
 		wall_view.set_time_scale(0.0 if paused else days_per_second * speed)
 	_auto_alerts()
 	_update_hud()
+	if decor:
+		decor.update(delta)
 	if _open != "":
 		_panel_refresh -= delta
 		if _panel_refresh <= 0.0:

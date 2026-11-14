@@ -28,5 +28,11 @@ func _ready() -> void:
 			if shot == "eventpanel":
 				await get_tree().create_timer(0.3).timeout
 				mc.open_console(mc.events.active["console"])
+		"left":
+			mc.player.position = Vector3(-6.5, 0.1, -0.5)
+			mc.player.rotation.y = PI / 2
+		"back":
+			mc.player.position = Vector3(0, 0.1, 3.0)
+			mc.player.rotation.y = PI
 		_:
 			mc.player.position = Vector3(0, 0.1, 7.0)

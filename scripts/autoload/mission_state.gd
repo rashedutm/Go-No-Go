@@ -22,6 +22,7 @@ const SCREENS := {
 const PLACEHOLDERS := {
 	"mission_control": "res://scenes/placeholders/mission_control_placeholder.tscn",
 	"debrief": "res://scenes/placeholders/debrief_placeholder.tscn",
+	"launch_anim": "res://scenes/placeholders/launch_placeholder.tscn",
 	"hangar": "res://scenes/design/design.tscn",
 }
 
