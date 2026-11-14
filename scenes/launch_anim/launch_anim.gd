@@ -13,7 +13,7 @@ const DEPLOY_END := 8.2
 const ARRIVE_T := 10.5
 const FADE_OUT_T := 11.6
 const STAGE2_T := 8.6
-const RUMBLE_FILE := "res://audio/launch_rumble.wav"
+const RUMBLE_FILE := "res://audio/jerryblessed-space-rocket-launch-rumble-544846.wav"
 const STARS_MAP := "res://art/planets/2k_stars.jpg"
 
 var design: Dictionary
@@ -637,7 +637,8 @@ func _build_rumble() -> void:
 
 
 ## Procedural launch rumble (Member C, README §C step 7): brown noise + low-pass +
-## envelope. Drop a real file at res://audio/launch_rumble.wav to replace it.
+## envelope. A real file at res://audio/jerryblessed-space-rocket-launch-rumble-544846.wav
+## is used when present.
 func _make_rumble() -> AudioStreamWAV:
 	var rate := 22050
 	var seconds := 4.0
