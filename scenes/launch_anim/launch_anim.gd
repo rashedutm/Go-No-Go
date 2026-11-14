@@ -625,12 +625,12 @@ func _build_world() -> void:
 		env.background_mode = Environment.BG_COLOR
 		env.background_color = Color(0.015, 0.025, 0.07)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.22, 0.28, 0.45)
-	env.ambient_light_energy = 0.5
+	env.ambient_light_color = Color(0.26, 0.33, 0.43)
+	env.ambient_light_energy = 0.7
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.fog_enabled = true
-	env.fog_light_color = Color(0.05, 0.07, 0.14)
-	env.fog_density = 0.006
+	env.fog_light_color = Color(0.06, 0.09, 0.14)
+	env.fog_density = 0.011
 	we.environment = env
 	_env = env
 	add_child(we)
@@ -638,7 +638,7 @@ func _build_world() -> void:
 	var moon := DirectionalLight3D.new()
 	moon.rotation_degrees = Vector3(-32, 140, 0)
 	moon.light_color = Color(0.60, 0.70, 1.0)
-	moon.light_energy = 0.6
+	moon.light_energy = 0.9
 	moon.shadow_enabled = true
 	add_child(moon)
 
@@ -648,10 +648,19 @@ func _build_pad() -> void:
 	_pad_root.name = "Pad"
 	add_child(_pad_root)
 
-	_pad_root.add_child(_at(_box(Vector3(400, 0.2, 400), Color(0.08, 0.11, 0.09), 0.0, 0.95), Vector3(0, -0.1, 0)))
-	_pad_root.add_child(_at(_box(Vector3(70, 0.08, 70), Color(0.16, 0.18, 0.20), 0.1, 0.9), Vector3(0, 0.04, 0)))
+	var ground := _box(Vector3(400, 0.2, 400), Color(0.10, 0.19, 0.11), 0.0, 1.0)
+	var gm := ground.mesh.material as StandardMaterial3D
+	gm.emission_enabled = true
+	gm.emission = Color(0.015, 0.04, 0.015)
+	_pad_root.add_child(_at(ground, Vector3(0, -0.1, 0)))
+	var lawn := _box(Vector3(70, 0.08, 70), Color(0.11, 0.20, 0.11), 0.0, 1.0)
+	var lm := lawn.mesh.material as StandardMaterial3D
+	lm.emission_enabled = true
+	lm.emission = Color(0.018, 0.045, 0.018)
+	_pad_root.add_child(_at(lawn, Vector3(0, 0.04, 0)))
 	_pad_root.add_child(_at(_box(Vector3(20, 1.0, 20), Color(0.36, 0.37, 0.41), 0.2, 0.8), Vector3(0, 0.5, 0)))
 	_pad_root.add_child(_at(_box(Vector3(6, 0.3, 6), Color(0.18, 0.18, 0.2), 0.5, 0.6), Vector3(0, 1.15, 0)))
+	_build_pad_surroundings()
 
 	var pad_fill := OmniLight3D.new()
 	pad_fill.position = Vector3(0, 6, 2)
@@ -763,6 +772,161 @@ func _build_pad() -> void:
 	_pad_cam.current = true
 	_pad_root.add_child(_pad_cam)
 	_pad_cam.look_at(Vector3(0, 16, 0), Vector3.UP)
+
+
+func _build_pad_surroundings() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1969
+	var concrete := Color(0.44, 0.45, 0.42)
+	var dark_concrete := Color(0.30, 0.31, 0.29)
+
+	# Light hardstand around the launch mount.
+	_pad_root.add_child(_at(_box(Vector3(40, 0.05, 40), concrete, 0.0, 0.8), Vector3(0, 0.06, 0)))
+
+	# Crawlerway: the wide diagonal concrete strip from the pad to the horizon.
+	var way := _box(Vector3(14, 0.06, 130), dark_concrete, 0.0, 0.9)
+	way.position = Vector3(-42, 0.035, -40)
+	way.rotation.y = deg_to_rad(30)
+	_pad_root.add_child(way)
+	var across := Vector3(cos(way.rotation.y), 0, -sin(way.rotation.y))
+	for side in [-1.0, 1.0]:
+		var rail := _box(Vector3(0.9, 0.08, 130), Color(0.16, 0.17, 0.16), 0.1, 0.7)
+		rail.position = way.position + across * (side * 4.6) + Vector3(0, 0.02, 0)
+		rail.rotation.y = way.rotation.y
+		_pad_root.add_child(rail)
+
+	# Perimeter service roads.
+	_pad_root.add_child(_at(_box(Vector3(120, 0.04, 3.5), dark_concrete, 0.0, 0.9), Vector3(0, 0.03, 47)))
+	_pad_root.add_child(_at(_box(Vector3(120, 0.04, 3.5), dark_concrete, 0.0, 0.9), Vector3(0, 0.03, -47)))
+	_pad_root.add_child(_at(_box(Vector3(3.5, 0.04, 94), dark_concrete, 0.0, 0.9), Vector3(-47, 0.03, 0)))
+	_pad_root.add_child(_at(_box(Vector3(3.5, 0.04, 94), dark_concrete, 0.0, 0.9), Vector3(47, 0.03, 0)))
+
+	# Scorched flame trench and its concrete lip.
+	_pad_root.add_child(_at(_box(Vector3(18, 0.10, 9), Color(0.07, 0.07, 0.06), 0.0, 1.0), Vector3(17, 0.06, 0)))
+	_pad_root.add_child(_at(_box(Vector3(1.2, 0.8, 10), concrete, 0.0, 0.8), Vector3(7.6, 0.4, 0)))
+
+	# A river/water band in the distance, then a grass bank in front of it.
+	var water := _box(Vector3(190, 0.04, 30), Color(0.02, 0.06, 0.10), 0.45, 0.25)
+	water.position = Vector3(-35, 0.02, -88)
+	var wm := water.mesh.material as StandardMaterial3D
+	wm.emission_enabled = true
+	wm.emission = Color(0.015, 0.045, 0.08)
+	_pad_root.add_child(water)
+	_pad_root.add_child(_at(_box(Vector3(200, 0.10, 8), Color(0.06, 0.12, 0.07), 0.0, 1.0), Vector3(-35, 0.04, -70)))
+
+	# Irregular grass patches to break up the flat ground plane.
+	for i in 12:
+		var px := rng.randf_range(-150.0, 150.0)
+		var pz := rng.randf_range(-120.0, 120.0)
+		if absf(px) < 62.0 and absf(pz) < 62.0:
+			continue
+		var g := rng.randf_range(0.055, 0.10)
+		var patch := _box(Vector3(rng.randf_range(26.0, 70.0), 0.02, rng.randf_range(22.0, 55.0)),
+			Color(g * 0.6, g * 1.5, g * 0.8), 0.0, 1.0)
+		patch.position = Vector3(px, 0.012, pz)
+		_pad_root.add_child(patch)
+
+	# Distant treeline. Fog takes over before the ring ends.
+	for i in 52:
+		var a := rng.randf_range(0.0, TAU)
+		var d := rng.randf_range(66.0, 150.0)
+		var pos := Vector3(cos(a) * d, 0.0, sin(a) * d - 12.0)
+		if absf(pos.x) < 58.0 and absf(pos.z) < 58.0:
+			continue
+		_pad_tree(pos, rng.randf_range(0.8, 1.7))
+
+	# Low buildings and the pad water tower.
+	_pad_building(Vector3(-58, 0, 8), Vector3(12, 5, 9), Color(0.34, 0.35, 0.36))
+	_pad_building(Vector3(-72, 0, -18), Vector3(16, 6, 12), Color(0.30, 0.31, 0.33))
+	_pad_building(Vector3(54, 0, -62), Vector3(20, 8, 16), Color(0.28, 0.29, 0.30))
+	_pad_water_tower(Vector3(-28, 0, 24))
+
+	# Lightning-protection masts with red beacons.
+	for p in [Vector3(32, 0, 32), Vector3(-34, 0, 30), Vector3(30, 0, -30)]:
+		_pad_root.add_child(_at(_box(Vector3(0.5, 34, 0.5), Color(0.17, 0.18, 0.18), 0.5, 0.5), p + Vector3(0, 17, 0)))
+		var beacon := _star(0.28, Color(1.0, 0.15, 0.08))
+		beacon.position = p + Vector3(0, 34.4, 0)
+		_pad_root.add_child(beacon)
+
+	# Warm perimeter lamps, kept low so the launch lights still own the scene.
+	for p in [Vector3(28, 2, 30), Vector3(-28, 2, 28), Vector3(26, 2, -28)]:
+		var l := OmniLight3D.new()
+		l.position = p
+		l.omni_range = 20
+		l.light_energy = 0.55
+		l.light_color = Color(1.0, 0.78, 0.52)
+		_pad_root.add_child(l)
+
+
+func _pad_tree(pos: Vector3, s: float) -> void:
+	var trunk := _box(Vector3(0.35 * s, 2.2 * s, 0.35 * s), Color(0.16, 0.12, 0.08), 0.0, 1.0)
+	trunk.position = pos + Vector3(0, 1.1 * s, 0)
+	_pad_root.add_child(trunk)
+	var canopy := MeshInstance3D.new()
+	var cone := CylinderMesh.new()
+	cone.top_radius = 0.0
+	cone.bottom_radius = 1.7 * s
+	cone.height = 4.6 * s
+	cone.radial_segments = 6
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.05, 0.13, 0.07)
+	mat.roughness = 1.0
+	mat.emission_enabled = true
+	mat.emission = Color(0.02, 0.045, 0.025)
+	cone.material = mat
+	canopy.mesh = cone
+	canopy.position = pos + Vector3(0, 3.6 * s, 0)
+	_pad_root.add_child(canopy)
+
+
+func _pad_building(pos: Vector3, size: Vector3, col: Color) -> void:
+	var body := _box(size, col, 0.0, 0.85)
+	body.position = pos + Vector3(0, size.y * 0.5, 0)
+	_pad_root.add_child(body)
+	var roof := _box(Vector3(size.x * 1.04, 0.35, size.z * 1.04), col.darkened(0.22), 0.0, 0.8)
+	roof.position = pos + Vector3(0, size.y, 0)
+	_pad_root.add_child(roof)
+	var win := _box(Vector3(size.x * 0.7, 0.5, 0.05), Color(0.7, 0.82, 1.0), 0.0, 0.3)
+	win.position = pos + Vector3(0, size.y * 0.55, size.z * 0.5 + 0.03)
+	var wmat := win.mesh.material as StandardMaterial3D
+	wmat.emission_enabled = true
+	wmat.emission = Color(0.35, 0.55, 0.9)
+	_pad_root.add_child(win)
+
+
+func _pad_water_tower(pos: Vector3) -> void:
+	_pad_root.add_child(_at(_box(Vector3(7, 0.6, 7), Color(0.32, 0.33, 0.31), 0, 0.9), pos + Vector3(0, 0.3, 0)))
+	var column := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.8
+	cyl.bottom_radius = 1.2
+	cyl.height = 20
+	cyl.radial_segments = 8
+	var cm := StandardMaterial3D.new()
+	cm.albedo_color = Color(0.42, 0.44, 0.45)
+	cm.metallic = 0.3
+	cm.roughness = 0.6
+	cyl.material = cm
+	column.mesh = cyl
+	column.position = pos + Vector3(0, 10, 0)
+	_pad_root.add_child(column)
+	var tank := MeshInstance3D.new()
+	var sph := SphereMesh.new()
+	sph.radius = 3.2
+	sph.height = 6.4
+	sph.radial_segments = 12
+	sph.rings = 6
+	var sm := StandardMaterial3D.new()
+	sm.albedo_color = Color(0.5, 0.53, 0.55)
+	sm.metallic = 0.3
+	sm.roughness = 0.5
+	sph.material = sm
+	tank.mesh = sph
+	tank.position = pos + Vector3(0, 22, 0)
+	_pad_root.add_child(tank)
+	var beacon := _star(0.35, Color(1.0, 0.15, 0.08))
+	beacon.position = pos + Vector3(0, 25.4, 0)
+	_pad_root.add_child(beacon)
 
 
 func _build_space() -> void:
