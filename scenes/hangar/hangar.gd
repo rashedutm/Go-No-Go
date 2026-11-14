@@ -370,7 +370,7 @@ func _small_button(text: String) -> Button:
 
 
 func _make_chip(key: String, label_text: String) -> Control:
-	var panel := NeonUI.panel("cyan", 6)
+	var panel := NeonUI.panel("cyan", 12)
 	panel.custom_minimum_size = Vector2(140, 0)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 0)
