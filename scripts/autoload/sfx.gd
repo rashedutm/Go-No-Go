@@ -35,6 +35,36 @@ func _ready() -> void:
 		_streams[n] = _load_or_make(n)
 	get_tree().node_added.connect(_on_node_added)
 	_build_buttons()
+	if OS.has_feature("web"):
+		# Browsers only allow fullscreen inside the real click/key event. Godot handles button
+		# presses a frame later, so the page itself toggles fullscreen when the pointer is released
+		# over our Fullscreen button (armed on hover) or when F11 is pressed.
+		JavaScriptBridge.eval("""
+			window.goNoGoFS = false;
+			window.goNoGoToggleFS = function () {
+				if (!document.fullscreenElement) {
+					(document.documentElement.requestFullscreen ? document.documentElement.requestFullscreen() : Promise.resolve()).catch(function () {});
+				} else if (document.exitFullscreen) { document.exitFullscreen(); }
+			};
+			document.addEventListener('pointerup', function () { if (window.goNoGoFS) { window.goNoGoToggleFS(); } }, true);
+			document.addEventListener('keydown', function (e) { if (e.key === 'F11') { e.preventDefault(); window.goNoGoToggleFS(); } }, true);
+		""", true)
+
+
+var _fs_poll := 0.0
+
+
+func _process(delta: float) -> void:
+	_fs_poll -= delta
+	if _fs_poll <= 0.0:
+		_fs_poll = 0.5
+		_update_buttons()
+
+
+func is_fullscreen() -> bool:
+	if OS.has_feature("web"):
+		return bool(JavaScriptBridge.eval("!!document.fullscreenElement", true))
+	return DisplayServer.window_get_mode() in [DisplayServer.WINDOW_MODE_FULLSCREEN, DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN]
 
 
 # ============================================================ playback
@@ -91,7 +121,9 @@ func toggle_mute() -> void:
 
 
 func toggle_fullscreen() -> void:
-	var fs := DisplayServer.window_get_mode() in [DisplayServer.WINDOW_MODE_FULLSCREEN, DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN]
+	if OS.has_feature("web"):
+		return   # handled by the page's own click/F11 listener (see _ready)
+	var fs := is_fullscreen()
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if fs else DisplayServer.WINDOW_MODE_FULLSCREEN)
 	_update_buttons.call_deferred()
 
@@ -122,6 +154,9 @@ func _build_buttons() -> void:
 	_fs_btn = _corner_button("Fullscreen")
 	_fs_btn.tooltip_text = "Fullscreen on/off (F11)"
 	_fs_btn.pressed.connect(toggle_fullscreen)
+	if OS.has_feature("web"):
+		_fs_btn.mouse_entered.connect(func(): JavaScriptBridge.eval("window.goNoGoFS = true;", true))
+		_fs_btn.mouse_exited.connect(func(): JavaScriptBridge.eval("window.goNoGoFS = false;", true))
 	box.add_child(_fs_btn)
 	_mute_btn = _corner_button("Sound: on")
 	_mute_btn.tooltip_text = "Sound on/off (M)"
@@ -154,8 +189,7 @@ func _update_buttons() -> void:
 	if _mute_btn:
 		_mute_btn.text = "Sound: off" if muted else "Sound: on"
 	if _fs_btn:
-		var fs := DisplayServer.window_get_mode() in [DisplayServer.WINDOW_MODE_FULLSCREEN, DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN]
-		_fs_btn.text = "Exit fullscreen" if fs else "Fullscreen"
+		_fs_btn.text = "Exit fullscreen" if is_fullscreen() else "Fullscreen"
 
 
 # ============================================================ sound synthesis
@@ -212,28 +246,27 @@ func _synth(length_s: float, notes: Array, slide := 0.0) -> AudioStreamWAV:
 
 func _make(sound: String) -> AudioStream:
 	match sound:
-		"click":
-			return _synth(0.06, [[0.0, 0.05, 1800.0, 0.25, "sine"], [0.0, 0.02, 0.0, 0.15, "noise"]])
-		"snap":
-			return _synth(0.22, [[0.0, 0.08, 180.0, 0.6, "square"], [0.0, 0.05, 0.0, 0.35, "noise"], [0.06, 0.14, 520.0, 0.25, "sine"]])
-		"whoosh":
-			return _synth(0.35, [[0.0, 0.35, 0.0, 0.25, "noise"], [0.0, 0.35, 300.0, 0.1, "sine"]], 1.5)
-		"beep":
-			return _synth(0.12, [[0.0, 0.1, 1000.0, 0.3, "sine"]])
-		"go":
-			return _synth(0.4, [[0.0, 0.15, 660.0, 0.3, "sine"], [0.1, 0.3, 990.0, 0.3, "sine"]])
-		"nogo":
-			return _synth(0.45, [[0.0, 0.4, 140.0, 0.35, "square"], [0.0, 0.4, 147.0, 0.25, "square"]])
-		"alarm":
-			return _synth(0.6, [[0.0, 0.18, 880.0, 0.35, "square"], [0.26, 0.18, 660.0, 0.35, "square"]])
-		"fixed":
-			return _synth(0.5, [[0.0, 0.15, 523.0, 0.3, "tri"], [0.1, 0.15, 659.0, 0.3, "tri"], [0.2, 0.3, 784.0, 0.3, "tri"]])
-		"complete":
-			return _synth(1.4, [[0.0, 0.25, 523.0, 0.3, "tri"], [0.2, 0.25, 659.0, 0.3, "tri"], [0.4, 0.25, 784.0, 0.3, "tri"],
-				[0.6, 0.8, 1047.0, 0.35, "tri"], [0.6, 0.8, 523.0, 0.15, "sine"]])
-		"fail":
-			return _synth(1.0, [[0.0, 0.3, 392.0, 0.3, "tri"], [0.25, 0.3, 330.0, 0.3, "tri"], [0.5, 0.5, 262.0, 0.3, "tri"]])
-		"hum":
-			# 2 s seamless control-room ambience: low hum + soft air noise (frequencies fit whole cycles in 2 s)
-			return _synth(2.0, [[0.0, 2.0, 60.0, 0.12, "sine", true], [0.0, 2.0, 120.0, 0.05, "sine", true], [0.0, 2.0, 0.0, 0.03, "noise", true]])
+		"click":      # tiny soft tick
+			return _synth(0.05, [[0.0, 0.04, 1250.0, 0.12, "sine"]])
+		"whoosh":     # soft two-note slide (station change)
+			return _synth(0.18, [[0.0, 0.09, 587.0, 0.12, "sine"], [0.06, 0.12, 784.0, 0.12, "sine"]])
+		"snap":       # gentle "tock" when a part attaches
+			return _synth(0.16, [[0.0, 0.07, 392.0, 0.22, "sine"], [0.03, 0.12, 784.0, 0.10, "sine"]])
+		"beep":       # poll: station is checking
+			return _synth(0.1, [[0.0, 0.08, 880.0, 0.12, "sine"]])
+		"go":         # poll: GO
+			return _synth(0.32, [[0.0, 0.12, 659.0, 0.16, "sine"], [0.09, 0.22, 988.0, 0.16, "sine"]])
+		"nogo":       # poll: NO-GO (low, not harsh)
+			return _synth(0.4, [[0.0, 0.36, 196.0, 0.22, "tri"], [0.0, 0.36, 185.0, 0.14, "tri"]])
+		"alarm":      # mission-control alert: clear but not piercing
+			return _synth(0.6, [[0.0, 0.2, 784.0, 0.2, "tri"], [0.25, 0.2, 587.0, 0.2, "tri"]])
+		"fixed":      # problem solved
+			return _synth(0.45, [[0.0, 0.14, 523.0, 0.15, "sine"], [0.09, 0.14, 659.0, 0.15, "sine"], [0.18, 0.26, 784.0, 0.15, "sine"]])
+		"complete":   # mission complete / all GO
+			return _synth(1.3, [[0.0, 0.25, 523.0, 0.15, "sine"], [0.18, 0.25, 659.0, 0.15, "sine"], [0.36, 0.25, 784.0, 0.15, "sine"],
+				[0.54, 0.75, 1047.0, 0.17, "sine"], [0.54, 0.75, 523.0, 0.08, "tri"]])
+		"fail":       # mission failed / no answer
+			return _synth(0.9, [[0.0, 0.28, 392.0, 0.15, "tri"], [0.22, 0.28, 349.0, 0.15, "tri"], [0.44, 0.45, 294.0, 0.15, "tri"]])
+		"hum":        # control-room ambience, very quiet, loops seamlessly every 2 s
+			return _synth(2.0, [[0.0, 2.0, 60.0, 0.06, "sine", true], [0.0, 2.0, 120.0, 0.025, "sine", true]])
 	return null

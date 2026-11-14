@@ -11,11 +11,12 @@ const C_TILE := Color(0.1, 0.14, 0.26, 0.92)
 const C_TILE_SEL := Color(0.14, 0.38, 0.8, 0.95)
 const C_TILE_OFF := Color(0.09, 0.1, 0.14, 0.85)
 const MODEL_POS := Vector3(0, 2.3, 0)
-const ROCKET_POS := Vector3(-8.0, 0.0, -7.0)
+const ROCKET_POS := Vector3(-11.0, 0.0, -11.0)
+const MAX_DIST := 12.5   # camera never leaves the room
 
 # camera views per station: [target, yaw, pitch, distance]
 const VIEWS := {
-	"director": [Vector3(-3.5, 4.0, -3.0), 0.35, 0.15, 17.0],
+	"director": [Vector3(-4.0, 4.0, -4.0), 0.45, 0.12, 12.5],
 	"engineer": [MODEL_POS, 0.9, 0.22, 9.0],
 	"science": [MODEL_POS, PI + 0.35, 0.12, 6.5],
 	"comms": [MODEL_POS + Vector3(0, 0.8, 0), 0.3, 0.75, 8.0],
@@ -98,11 +99,12 @@ func _build_world() -> void:
 	add_child(_cyl(0.5, 0.7, 0.9, Vector3(0, 0.85, 0), Color(0.4, 0.42, 0.46), 0.8, 0.3))   # stand
 
 	# walls with ribs
-	add_child(_box(Vector3(60, 18, 0.4), Vector3(0, 9, -16), Color(0.13, 0.15, 0.2)))
-	add_child(_box(Vector3(0.4, 18, 40), Vector3(-18, 9, 0), Color(0.12, 0.14, 0.19)))
-	add_child(_box(Vector3(0.4, 18, 40), Vector3(18, 9, 0), Color(0.12, 0.14, 0.19)))
+	# walls: only their inside faces are drawn ("dollhouse"), so they never block the camera
+	add_child(_wall(_box(Vector3(60, 18, 0.4), Vector3(0, 9, -16), Color(0.13, 0.15, 0.2))))
+	add_child(_wall(_box(Vector3(0.4, 18, 40), Vector3(-18, 9, 0), Color(0.12, 0.14, 0.19))))
+	add_child(_wall(_box(Vector3(0.4, 18, 40), Vector3(18, 9, 0), Color(0.12, 0.14, 0.19))))
 	for x in range(-16, 17, 4):
-		add_child(_box(Vector3(0.5, 18, 0.6), Vector3(x, 9, -15.6), Color(0.2, 0.22, 0.28), 0.6, 0.4))
+		add_child(_wall(_box(Vector3(0.5, 18, 0.6), Vector3(x, 9, -15.6), Color(0.2, 0.22, 0.28), 0.6, 0.4)))
 	# big hangar door outline
 	add_child(_box(Vector3(12, 0.4, 0.3), Vector3(-6, 11, -15.6), Color(1.0, 0.78, 0.1)))
 	# ceiling lamps
@@ -131,6 +133,7 @@ func _build_world() -> void:
 	sign.font_size = 72
 	sign.pixel_size = 0.01
 	sign.modulate = Color(1, 0.85, 0.3)
+	sign.double_sided = false
 	sign.position = Vector3(3, 10, -15.1)
 	add_child(sign)
 	var sub := Label3D.new()
@@ -138,6 +141,7 @@ func _build_world() -> void:
 	sub.font_size = 48
 	sub.pixel_size = 0.01
 	sub.modulate = Color(0.7, 0.8, 1.0)
+	sub.double_sided = false
 	sub.position = Vector3(3, 9, -15.1)
 	add_child(sub)
 
@@ -211,10 +215,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			if event.pressed:
 				_goal = {}
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
-			_dist = clampf(_dist * 0.9, 3.5, 22.0)
+			_dist = clampf(_dist * 0.9, 3.5, MAX_DIST)
 			_goal = {}
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
-			_dist = clampf(_dist * 1.1, 3.5, 22.0)
+			_dist = clampf(_dist * 1.1, 3.5, MAX_DIST)
 			_goal = {}
 		_idle = 0.0
 	elif event is InputEventMouseMotion and _dragging:
@@ -268,6 +272,7 @@ func _build_ui() -> void:
 		var key: String = s["key"]
 		b.pressed.connect(func(): _set_station(key))
 		b.tooltip_text = s["long"]
+		b.set_meta("no_click", true)
 		left.add_child(b)
 		_station_btns[key] = b
 	var gap := Control.new()
@@ -405,7 +410,7 @@ func _set_station(key: String) -> void:
 	station = key
 	section_idx = 0
 	MissionState.set_meta("design_station", key)
-	Sfx.play("whoosh", -6.0)
+	Sfx.play("whoosh", -8.0)
 	_set_view(key)
 	_refresh()
 
@@ -540,6 +545,7 @@ func _rebuild_tray() -> void:
 
 func _tile(title: String, stat: String, cost: String, selected: bool, prob: String) -> Button:
 	var b := Button.new()
+	b.set_meta("no_click", true)
 	b.custom_minimum_size = Vector2(168, 100)
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -593,4 +599,11 @@ func _box(size: Vector3, pos: Vector3, color: Color, metallic := 0.2, roughness 
 func _cyl(top_r: float, bottom_r: float, h: float, pos: Vector3, color: Color, metallic := 0.2, roughness := 0.7) -> MeshInstance3D:
 	var mi := SpacecraftModel3D._cyl(top_r, bottom_r, h, color, metallic, roughness)
 	mi.position = pos
+	return mi
+
+
+## Draw only the inside faces of a wall, so the orbit camera can see through it from outside.
+func _wall(mi: MeshInstance3D) -> MeshInstance3D:
+	var m: StandardMaterial3D = mi.mesh.material
+	m.cull_mode = BaseMaterial3D.CULL_FRONT
 	return mi

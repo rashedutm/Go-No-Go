@@ -30,6 +30,13 @@ Less text, fewer buttons, more *doing*:
 | **Member B — Emon** | **3D Mission Control room**: first-person player, 4 consoles, live simulation, **events**, alerts | **§B2 (new tasks!)**, then §B, §6.4–§6.8, §8 |
 | **Member C — Daniel** | **3D launch & cruise**, **space view** (spacecraft orbiting the planet, shown on the big screen), planets, **Debrief**, sounds, **demo video** | §C, then §6.9–§6.10, §7.6, §8 |
 
+### 🆕 Latest changes (read this first after every `git pull`)
+| When | What changed | Who it affects |
+|---|---|---|
+| Sat 14 Nov, afternoon | **Sounds redone** to be soft and short. Station/part buttons no longer double-click. **Fullscreen fixed for the browser** (the page now toggles it during the real click; F11 works too). Note: fullscreen **can't** work while the game runs *embedded inside the Godot editor*. Test it in the browser build, or in Godot's *Game* tab turn off "Embed game". **Hangar camera** can't leave the room anymore, walls are see-through from outside, and the rocket was moved back so nothing blocks the spacecraft. | everyone |
+| Sat 14 Nov, midday | `Sfx` sound system + Fullscreen/Sound corner buttons. **Emon: M4a–M5 were built for you, so your new tasks are in §B2.** | Emon, Daniel |
+| Sat 14 Nov, morning | 3D Hangar, Go/No-Go poll, 3D title/campaign/briefing, web export preset | everyone |
+
 ### 📍 Project status
 | Milestone | Status |
 |---|---|
@@ -44,7 +51,7 @@ Less text, fewer buttons, more *doing*:
 | **M4c Console actions** | ✅ **Done (built by Member A for Emon).** Panel buttons: **POWER**: enter/leave SAFE MODE · **SCIENCE**: switch each instrument on/off (shows its power and data) · **COMMS**: buy +4 h/day antenna time ($4 M, max +8 h) · **DIRECTOR**: software fix (+15% health for $15 M), end mission now, plus the mission log. The logic lives in `MissionSim` (`set_safe_mode`, `toggle_instrument`, `buy_contact_time`, `repair`, `abort`), and every action writes a cause→effect log line for the debrief. |
 | **M5 Events** | ✅ **Done (built by Member A for Emon).** `data/events.json` has **14 events**: solar storm, micrometeoroid, battery wear, stuck solar wing, Jupiter radiation spike, ground station down, memory error, budget cut, plus science chances (wildfires, lunar ice, Mars dust storm, Io volcano, Enceladus plume, comet), each filtered by destination. `scripts/events/event_system.gd` (`EventSystem`) fires one every ~18–30 s (the first after 12 s). A **red alarm light + beep** plays (it uses `audio/alarm.wav/.ogg` if Daniel adds one), a top banner shows **"Go to the POWER console! 18 s"**, and the console blinks red. The countdown **freezes once you reach the console**. You pick a choice (choices you can't afford are disabled), and no answer means the worst option. Toasts explain the outcome, including the **signal delay** ("Your command takes 43 minutes to reach the spacecraft"), the wall screen shows `solar_storm`/`damaged`/`safe_mode` status, and everything goes into the debrief log. Scoring: discoveries add `bonus × 0.5` to the total. Test: `godot --headless --path . res://tests/events_test.tscn`. Ignoring alarms is risky (Jupiter at 11% health, Saturn 1 star), and good answers reach 90–100. |
 | **Emon's list (M4a–M5)** | ✅ **All done** (built by Member A). **Emon: see your new tasks in §B2.** |
-| **Sound + fullscreen** | ✅ **Done (Member A).** `Sfx` autoload: 11 sound effects generated in code (no files or licenses needed): click (every button, automatically), snap (part added in the hangar), whoosh, poll beep / GO chime / NO-GO buzz, alarm, fixed, mission complete jingle, fail tones, and a Mission Control room hum. A **Fullscreen** and **Sound on/off** button pair sits in the top-right corner of every screen (keys **F11** / **M**), and the mute setting is remembered. |
+| **Sound + fullscreen** | ✅ **Done (Member A).** `Sfx` autoload: 11 soft sound effects generated in code (no files or licenses needed): click (every button, automatically), snap (part added in the hangar), station change, poll beep / GO chime / NO-GO tone, alarm, fixed, mission complete jingle, fail tones, and a quiet Mission Control room hum. A **Fullscreen** and **Sound on/off** button pair sits in the top-right corner of every screen (keys **F11** / **M**), and the mute setting is remembered. |
 | M6 Launch/cruise, space view, debrief | ⏳ Daniel |
 
 ### 🛠️ Getting started (everyone)
