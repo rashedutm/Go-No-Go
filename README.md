@@ -35,6 +35,7 @@ Less text, fewer buttons, more *doing*:
 |---|---|
 | **M1 Skeleton** | ✅ **Done.** Godot project, all `data/*.json`, the 3 autoloads (`GameData`, `MissionState`, `Sim`) and placeholder screens. The whole flow is clickable. `tests/sim_test.tscn` checks that every mission's test design is GO. |
 | **M2 Design screen (2D)** | ✅ Done as a 2D version. It is the **fallback** while the 3D Hangar is built (`scenes/design/`). |
+| **M2a 3D models** | ✅ **Done.** `SpacecraftModel3D.build(design)`, `deploy_wings(model, t)` and `build_rocket(vehicle_id)` (children `Stage1`, `Stage2`, `Fairing`). Preview: `godot --path . res://tests/model_preview.tscn` |
 | M2b 3D Hangar · M3 Go/No-Go poll | ⏳ Member A |
 | M4–M5 3D Mission Control + events | ⏳ Emon. Until his scene exists, the game automatically uses `scenes/placeholders/`. |
 | M6 Launch/cruise, space view, debrief | ⏳ Daniel |
@@ -522,6 +523,7 @@ static func build(design: Dictionary) -> Node3D
 #  Child nodes are named so others can animate them:
 #  "Bus", "SolarWings" (Node3D, its children are the wing panels), "RTGs", "Antenna", "Instruments", "Vault".
 static func deploy_wings(model: Node3D, t: float) -> void   # t: 0 = folded, 1 = open (for the launch animation)
+static func build_rocket(launch_vehicle_id: String) -> Node3D   # origin at base, 7–16 m tall; children "Stage1", "Stage2", "Fairing"
 ```
 
 `space_view.tscn` (Daniel, `scenes/space/space_view.tscn`, root script `space_view.gd`):
