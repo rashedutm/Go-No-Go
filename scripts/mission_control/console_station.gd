@@ -31,6 +31,10 @@ func setup(p_key: String, p_title: String, p_color: Color) -> void:
 	# monitors (Asset Store sci-fi computer with a small console UI)
 	var computer := Props.computer(color, p_title)
 	computer.position = Vector3(0, 0.9, -0.30)
+	# Angle side consoles inward toward the room centre and tilt the screen up
+	# slightly so it reads from the floor, not just from the operator point.
+	computer.rotation.y = clampf(atan2(-global_position.x, -global_position.z), -1.0, 1.0)
+	computer.rotation.x = 0.10
 	add_child(computer)
 	_screen_mat = computer.get_meta("screen_material", null) as StandardMaterial3D
 	# chair (Asset Store low-poly office chair, facing the desk)
