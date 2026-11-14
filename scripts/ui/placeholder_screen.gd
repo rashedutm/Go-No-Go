@@ -103,7 +103,7 @@ func _fill() -> void:
 				mission.get("description", ""), mission.get("budget_musd", 0), mission.get("min_years", 0),
 				mission.get("data_goal_gb", 0), ", ".join(mission.get("required_types", [])), mission.get("fact", "")]
 			_add_button("Back", "campaign_map")
-			_add_button("Design spacecraft", "design")
+			_add_button("Design spacecraft", "hangar")
 
 		"design":
 			_body.text = "The real 4-station design screen comes in M2.\nFor now, use the built-in test design for this mission.\n\n" + _summary_text()
@@ -120,7 +120,7 @@ func _fill() -> void:
 				lines.append(("[color=#5f5]GO[/color]  " if c["passed"] else "[color=#f66]NO-GO[/color]  ") + c["message"])
 			var go := Sim.is_go(MissionState.design)
 			_body.text = "\n".join(lines) + ("\n\n[b]FLIGHT DIRECTOR: GO FOR LAUNCH![/b]" if go else "\n\n[b]NO-GO. Fix the red items.[/b]")
-			_add_button("Back to design", "design")
+			_add_button("Back to hangar", "hangar")
 			var launch := _add_button("Launch", "launch_anim")
 			launch.disabled = not go
 
@@ -140,7 +140,7 @@ func _fill() -> void:
 				s["total"], "★".repeat(s["stars"]) if s["stars"] > 0 else "(failed)", s["science"], s["survival"], s["budget"],
 				look.get("name", "—"), str(look.get("year", "")), look.get("fact", "")]
 			MissionState.record_result(r.get("mission_id", MissionState.current_mission_id), s["stars"], s["total"])
-			_add_button("Redesign & retry", "design")
+			_add_button("Redesign & retry", "hangar")
 			_add_button("Next mission", "campaign_map")
 
 
