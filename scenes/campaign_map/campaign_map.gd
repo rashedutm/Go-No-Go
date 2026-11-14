@@ -25,8 +25,6 @@ var _cam_target := Vector3.ZERO
 var _cam_vel := Vector3.ZERO
 var _t := 0.0
 var _frames_root: Control
-var _frame_sel: StyleBoxFlat
-var _frame_hover: StyleBoxFlat
 
 var _info_name: Label
 var _info_dest: Label
@@ -139,9 +137,7 @@ func _build_ui() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(root)
 
-	# Selection boxes track the planets in screen space (behind the HUD panels).
-	_frame_sel = _make_frame_style(NeonUI.GOLD, 10)
-	_frame_hover = _make_frame_style(NeonUI.CYAN, 8)
+	# Selection rings track the planets in screen space (behind the HUD panels).
 	_frames_root = Control.new()
 	_frames_root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_frames_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -150,8 +146,11 @@ func _build_ui() -> void:
 		var frame := Panel.new()
 		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		frame.visible = false
+		var style := _make_frame_style(NeonUI.GOLD)
+		frame.add_theme_stylebox_override("panel", style)
 		_frames_root.add_child(frame)
 		_planets[mid]["frame"] = frame
+		_planets[mid]["style"] = style
 
 	var kick_row := HBoxContainer.new()
 	kick_row.position = Vector2(32, 20)
@@ -277,28 +276,37 @@ func _select(mid: String) -> void:
 	_refresh_highlights()
 
 
-func _make_frame_style(color: Color, shadow: float) -> StyleBoxFlat:
+func _make_frame_style(color: Color) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.02, 0.04, 0.08, 0.16)
-	sb.border_color = color
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(4)
-	sb.shadow_color = Color(color.r, color.g, color.b, 0.32)
-	sb.shadow_size = int(shadow)
+	sb.bg_color = Color(color.r, color.g, color.b, 0.035)
+	sb.border_color = Color(color.r, color.g, color.b, 0.55)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(26)
+	sb.shadow_color = Color(color.r, color.g, color.b, 0.18)
+	sb.shadow_size = 6
 	sb.shadow_offset = Vector2.ZERO
 	return sb
+
+
+func _apply_frame_color(style: StyleBoxFlat, color: Color, selected: bool) -> void:
+	var border_a := 0.55 if selected else 0.40
+	var shadow_a := 0.18 if selected else 0.10
+	style.border_color = Color(color.r, color.g, color.b, border_a)
+	style.shadow_color = Color(color.r, color.g, color.b, shadow_a)
+	style.bg_color = Color(color.r, color.g, color.b, 0.035)
 
 
 func _refresh_highlights() -> void:
 	for id in _planets:
 		var frame: Panel = _planets[id]["frame"]
+		var style: StyleBoxFlat = _planets[id]["style"]
 		var is_selected: bool = id == _selected
 		var is_hovered: bool = id == _hovered
 		frame.visible = is_selected or is_hovered
 		if is_selected:
-			frame.add_theme_stylebox_override("panel", _frame_sel)
+			_apply_frame_color(style, NeonUI.GOLD, true)
 		elif is_hovered:
-			frame.add_theme_stylebox_override("panel", _frame_hover)
+			_apply_frame_color(style, NeonUI.CYAN, false)
 
 
 func _update_frames() -> void:
@@ -312,6 +320,8 @@ func _update_frames() -> void:
 		var right := _cam.unproject_position(node.global_position + _cam.global_transform.basis.x * radius)
 		var up := _cam.unproject_position(node.global_position + _cam.global_transform.basis.y * radius)
 		var r := maxf(center.distance_to(right), center.distance_to(up))
-		var side := maxf(58.0, r * 2.0 + 18.0)
+		var side := maxf(52.0, r * 2.0 + 12.0)
 		frame.position = center - Vector2(side, side) * 0.5
 		frame.size = Vector2(side, side)
+		var style: StyleBoxFlat = _planets[id]["style"]
+		style.set_corner_radius_all(int(side * 0.5))
