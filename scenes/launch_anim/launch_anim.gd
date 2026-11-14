@@ -29,6 +29,10 @@ var _last_count := 3
 var _arrive_sfx := false
 var _sep_fx_done := false
 var _deploy_blip := false
+var _s1_free := false
+var _s2_free := false
+var _s1_base: Vector3
+var _s2_base: Vector3
 var _rumble: AudioStreamPlayer
 var _sep_puff: CPUParticles3D
 var _sep_flash: OmniLight3D
@@ -145,29 +149,43 @@ func _enter_space() -> void:
 	_sub.text = "STAGE SEPARATION"
 	_fade.color = Color.WHITE
 	_fade.modulate.a = 1.0
-	Sfx.play("snap", -5.0)
 	if _rumble:
 		_rumble.stop()
 
 
 func _update_space(delta: float) -> void:
+	# --- booster: released into world space at SEP_T. It keeps its own inertia
+	# (decaying push-off, then constant drift + tumble) while the spacecraft
+	# accelerates away, so it leaves the frame on its own — never popped out.
 	var sep := maxf(_t - SEP_T, 0.0)
-	_stage1.position = Vector3(-2.4 * sep, -1.1 * sep, 10.2 + 2.0 * sep)
-	_stage1.rotation.z = 0.9 * sep
-	_stage1.rotation.x = 0.45 * sep
-	# Keep the booster tumbling until it has clearly left the frame, then cull it.
-	_stage1.visible = _t < 7.6
-	var s2 := maxf(_t - STAGE2_T, 0.0)
-	_stage2.position = Vector3(-0.4 * s2, -1.6 * s2, 4.6 + 1.0 * s2)
-	_stage2.rotation.z = 0.25 * s2
-	_stage2.visible = _t < 11.2
-
-	if _t >= SEP_T and not _sep_fx_done:
-		_sep_fx_done = true
+	if sep > 0.0 and not _s1_free:
+		_s1_free = true
+		_s1_base = _stage1.global_position
+		_ship.remove_child(_stage1)
+		_space_root.add_child(_stage1)
+		_stage1.global_position = _s1_base
 		_sep_puff.restart()
 		_sep_puff.emitting = true
 		_sep_flash.light_energy = 3.0
-	_sep_flash.light_energy = maxf(_sep_flash.light_energy - delta * 9.0, 0.0)
+		Sfx.play("snap", -5.0)
+	if _s1_free:
+		var d1 := _sep_motion(sep, 0.8, 1.5, 0.35) * Vector3(-0.45, -0.30, 0.84)
+		_stage1.position = _s1_base + d1
+		_stage1.rotation = Vector3(0.45, 0.10, 0.85) * sep
+		_sep_flash.light_energy = maxf(_sep_flash.light_energy - delta * 9.0, 0.0)
+
+	# --- upper stage: same treatment once the wings are open.
+	var s2 := maxf(_t - STAGE2_T, 0.0)
+	if s2 > 0.0 and not _s2_free:
+		_s2_free = true
+		_s2_base = _stage2.global_position
+		_ship.remove_child(_stage2)
+		_space_root.add_child(_stage2)
+		_stage2.global_position = _s2_base
+	if _s2_free:
+		var d2 := _sep_motion(s2, 1.6, 1.5, 0.35) * Vector3(-0.40, -0.30, 0.86)
+		_stage2.position = _s2_base + d2
+		_stage2.rotation = Vector3(0.35, 0.12, 0.60) * s2
 
 	var deploy := clampf((_t - DEPLOY_T) / (DEPLOY_END - DEPLOY_T), 0.0, 1.0)
 	SpacecraftModel3D.deploy_wings(_craft, deploy)
@@ -667,6 +685,12 @@ func _make_rumble() -> AudioStreamWAV:
 	stream.stereo = false
 	stream.data = data
 	return stream
+
+
+## Inertial separation profile: an initial push-off (the release springs) that
+## decays into a constant drift — what a real stage looks like after separation.
+func _sep_motion(t: float, v_inf: float, d0: float, tau: float) -> float:
+	return v_inf * t + d0 * tau * (1.0 - exp(-t / tau))
 
 
 func _at(node: Node3D, pos: Vector3) -> Node3D:
