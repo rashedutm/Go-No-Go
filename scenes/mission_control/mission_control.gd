@@ -90,17 +90,17 @@ func _build_room() -> void:
 	var we := WorldEnvironment.new()
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.02, 0.02, 0.04)
+	env.background_color = Color(0.08, 0.1, 0.16)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.35, 0.4, 0.55)
-	env.ambient_light_energy = 0.55
+	env.ambient_light_color = Color(0.62, 0.7, 0.88)
+	env.ambient_light_energy = 1.0
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	we.environment = env
 	add_child(we)
 
-	var wall_c := Color(0.1, 0.12, 0.17)
-	MCBuild.box(self, Vector3(24, 0.2, 20), Vector3(0, -0.1, 0), Color(0.12, 0.14, 0.2), true)      # floor
-	MCBuild.box(self, Vector3(24, 0.2, 20), Vector3(0, 6.1, 0), Color(0.06, 0.07, 0.1))              # ceiling
+	var wall_c := Color(0.22, 0.27, 0.37)
+	MCBuild.box(self, Vector3(24, 0.2, 20), Vector3(0, -0.1, 0), Color(0.2, 0.24, 0.33), true)      # floor
+	MCBuild.box(self, Vector3(24, 0.2, 20), Vector3(0, 6.1, 0), Color(0.16, 0.19, 0.27))              # ceiling
 	MCBuild.box(self, Vector3(24, 6.2, 0.3), Vector3(0, 3, -9.2), wall_c, true)                     # front wall
 	MCBuild.box(self, Vector3(24, 6.2, 0.3), Vector3(0, 3, 9.2), wall_c, true)                      # back wall
 	MCBuild.box(self, Vector3(0.3, 6.2, 20), Vector3(-11.2, 3, 0), wall_c, true)                    # left
@@ -113,8 +113,8 @@ func _build_room() -> void:
 		MCBuild.box(self, Vector3(0.3, 0.05, 14), Vector3(x, 5.95, 0), Color(0.75, 0.85, 1.0), false, 2.0)
 		var l := OmniLight3D.new()
 		l.position = Vector3(x, 5.2, 1)
-		l.omni_range = 11
-		l.light_energy = 0.45
+		l.omni_range = 14
+		l.light_energy = 1.1
 		l.light_color = Color(0.8, 0.88, 1.0)
 		add_child(l)
 	# floor guide strips
@@ -123,7 +123,7 @@ func _build_room() -> void:
 	# side wall info panels (decoration)
 	# decorative desks (non-interactive)
 	for p in [Vector3(-6, 0, 2.5), Vector3(-4, 0, 6.0), Vector3(4, 0, 6.0)]:
-		MCBuild.box(self, Vector3(2.4, 0.85, 1.0), p + Vector3(0, 0.425, 0), Color(0.15, 0.17, 0.22), true)
+		MCBuild.box(self, Vector3(2.4, 0.85, 1.0), p + Vector3(0, 0.425, 0), Color(0.26, 0.3, 0.4), true)
 		MCBuild.box(self, Vector3(1.3, 0.7, 0.06), p + Vector3(0, 1.25, -0.25), Color(0.08, 0.08, 0.1))
 		MCBuild.box(self, Vector3(1.2, 0.6, 0.02), p + Vector3(0, 1.25, -0.21), Color(0.12, 0.3, 0.5), false, 0.6)
 
@@ -187,6 +187,12 @@ func open_console(key: String) -> void:
 	_build_actions(key)
 	for b in _panel_buttons.get_children():
 		b.queue_free()
+	var keys_hint := Label.new()
+	keys_hint.text = "Press a number key to choose  ·  E to close"
+	keys_hint.modulate = Color(0.7, 0.78, 0.95)
+	keys_hint.add_theme_font_size_override("font_size", 15)
+	keys_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_panel_buttons.add_child(keys_hint)
 	var close := Button.new()
 	close.text = "Close (E)"
 	close.pressed.connect(close_console)
@@ -345,6 +351,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	var k: int = event.physical_keycode
+	if _open != "" and k >= KEY_1 and k <= KEY_9:
+		var idx := k - KEY_1
+		if idx < _panel_actions.get_child_count():
+			var btn: Button = _panel_actions.get_child(idx)
+			if not btn.disabled:
+				btn.pressed.emit()
+		get_viewport().set_input_as_handled()
+		return
 	if k == KEY_SPACE or k == KEY_P:
 		paused = not paused
 	elif k >= KEY_1 and k <= KEY_3:
@@ -537,7 +551,7 @@ func _update_hud() -> void:
 
 func _action_button(text: String, tip: String, color: Color, enabled: bool, cb: Callable) -> Button:
 	var b := Button.new()
-	b.text = text
+	b.text = "[%d]  %s" % [_panel_actions.get_child_count() + 1, text]
 	b.tooltip_text = tip
 	b.disabled = not enabled
 	b.custom_minimum_size = Vector2(200, 54)
@@ -568,6 +582,7 @@ func _after_action() -> void:
 
 func _build_actions(key: String) -> void:
 	for c in _panel_actions.get_children():
+		_panel_actions.remove_child(c)
 		c.queue_free()
 	var orange := Color(1.0, 0.55, 0.2)
 	if events and events.active.get("console", "") == key:

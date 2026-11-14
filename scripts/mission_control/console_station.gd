@@ -20,7 +20,7 @@ func setup(p_key: String, p_title: String, p_color: Color) -> void:
 	title = p_title
 	color = p_color
 	# desk
-	MCBuild.box(self, Vector3(2.2, 0.85, 1.0), Vector3(0, 0.425, 0), Color(0.18, 0.2, 0.26), true)
+	MCBuild.box(self, Vector3(2.2, 0.85, 1.0), Vector3(0, 0.425, 0), Color(0.28, 0.32, 0.42), true)
 	MCBuild.box(self, Vector3(2.25, 0.05, 1.05), Vector3(0, 0.875, 0), Color(0.1, 0.11, 0.14))
 	MCBuild.box(self, Vector3(2.2, 0.06, 0.06), Vector3(0, 0.86, 0.52), p_color, false, 1.5)   # accent strip
 	# monitors

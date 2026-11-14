@@ -3,7 +3,7 @@
 #  - 4 live wall screens (power, science data, ground track, spacecraft health) fed by MissionSim
 #  - 2 status boards beside the main screen (mission clock, data returned / status)
 #  - a hologram of the destination planet with an orbiting spacecraft
-#  - robot colleagues at the empty desks, scrolling telemetry on their monitors
+#  - scrolling telemetry on the monitors of the empty desks
 #  - fact posters on the back wall, a glowing floor ring
 # Built by Mission Control after the room; update() is called every frame. Owner: Member B (Emon).
 class_name RoomDecor
@@ -91,7 +91,6 @@ func build(p_mc: Node, p_sim: MissionSim) -> void:
 
 	# ---- robot colleagues + telemetry at the decorative desks
 	for p in [Vector3(-6, 0, 2.5), Vector3(-4, 0, 6.0), Vector3(4, 0, 6.0)]:
-		_robots.append(_robot(p + Vector3(0, 0, 0.95)))
 		var lab := MCBuild.label(self, "", p + Vector3(0, 1.25, -0.18), Color(0.4, 1.0, 0.6), 22, 0.0028)
 		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		_tele_labels.append(lab)

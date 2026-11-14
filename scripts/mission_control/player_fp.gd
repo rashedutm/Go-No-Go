@@ -49,9 +49,10 @@ static func _ensure_actions() -> void:
 			InputMap.action_add_event(action, ev)
 
 
+## Pauses walking/looking (e.g. while a console panel is open). The mouse stays captured,
+## so looking around works again the moment the panel closes, with no extra click.
 func set_controls_enabled(on: bool) -> void:
 	controls_enabled = on
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if on and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else Input.MOUSE_MODE_VISIBLE
 
 
 func _unhandled_input(event: InputEvent) -> void:
