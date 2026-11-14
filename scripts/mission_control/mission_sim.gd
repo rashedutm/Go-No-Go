@@ -208,6 +208,64 @@ func _end(reason: String) -> void:
 			add_log("Contact lost: the spacecraft is worn out.", "Damage and wear reached 100%", "The mission ended early")
 
 
+# ================================================================ player actions (M4c)
+# Each returns true if it happened. Costs come out of the reserve (unspent budget).
+
+const CONTACT_STEP_H := 4.0      # hours/day added per purchase
+const CONTACT_COST := 4.0        # $M per purchase
+const CONTACT_MAX_H := 8.0
+const REPAIR_COST := 15.0        # $M
+const REPAIR_AMOUNT := 15.0      # % health
+
+
+func set_safe_mode(on: bool) -> bool:
+	if safe_mode == on or finished:
+		return false
+	safe_mode = on
+	if on:
+		add_log("SAFE MODE on: instruments off to save power.", "Safe mode", "No science while it is on, but power and wear are saved")
+	else:
+		add_log("Safe mode off: science resumes.")
+	return true
+
+
+func toggle_instrument(id: String) -> bool:
+	if not instruments_on.has(id) or finished:
+		return false
+	instruments_on[id] = not instruments_on[id]
+	var name: String = GameData.get_item("instruments", id).get("name", id)
+	add_log("%s switched %s." % [name, "ON" if instruments_on[id] else "OFF"])
+	return true
+
+
+func can_buy_contact() -> bool:
+	return not finished and extra_contact_hours < CONTACT_MAX_H and reserve_musd >= CONTACT_COST
+
+
+func buy_contact_time() -> bool:
+	if not can_buy_contact():
+		return false
+	extra_contact_hours += CONTACT_STEP_H
+	reserve_musd -= CONTACT_COST
+	add_log("Bought +%d h/day of antenna time for $%d M." % [int(CONTACT_STEP_H), int(CONTACT_COST)],
+		"Extra ground-station time", "More data reaches Earth, but less money left over")
+	return true
+
+
+func can_repair() -> bool:
+	return not finished and health < 100.0 and reserve_musd >= REPAIR_COST
+
+
+func repair() -> bool:
+	if not can_repair():
+		return false
+	health = minf(health + REPAIR_AMOUNT, 100.0)
+	reserve_musd -= REPAIR_COST
+	add_log("Engineers uploaded a software fix (+%d%% health) for $%d M." % [int(REPAIR_AMOUNT), int(REPAIR_COST)],
+		"Spent reserve on a repair", "The spacecraft lasts longer, but the budget score drops")
+	return true
+
+
 ## Ends the mission now (Director decision / quit).
 func abort() -> void:
 	if not finished:

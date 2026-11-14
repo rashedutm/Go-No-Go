@@ -36,6 +36,7 @@ var _panel: PanelContainer
 var _panel_title: Label
 var _panel_body: RichTextLabel
 var _panel_buttons: HBoxContainer
+var _panel_actions: HFlowContainer
 var _hud_clock: Label
 var _hud_bars := {}         # key -> {bar, label}
 var _end_banner: Label
@@ -175,14 +176,9 @@ func open_console(key: String) -> void:
 	_panel_title.text = st.title + " CONSOLE"
 	_panel_title.add_theme_color_override("font_color", st.color)
 	_panel_body.text = _console_body(key)
+	_build_actions(key)
 	for b in _panel_buttons.get_children():
 		b.queue_free()
-	if key == "director":
-		var end := Button.new()
-		end.text = "End mission (test)"
-		end.tooltip_text = "Temporary: finishes the mission using the design estimate (until the live simulation exists)."
-		end.pressed.connect(_end_mission_test)
-		_panel_buttons.add_child(end)
 	var close := Button.new()
 	close.text = "Close (E)"
 	close.pressed.connect(close_console)
@@ -210,18 +206,18 @@ func _console_body(key: String) -> String:
 	var f := PartInfo.fmt
 	match key:
 		"engineer":
-			return "[b]Power & spacecraft health[/b]\nPower made: %d W   ·   Power used: %d W\nBattery: %d%%  (%s / %s Wh)\nHealth: %d%%%s\n\n[i]Coming in M4c: SAFE MODE button.[/i]" % [
+			return "[b]Power & spacecraft health[/b]\nPower made: %d W   ·   Power used: %d W\nBattery: %d%%  (%s / %s Wh)\nHealth: %d%%%s" % [
 				sim.power_gen_w, sim.power_load_w, sim.battery_pct(), f.call(sim.battery_wh), f.call(sim.battery_max), sim.health,
 				"   ·   [color=#ffb74d]SAFE MODE[/color]" if sim.safe_mode else ""]
 		"science":
 			var lines: Array = []
 			for i in sim.instruments_on:
 				lines.append("%s: %s" % [GameData.get_item("instruments", i).get("name", i), "ON" if sim.instruments_on[i] else "off"])
-			return "[b]Instruments[/b]\n%s\n\nMaking %.1f Gb/day   ·   Returned %s / %s Gb (%d%%)\n\n[i]Coming in M4c: switch each instrument on/off.[/i]" % [
+			return "[b]Instruments[/b]\n%s\n\nMaking %.1f Gb/day   ·   Returned %s / %s Gb (%d%%)" % [
 				"\n".join(lines), sim.data_rate_gb_day, f.call(sim.data_returned_gb), f.call(sim.mission.get("data_goal_gb", 0)),
 				int(100.0 * sim.data_returned_gb / maxf(float(sim.mission.get("data_goal_gb", 1)), 1.0))]
 		"comms":
-			return "[b]Communications[/b]\nSending %.1f Gb/day%s\nMemory: %d%% full  (%s / %s Gb)\nData lost: %s Gb   ·   Signal delay: %.1f min\n\n[i]Coming in M4c: buy extra antenna time.[/i]" % [
+			return "[b]Communications[/b]\nSending %.1f Gb/day%s\nMemory: %d%% full  (%s / %s Gb)\nData lost: %s Gb   ·   Signal delay: %.1f min" % [
 				sim.downlink_gb_day, "   ·   [color=#ff8a80]BLACKOUT[/color]" if sim.blackout_days > 0.0 else "", sim.storage_pct(),
 				f.call(sim.storage_gb), f.call(sim.storage_max), f.call(sim.data_lost_gb), float(mission.get("signal_delay_min", 0))]
 		"director":
@@ -427,8 +423,8 @@ func _build_ui() -> void:
 	root.add_child(_start_hint)
 
 	_panel = PanelContainer.new()
-	_panel.position = Vector2(290, 150)
-	_panel.custom_minimum_size = Vector2(700, 400)
+	_panel.position = Vector2(270, 100)
+	_panel.custom_minimum_size = Vector2(740, 500)
 	var psb := StyleBoxFlat.new()
 	psb.bg_color = Color(0.03, 0.05, 0.11, 0.95)
 	psb.border_color = Color(0.3, 0.45, 0.85)
@@ -450,6 +446,10 @@ func _build_ui() -> void:
 	_panel_body.add_theme_font_size_override("normal_font_size", 18)
 	_panel_body.add_theme_font_size_override("bold_font_size", 20)
 	v.add_child(_panel_body)
+	_panel_actions = HFlowContainer.new()
+	_panel_actions.add_theme_constant_override("h_separation", 10)
+	_panel_actions.add_theme_constant_override("v_separation", 10)
+	v.add_child(_panel_actions)
 	_panel_buttons = HBoxContainer.new()
 	_panel_buttons.alignment = BoxContainer.ALIGNMENT_END
 	_panel_buttons.add_theme_constant_override("separation", 10)
@@ -486,3 +486,68 @@ func _update_hud() -> void:
 	_hud_bar("data", dp, "%d%%" % int(dp), true, on_track)
 	_hud_bar("health", sim.health, "%d%%" % int(sim.health))
 	_hud_bar("storage", sim.storage_pct(), "%d%%" % int(sim.storage_pct()), false)
+
+
+# ============================================================== console actions (M4c)
+
+func _action_button(text: String, tip: String, color: Color, enabled: bool, cb: Callable) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.tooltip_text = tip
+	b.disabled = not enabled
+	b.custom_minimum_size = Vector2(200, 54)
+	b.add_theme_font_size_override("font_size", 16)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = color.darkened(0.35)
+	sb.set_corner_radius_all(10)
+	sb.set_content_margin_all(8)
+	sb.border_color = color
+	sb.set_border_width_all(2)
+	b.add_theme_stylebox_override("normal", sb)
+	var hov := sb.duplicate()
+	hov.bg_color = color.darkened(0.15)
+	b.add_theme_stylebox_override("hover", hov)
+	b.pressed.connect(func():
+		cb.call()
+		_after_action())
+	_panel_actions.add_child(b)
+	return b
+
+
+func _after_action() -> void:
+	if _open == "":
+		return
+	_panel_body.text = _console_body(_open)
+	_build_actions(_open)
+
+
+func _build_actions(key: String) -> void:
+	for c in _panel_actions.get_children():
+		c.queue_free()
+	var orange := Color(1.0, 0.55, 0.2)
+	match key:
+		"engineer":
+			if sim.safe_mode:
+				_action_button("Leave SAFE MODE", "Switch instruments back on and resume science.", Color(0.35, 0.9, 0.45), true,
+					func(): sim.set_safe_mode(false))
+			else:
+				_action_button("Enter SAFE MODE", "Turn off all instruments: saves power and halves wear, but no science.",
+					orange, true, func(): sim.set_safe_mode(true))
+		"science":
+			for id in sim.instruments_on:
+				var it := GameData.get_item("instruments", id)
+				var on: bool = sim.instruments_on[id]
+				var iid: String = id
+				_action_button("%s\n%s · %s W · %s Gb/day" % [it.get("name", id), "ON" if on else "OFF", PartInfo.fmt(it.get("power_w", 0)), PartInfo.fmt(it.get("data_gb_day", 0))],
+					"Turn this instrument %s. Off saves power and memory; on makes science." % ("off" if on else "on"),
+					Color(0.72, 0.48, 1.0) if on else Color(0.4, 0.4, 0.45), not sim.safe_mode, func(): sim.toggle_instrument(iid))
+		"comms":
+			_action_button("Buy +%d h/day antenna time\n$%d M (have $%s M)" % [int(MissionSim.CONTACT_STEP_H), int(MissionSim.CONTACT_COST), PartInfo.fmt(sim.reserve_musd)],
+				"Rent more time on the ground antennas, so more data reaches Earth each day. Now: +%d h/day." % int(sim.extra_contact_hours),
+				Color(0.3, 0.85, 1.0), sim.can_buy_contact(), func(): sim.buy_contact_time())
+		"director":
+			_action_button("Repair: software fix\n+%d%% health for $%d M" % [int(MissionSim.REPAIR_AMOUNT), int(MissionSim.REPAIR_COST)],
+				"Engineers on Earth upload a fix. Costs reserve money (lowers the budget score).",
+				Color(1.0, 0.82, 0.3), sim.can_repair(), func(): sim.repair())
+			_action_button("End mission now", "Stop the mission early and go to the debrief.", Color(1.0, 0.35, 0.3), true,
+				func(): sim.abort())

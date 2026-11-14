@@ -42,5 +42,15 @@ func _ready() -> void:
 	d = Sim.make_test_design("mars")
 	d["antenna"] = "mga"
 	_fly("mars small antenna", d)
+	# player actions
+	var s2 := MissionSim.new(Sim.make_test_design("jupiter"))
+	var ok := s2.set_safe_mode(true) and s2.set_safe_mode(false) and s2.toggle_instrument("cam_wide")
+	ok = ok and s2.buy_contact_time()
+	s2.health = 50.0
+	ok = ok and s2.repair() and absf(s2.health - 65.0) < 0.01
+	print("actions ok: ", ok, "  reserve left $", int(s2.reserve_musd), "M  contact +", s2.extra_contact_hours, "h")
+	while not s2.finished:
+		s2.tick(0.5)
+	print("jupiter after actions: data %d Gb, lost %d Gb, score %s" % [s2.data_returned_gb, s2.data_lost_gb, Sim.score(s2.result())])
 	print("RESULT: ", "ALL TEST DESIGNS >= 2 STARS" if bad == 0 else "%d test designs under 2 stars" % bad)
 	get_tree().quit()

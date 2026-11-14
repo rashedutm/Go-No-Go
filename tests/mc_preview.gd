@@ -19,6 +19,6 @@ func _ready() -> void:
 			mc.set_console_alert("engineer", true)
 			if shot == "panel":
 				await get_tree().create_timer(0.3).timeout
-				mc.open_console("engineer")
+				mc.open_console(args[2] if args.size() > 2 else "engineer")
 		_:
 			mc.player.position = Vector3(0, 0.1, 7.0)
