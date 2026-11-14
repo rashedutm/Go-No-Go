@@ -272,6 +272,7 @@ func repair() -> bool:
 # ================================================================ event effects (M5)
 
 var safe_until := -1.0   # day when an event's timed safe mode ends (-1 = none)
+var risk_bonus := 0.0    # added to every risk chance (Hard difficulty)
 
 
 ## Cost in $M of a choice's effects (for disabling choices the reserve can't pay for).
@@ -290,7 +291,7 @@ func apply_effects(effects: Dictionary, rng: RandomNumberGenerator) -> String:
 			"health":
 				health = clampf(health + float(v), 0.0, 100.0)
 			"health_risk":
-				if rng.randf() < float(v.get("p", 0.5)):
+				if rng.randf() < float(v.get("p", 0.5)) + risk_bonus:
 					health = clampf(health + float(v.get("health", -10)), 0.0, 100.0)
 					outcome = "Bad luck: the spacecraft was damaged (%d%% health)." % int(v.get("health", -10))
 				else:
@@ -298,7 +299,7 @@ func apply_effects(effects: Dictionary, rng: RandomNumberGenerator) -> String:
 			"power_penalty":
 				power_penalty = clampf(power_penalty + float(v), 0.0, 0.9)
 			"power_risk":
-				if rng.randf() < float(v.get("p", 0.3)):
+				if rng.randf() < float(v.get("p", 0.3)) + risk_bonus:
 					power_penalty = clampf(power_penalty + float(v.get("power_penalty", 0.3)), 0.0, 0.9)
 					outcome = "The fix failed: power is reduced."
 				else:
@@ -318,6 +319,8 @@ func apply_effects(effects: Dictionary, rng: RandomNumberGenerator) -> String:
 			"storage_clear":
 				data_lost_gb += storage_gb
 				storage_gb = 0.0
+			"contact_hours":
+				extra_contact_hours += float(v)
 			"end_early_days":
 				total_days = maxf(day + 1.0, total_days - float(v))
 			"instrument_off":

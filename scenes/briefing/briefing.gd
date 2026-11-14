@@ -107,6 +107,8 @@ func _build_ui() -> void:
 	NeonUI.body(fl, 13, NeonUI.TEXT, true)
 	fv.add_child(fl)
 
+	v.add_child(DifficultyPicker.new())
+
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 10)
 	v.add_child(buttons)

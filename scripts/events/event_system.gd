@@ -18,15 +18,30 @@ var active: Dictionary = {}
 var time_left := 0.0
 var _until_next := FIRST_DELAY
 var _used: Array = []
+var difficulty := "normal"     # "easy" | "normal" | "hard"
+var timer_mult := 1.0
+var gap_mult := 1.0
 
 
-func setup(p_sim: MissionSim, seed_value := 0) -> void:
+func setup(p_sim: MissionSim, seed_value := 0, p_difficulty := "normal") -> void:
 	sim = p_sim
+	difficulty = p_difficulty
+	match difficulty:
+		"easy":
+			timer_mult = 1.5
+			gap_mult = 1.4
+		"hard":
+			timer_mult = 0.7
+			gap_mult = 0.75
+			sim.risk_bonus = 0.15
+		_:
+			timer_mult = 1.0
+			gap_mult = 1.0
 	if seed_value != 0:
 		rng.seed = seed_value
 	else:
 		rng.randomize()
-	_until_next = FIRST_DELAY
+	_until_next = FIRST_DELAY * gap_mult
 
 
 func _has_power_kind(kind: String) -> bool:
@@ -85,7 +100,7 @@ func update(real_dt: float, paused: bool, frozen: bool) -> void:
 
 func start(ev: Dictionary) -> void:
 	active = ev
-	time_left = float(ev.get("timer_s", 20))
+	time_left = float(ev.get("timer_s", 20)) * timer_mult
 	_used.append(ev["id"])
 	sim.add_log("ALERT: %s" % ev["title"])
 	event_started.emit(ev)
@@ -120,7 +135,7 @@ func choose(idx: int, timed_out := false) -> bool:
 	if outcome != "":
 		effect += ". " + outcome
 	sim.add_log(text, "%s: %s%s" % [title, ch["label"], ", because nobody answered in time" if timed_out else ""], effect)
-	_until_next = rng.randf_range(GAP_MIN, GAP_MAX)
+	_until_next = rng.randf_range(GAP_MIN, GAP_MAX) * gap_mult
 	event_resolved.emit(ev, ch, outcome, timed_out)
 	return true
 
@@ -145,3 +160,55 @@ static func make_beep() -> AudioStreamWAV:
 	wav.stereo = false
 	wav.data = data
 	return wav
+
+
+# ================================================================ manual fixes (Normal / Hard)
+
+## True when problems must be fixed with console tools instead of picking a choice.
+func is_manual() -> bool:
+	return difficulty != "easy"
+
+
+## The repair tools a console offers in Normal/Hard: one per distinct "fix.action" of the events
+## that belong to this console (and fit this mission). [{action, label, cost}]
+func tools_for(console: String) -> Array:
+	var seen := {}
+	var out: Array = []
+	for ev in eligible():
+		if ev.get("console", "") != console:
+			continue
+		var fix: Dictionary = ev.get("fix", {})
+		var act: String = fix.get("action", "")
+		if act == "" or seen.has(act):
+			continue
+		seen[act] = true
+		var cost := MissionSim.effects_cost(ev["choices"][int(ev.get("recommended", 0))].get("effects", {}))
+		out.append({"action": act, "label": fix.get("label", act), "cost": cost})
+	return out
+
+
+## The player used a console tool. Returns "fixed", "wrong" or "nothing".
+func try_fix(action: String) -> String:
+	if active.is_empty():
+		return "nothing"
+	var fix: Dictionary = active.get("fix", {})
+	if fix.get("action", "") == action or (action == "safe_mode" and fix.get("type", "") == "safe_mode"):
+		var rec := int(active.get("recommended", 0))
+		if not can_afford(active["choices"][rec]):
+			return "wrong"
+		choose(rec)
+		return "fixed"
+	# wrong tool: it still costs what it normally costs, and does not help
+	var cost := 0.0
+	for t in tools_for(active.get("console", "")):
+		if t["action"] == action:
+			cost = t["cost"]
+	for ev in eligible():
+		if ev.get("fix", {}).get("action", "") == action:
+			cost = MissionSim.effects_cost(ev["choices"][int(ev.get("recommended", 0))].get("effects", {}))
+	if cost > 0.0:
+		sim.reserve_musd = maxf(sim.reserve_musd - cost, 0.0)
+	sim.add_log("Tried the wrong fix during %s." % str(active["title"]).capitalize(),
+		"Used the wrong tool for %s" % str(active["title"]).capitalize(),
+		"Wasted $%d M and time" % int(cost) if cost > 0.0 else "Wasted time")
+	return "wrong"

@@ -112,3 +112,15 @@ func load_progress() -> void:
 func reset_progress() -> void:
 	campaign = {"unlocked": ["earth"], "stars": {}, "best_score": {}}
 	save_progress()
+
+
+## "easy" | "normal" | "hard". Chosen on the briefing screen; default = easy on the first
+## mission (Fire Watch), normal afterwards.
+func difficulty() -> String:
+	if has_meta("difficulty"):
+		return str(get_meta("difficulty"))
+	return "easy" if current_mission_id == "earth" else "normal"
+
+
+func set_difficulty(level: String) -> void:
+	set_meta("difficulty", level)
