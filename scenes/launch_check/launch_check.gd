@@ -287,11 +287,16 @@ func _set_meta(text: String) -> void:
 
 # ===================================================================== the poll
 
-func _wait(seconds: float) -> void:
+func _wait(seconds: float) -> bool:
 	var t := 0.0
 	while t < seconds and not _skip:
+		if not is_inside_tree():
+			return false
 		await get_tree().process_frame
+		if not is_inside_tree():
+			return false
 		t += get_process_delta_time()
+	return is_inside_tree()
 
 
 func _run_poll() -> void:
@@ -299,6 +304,8 @@ func _run_poll() -> void:
 	_set_chip("STANDBY", NeonUI.GOLD)
 	_set_meta("AWAITING STATION REPORTS")
 	await _wait(1.4)
+	if not is_inside_tree():
+		return
 	var nogo := 0
 	for st in POLL_ORDER:
 		var r: Dictionary = _rows[st]
@@ -308,6 +315,8 @@ func _run_poll() -> void:
 		r["call"].modulate = C_WAIT
 		Sfx.play("beep", -6.0)
 		await _wait(STEP_TIME * 0.6)
+		if not is_inside_tree():
+			return
 		var fails: Array = _results[st]
 		if fails.is_empty():
 			r["light"].bg_color = C_GOOD
@@ -323,6 +332,8 @@ func _run_poll() -> void:
 			r["fix"].visible = true
 			Sfx.play("nogo", -4.0)
 		await _wait(STEP_TIME * 0.4)
+		if not is_inside_tree():
+			return
 	if nogo == 0:
 		_say("We are GO for launch!", NeonUI.GREEN)
 		_set_chip("GO FOR LAUNCH", NeonUI.GREEN)
