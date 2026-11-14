@@ -131,7 +131,7 @@ func _build_room() -> void:
 		comp.position = p + Vector3(0, 0.9, -0.30)
 		add_child(comp)
 		var chair := Props.chair()
-		chair.position = p + Vector3(0.4, 0, 1.0)
+		chair.position = p + Vector3(0, 0, 1.0)
 		add_child(chair)
 
 

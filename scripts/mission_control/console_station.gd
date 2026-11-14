@@ -35,7 +35,7 @@ func setup(p_key: String, p_title: String, p_color: Color) -> void:
 	_screen_mat = computer.get_meta("screen_material", null) as StandardMaterial3D
 	# chair (Asset Store low-poly office chair, facing the desk)
 	var chair := Props.chair()
-	chair.position = Vector3(0.39, 0, 0.98)
+	chair.position = Vector3(0, 0, 0.98)
 	add_child(chair)
 	# sign
 	MCBuild.label(self, p_title, Vector3(0, 1.95, -0.25), p_color, 56, 0.005)
