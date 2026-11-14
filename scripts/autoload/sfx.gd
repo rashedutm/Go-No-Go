@@ -206,9 +206,7 @@ func _build_menu() -> void:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 10)
 	panel.add_child(v)
-	v.add_child(Neon.kicker("GO / NO-GO", Neon.CYAN, 11))
 	v.add_child(Neon.display("MISSION MENU", 38, Neon.TEXT))
-	v.add_child(Neon.caption("FLIGHT OPERATIONS  ·  PAUSED", 13))
 	v.add_child(Neon.rule(Neon.CYAN_DIM))
 
 	var resume := Button.new()
@@ -257,9 +255,6 @@ func _build_menu() -> void:
 		quit.pressed.connect(_exit_game)
 		v.add_child(quit)
 
-	var hint := Neon.caption("ESC TO RESUME", 11)
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	v.add_child(hint)
 	_update_buttons()
 
 
