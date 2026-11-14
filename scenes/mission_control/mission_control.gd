@@ -210,12 +210,10 @@ func _console_body(key: String) -> String:
 				sim.power_gen_w, sim.power_load_w, sim.battery_pct(), f.call(sim.battery_wh), f.call(sim.battery_max), sim.health,
 				"   ·   [color=#ffb74d]SAFE MODE[/color]" if sim.safe_mode else ""]
 		"science":
-			var lines: Array = []
-			for i in sim.instruments_on:
-				lines.append("%s: %s" % [GameData.get_item("instruments", i).get("name", i), "ON" if sim.instruments_on[i] else "off"])
-			return "[b]Instruments[/b]\n%s\n\nMaking %.1f Gb/day   ·   Returned %s / %s Gb (%d%%)" % [
-				"\n".join(lines), sim.data_rate_gb_day, f.call(sim.data_returned_gb), f.call(sim.mission.get("data_goal_gb", 0)),
-				int(100.0 * sim.data_returned_gb / maxf(float(sim.mission.get("data_goal_gb", 1)), 1.0))]
+			return "[b]Instruments[/b]: click to switch each one on or off.\nOff saves power and memory, but makes no science.\n\nMaking %.1f Gb/day   ·   Returned %s / %s Gb (%d%%)%s" % [
+				sim.data_rate_gb_day, f.call(sim.data_returned_gb), f.call(sim.mission.get("data_goal_gb", 0)),
+				int(100.0 * sim.data_returned_gb / maxf(float(sim.mission.get("data_goal_gb", 1)), 1.0)),
+				"\n[color=#ffb74d]SAFE MODE is on: instruments are off.[/color]" if sim.safe_mode else ""]
 		"comms":
 			return "[b]Communications[/b]\nSending %.1f Gb/day%s\nMemory: %d%% full  (%s / %s Gb)\nData lost: %s Gb   ·   Signal delay: %.1f min" % [
 				sim.downlink_gb_day, "   ·   [color=#ff8a80]BLACKOUT[/color]" if sim.blackout_days > 0.0 else "", sim.storage_pct(),
