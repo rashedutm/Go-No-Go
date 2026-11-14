@@ -4,18 +4,18 @@
 # Skippable with the SKIP button or Space. Owner: Member C (Daniel).
 extends Node3D
 
-const TOTAL := 21.0
+const TOTAL := 22.5
 const LIFTOFF_T := 3.0
-const CUT_T := 5.4
-const SEP_T := 6.1
-const DEPLOY_T := 6.4
-const DEPLOY_END := 7.4
-const COCKPIT_IN_T := 7.2
-const CONTROL_T := 8.2
-const CONTROL_END := 16.8
-const ARRIVE_T := 19.0
-const FADE_OUT_T := 20.0
-const STAGE2_T := 6.9
+const CUT_T := 7.0
+const SEP_T := 7.7
+const DEPLOY_T := 8.0
+const DEPLOY_END := 9.0
+const COCKPIT_IN_T := 8.8
+const CONTROL_T := 9.8
+const CONTROL_END := 18.4
+const ARRIVE_T := 20.5
+const FADE_OUT_T := 21.5
+const STAGE2_T := 8.5
 const RUMBLE_FILE := "res://audio/jerryblessed-space-rocket-launch-rumble-544846.wav"
 const STARS_MAP := "res://art/planets/2k_stars.jpg"
 
@@ -47,6 +47,9 @@ var _flame: MeshInstance3D
 var _flame_inner: MeshInstance3D
 var _glow: OmniLight3D
 var _smoke: CPUParticles3D
+var _smoke_left: CPUParticles3D
+var _smoke_right: CPUParticles3D
+var _trail_smoke: CPUParticles3D
 var _pad_cam: Camera3D
 var _space_cam: Camera3D
 
@@ -76,6 +79,7 @@ var _asteroid_root: Node3D
 var _asteroids: Array[Dictionary] = []
 var _asteroid_timer := 0.0
 var _ship_vel := Vector2.ZERO
+var _mouse_steer := Vector2.ZERO
 var _hull := 3
 var _shake := 0.0
 var _cockpit_on := false
@@ -156,6 +160,12 @@ func _launch() -> void:
 	_flame_inner.visible = true
 	_glow.light_energy = 6.0
 	_smoke.emitting = true
+	if _smoke_left:
+		_smoke_left.emitting = true
+	if _smoke_right:
+		_smoke_right.emitting = true
+	if _trail_smoke:
+		_trail_smoke.emitting = true
 	Sfx.play("whoosh", -2.0)
 	Sfx.play("go", -6.0)
 	if _rumble:
@@ -172,7 +182,11 @@ func _update_pad() -> void:
 	_pad_cam.look_at(_rocket.position + Vector3(0, 10, 0), Vector3.UP)
 	if ft > 1.4:
 		_big.text = ""
-		_sub.text = "ASCENT  ·  STAGE SEPARATION"
+		_sub.text = "ASCENT  ·  STAGE 1 NOMINAL"
+	if ft > 2.6:
+		_sub.text = "MAX Q  ·  STAGE 1 NOMINAL"
+	if ft > 3.6:
+		_sub.text = "STAGE SEPARATION ARMED"
 
 
 func _enter_space() -> void:
@@ -185,6 +199,8 @@ func _enter_space() -> void:
 		_env.ambient_light_energy = 0.22
 	_ship.position = Vector3.ZERO
 	_ship_vel = Vector2.ZERO
+	_mouse_steer = Vector2.ZERO
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_hull = 3
 	_shake = 0.0
 	_cockpit_on = false
@@ -308,6 +324,8 @@ func _update_space(delta: float) -> void:
 	elif _t < CONTROL_END:
 		if not _cockpit_on:
 			_cockpit_on = true
+			_mouse_steer = Vector2.ZERO
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 			if _mission_card:
 				_mission_card.visible = false
 			if _phase_track:
@@ -320,9 +338,10 @@ func _update_space(delta: float) -> void:
 			Sfx.play("go", -8.0)
 		_cockpit_vis = 1.0
 
-		# --- player steering (keyboard, no InputMap edits)
-		var ix := 0.0
-		var iy := 0.0
+		# --- player steering: captured mouse (self-centering) + keyboard
+		_mouse_steer = _mouse_steer.lerp(Vector2.ZERO, 1.0 - exp(-delta * 2.6))
+		var ix := _mouse_steer.x
+		var iy := _mouse_steer.y
 		if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
 			ix -= 1.0
 		if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
@@ -331,7 +350,7 @@ func _update_space(delta: float) -> void:
 			iy -= 1.0
 		if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
 			iy += 1.0
-		_ship_vel = _ship_vel.lerp(Vector2(ix, iy) * Vector2(3.4, 2.2), 1.0 - exp(-delta * 6.5))
+		_ship_vel = _ship_vel.lerp(Vector2(clampf(ix, -1.0, 1.0), clampf(iy, -1.0, 1.0)) * Vector2(3.4, 2.2), 1.0 - exp(-delta * 6.5))
 		_ship.position.x = clampf(_ship.position.x + _ship_vel.x * delta, -3.2, 3.2)
 		_ship.position.y = clampf(_ship.position.y + _ship_vel.y * delta, -1.9, 1.9)
 		_ship.position.z = 0.0
@@ -340,7 +359,7 @@ func _update_space(delta: float) -> void:
 		_asteroid_timer -= delta
 		if _asteroid_timer <= 0.0 and _t < CONTROL_END - 1.2:
 			_spawn_asteroid()
-			_asteroid_timer = randf_range(0.30, 0.58)
+			_asteroid_timer = randf_range(0.34, 0.62)
 		_update_asteroids(delta)
 
 		_shake = maxf(_shake - delta * 2.4, 0.0)
@@ -353,6 +372,7 @@ func _update_space(delta: float) -> void:
 	else:
 		if not _autopilot:
 			_autopilot = true
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 			_clear_asteroids()
 			_letterbox_vis = 0.0
 			_big.visible = true
@@ -384,34 +404,68 @@ func _update_space(delta: float) -> void:
 	_apply_letterbox()
 
 
+func _rock_mesh(kind: int, col: Color) -> PrimitiveMesh:
+	var mesh: PrimitiveMesh
+	match kind:
+		0:
+			var sm := SphereMesh.new()
+			sm.radius = 1.0
+			sm.height = 2.0
+			sm.radial_segments = 7
+			sm.rings = 5
+			mesh = sm
+		1:
+			var bm := BoxMesh.new()
+			bm.size = Vector3(1.7, 1.45, 1.6)
+			mesh = bm
+		_:
+			var cm := CylinderMesh.new()
+			cm.top_radius = 0.72
+			cm.bottom_radius = 1.0
+			cm.height = 1.9
+			cm.radial_segments = 7
+			cm.rings = 1
+			mesh = cm
+	var m := StandardMaterial3D.new()
+	m.albedo_color = col
+	m.roughness = 1.0
+	mesh.material = m
+	return mesh
+
+
 func _spawn_asteroid() -> void:
 	if _asteroid_root == null:
 		return
 	var node := Node3D.new()
 	node.name = "Asteroid"
+	var r := randf_range(0.45, 1.15)
+	var icy := randf() < 0.22
+	var g := randf_range(0.26, 0.46)
+	var col := Color(0.62, 0.74, 0.86) if icy else Color(g * randf_range(1.0, 1.18), g * randf_range(0.92, 1.02), g * randf_range(0.74, 0.90))
 	var mi := MeshInstance3D.new()
-	var mesh := SphereMesh.new()
-	mesh.radius = 1.0
-	mesh.height = 2.0
-	mesh.radial_segments = 8
-	mesh.rings = 5
-	var m := StandardMaterial3D.new()
-	var g := randf_range(0.28, 0.44)
-	m.albedo_color = Color(g * 1.15, g, g * 0.82)
-	m.roughness = 1.0
-	mesh.material = m
-	mi.mesh = mesh
+	mi.mesh = _rock_mesh(randi() % 3, col)
+	mi.rotation = Vector3(randf_range(0, TAU), randf_range(0, TAU), randf_range(0, TAU))
 	node.add_child(mi)
-	var r := randf_range(0.50, 1.05)
-	node.scale = Vector3(r * randf_range(0.8, 1.3), r * randf_range(0.7, 1.2), r * randf_range(0.8, 1.3))
-	node.position = Vector3(randf_range(-4.6, 4.6), randf_range(-2.8, 2.8), -randf_range(50.0, 70.0))
+
+	# --- companion fragments: broken-off chunks that travel with the rock
+	if randf() < 0.5:
+		for i in randi_range(1, 2):
+			var frag := MeshInstance3D.new()
+			frag.mesh = _rock_mesh(randi() % 3, col.darkened(randf_range(0.0, 0.18)))
+			frag.position = Vector3(randf_range(-1.5, 1.5), randf_range(-1.2, 1.2), randf_range(-1.4, 1.4))
+			frag.scale = Vector3.ONE * randf_range(0.16, 0.34)
+			frag.rotation = Vector3(randf_range(0, TAU), randf_range(0, TAU), randf_range(0, TAU))
+			node.add_child(frag)
+
+	node.scale = Vector3(r, r, r) * Vector3(randf_range(0.82, 1.20), randf_range(0.72, 1.12), randf_range(0.82, 1.20))
+	node.position = Vector3(randf_range(-4.6, 4.6), randf_range(-2.8, 2.8), -randf_range(48.0, 68.0))
 	node.rotation = Vector3(randf_range(0, TAU), randf_range(0, TAU), randf_range(0, TAU))
 	_asteroid_root.add_child(node)
 	_asteroids.append({
 		"node": node,
-		"speed": randf_range(15.0, 24.0),
+		"speed": randf_range(12.0, 20.0),
 		"radius": r,
-		"spin": Vector3(randf_range(-1.2, 1.2), randf_range(-1.2, 1.2), randf_range(-1.2, 1.2)),
+		"spin": Vector3(randf_range(-0.9, 0.9), randf_range(-0.9, 0.9), randf_range(-0.9, 0.9)),
 	})
 
 
@@ -511,12 +565,21 @@ func _finish() -> void:
 	if _done:
 		return
 	_done = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	MissionState.go_to("mission_control")
 
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
 		_finish()
+		return
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		return
+	if _cockpit_on and event is InputEventMouseMotion:
+		var mm := event as InputEventMouseMotion
+		_mouse_steer.x = clampf(_mouse_steer.x + mm.relative.x * 0.0065, -1.0, 1.0)
+		_mouse_steer.y = clampf(_mouse_steer.y + mm.relative.y * 0.0065, -1.0, 1.0)
 
 
 # ===================================================================== world
@@ -649,6 +712,27 @@ func _build_pad() -> void:
 	_smoke.position = Vector3(0, 1.3, 0)
 	_smoke.emitting = false
 	_pad_root.add_child(_smoke)
+
+	# --- ground billows pushed out to either side of the pad
+	_smoke_left = _smoke_particles(150, 4.6, Vector3(-1.0, 0.25, 0.35), 36.0,
+		4.0, 8.5, 2.0, 4.8, Vector3(0, 1.3, 0))
+	_smoke_left.name = "SmokeLeft"
+	_smoke_left.position = Vector3(-4.2, 1.6, 1.2)
+	_pad_root.add_child(_smoke_left)
+
+	_smoke_right = _smoke_particles(150, 4.6, Vector3(1.0, 0.25, 0.35), 36.0,
+		4.0, 8.5, 2.0, 4.8, Vector3(0, 1.3, 0))
+	_smoke_right.name = "SmokeRight"
+	_smoke_right.position = Vector3(4.2, 1.6, 1.2)
+	_pad_root.add_child(_smoke_right)
+
+	# --- exhaust trail left behind in world space as the rocket climbs
+	_trail_smoke = _smoke_particles(190, 3.0, Vector3(0, -1, 0), 16.0,
+		6.0, 10.0, 1.2, 2.8, Vector3(0, 0.15, 0))
+	_trail_smoke.name = "TrailSmoke"
+	_trail_smoke.local_coords = false
+	_trail_smoke.position = Vector3(0, -3.2, 0)
+	_rocket.add_child(_trail_smoke)
 
 	_pad_cam = Camera3D.new()
 	_pad_cam.fov = 52
@@ -998,7 +1082,7 @@ func _build_cockpit_ui() -> void:
 	var bh := HBoxContainer.new()
 	bh.add_theme_constant_override("separation", 10)
 	bottom_card.add_child(bh)
-	bh.add_child(NeonUI.mono("A / D  ·  W / S  ·  ARROWS", 11, NeonUI.MUTED))
+	bh.add_child(NeonUI.mono("MOUSE  ·  A/D  ·  W/S  ·  SPACE SKIP", 11, NeonUI.MUTED))
 	var sp := Control.new()
 	sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bh.add_child(sp)
@@ -1133,6 +1217,23 @@ func _flame_cone(top_r: float, bottom_r: float, height: float, color: Color) -> 
 	mesh.material = m
 	mi.mesh = mesh
 	return mi
+
+
+func _smoke_particles(amount: int, lifetime: float, direction: Vector3, spread: float,
+		vmin: float, vmax: float, smin: float, smax: float, gravity: Vector3) -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	p.amount = amount
+	p.lifetime = lifetime
+	p.direction = direction
+	p.spread = spread
+	p.initial_velocity_min = vmin
+	p.initial_velocity_max = vmax
+	p.gravity = gravity
+	p.scale_amount_min = smin
+	p.scale_amount_max = smax
+	p.mesh = _smoke_mesh()
+	p.emitting = false
+	return p
 
 
 func _smoke_mesh() -> SphereMesh:
