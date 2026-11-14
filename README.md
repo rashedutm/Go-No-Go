@@ -37,7 +37,7 @@ Less text, fewer buttons, more *doing*:
 | **M2 Design screen (2D)** | ✅ Done as a 2D version. It is the **fallback** while the 3D Hangar is built (`scenes/design/`). |
 | **M2a 3D models** | ✅ **Done.** `SpacecraftModel3D.build(design)`, `deploy_wings(model, t)` and `build_rocket(vehicle_id)` (children `Stage1`, `Stage2`, `Fairing`). Preview: `godot --path . res://tests/model_preview.tscn` |
 | **M2b 3D Hangar** | ✅ **Done.** `scenes/hangar/`: the spacecraft and rocket in a 3D hangar, an orbit camera (drag/wheel, it flies to each station's view), 4 station buttons with issue counts, a slim part tray with tabs, compact resource chips, and a hover tooltip with "why it matters". The briefing now opens the hangar (`go_to("hangar")`). Preview: `godot --path . res://tests/hangar_preview.tscn -- mars science` |
-| M3 Go/No-Go poll | ⏳ Member A, next |
+| **M3 Go/No-Go poll** | ✅ **Done.** `scenes/launch_check/`: a night launch pad in 3D with your rocket. The Flight Director polls Engineer → Science → Comms → Director, and each lights up GO (green) or NO-GO (red, with the reason and a **Fix it** button that opens that station in the hangar). Four GOs unlock **LAUNCH!** → `go_to("launch_anim")` (Daniel). Click or press a key to fast-forward. Preview: `godot --path . res://tests/poll_preview.tscn -- mars broken` |
 | M4–M5 3D Mission Control + events | ⏳ Emon. Until his scene exists, the game automatically uses `scenes/placeholders/`. |
 | M6 Launch/cruise, space view, debrief | ⏳ Daniel |
 
