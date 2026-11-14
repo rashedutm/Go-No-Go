@@ -12,6 +12,8 @@ const DEPLOY_T := 6.4
 const DEPLOY_END := 8.2
 const ARRIVE_T := 10.5
 const FADE_OUT_T := 11.6
+const STAGE2_T := 8.6
+const RUMBLE_FILE := "res://audio/launch_rumble.wav"
 const STARS_MAP := "res://art/planets/2k_stars.jpg"
 
 var design: Dictionary
@@ -25,6 +27,11 @@ var _launched := false
 var _space := false
 var _last_count := 3
 var _arrive_sfx := false
+var _sep_fx_done := false
+var _deploy_blip := false
+var _rumble: AudioStreamPlayer
+var _sep_puff: CPUParticles3D
+var _sep_flash: OmniLight3D
 
 var _pad_root: Node3D
 var _space_root: Node3D
@@ -66,6 +73,7 @@ func _ready() -> void:
 	_build_pad()
 	_build_space()
 	_build_ui()
+	_build_rumble()
 	Sfx.play("beep", -8.0)
 
 
@@ -108,6 +116,8 @@ func _launch() -> void:
 	_smoke.emitting = true
 	Sfx.play("whoosh", -2.0)
 	Sfx.play("go", -6.0)
+	if _rumble:
+		_rumble.play()
 
 
 func _update_pad() -> void:
@@ -136,18 +146,34 @@ func _enter_space() -> void:
 	_fade.color = Color.WHITE
 	_fade.modulate.a = 1.0
 	Sfx.play("snap", -5.0)
+	if _rumble:
+		_rumble.stop()
 
 
 func _update_space(delta: float) -> void:
 	var sep := maxf(_t - SEP_T, 0.0)
-	_stage1.position = Vector3(-sep * 1.6, -sep * 0.55, 10.2 + sep * 1.6)
-	_stage1.rotation.z = sep * 0.7
-	_stage1.rotation.x = sep * 0.4
-	_stage1.visible = _t < 6.85
-	_stage2.visible = _t < 7.0
+	_stage1.position = Vector3(-2.4 * sep, -1.1 * sep, 10.2 + 2.0 * sep)
+	_stage1.rotation.z = 0.9 * sep
+	_stage1.rotation.x = 0.45 * sep
+	# Keep the booster tumbling until it has clearly left the frame, then cull it.
+	_stage1.visible = _t < 7.6
+	var s2 := maxf(_t - STAGE2_T, 0.0)
+	_stage2.position = Vector3(-0.4 * s2, -1.6 * s2, 4.6 + 1.0 * s2)
+	_stage2.rotation.z = 0.25 * s2
+	_stage2.visible = _t < 11.2
+
+	if _t >= SEP_T and not _sep_fx_done:
+		_sep_fx_done = true
+		_sep_puff.restart()
+		_sep_puff.emitting = true
+		_sep_flash.light_energy = 3.0
+	_sep_flash.light_energy = maxf(_sep_flash.light_energy - delta * 9.0, 0.0)
 
 	var deploy := clampf((_t - DEPLOY_T) / (DEPLOY_END - DEPLOY_T), 0.0, 1.0)
 	SpacecraftModel3D.deploy_wings(_craft, deploy)
+	if deploy >= 1.0 and not _deploy_blip:
+		_deploy_blip = true
+		Sfx.play("fixed", -8.0)
 
 	var ship_z := -clampf((_t - 7.4) * 2.4, 0.0, 10.0)
 	_ship.position.z = ship_z
@@ -398,6 +424,34 @@ func _build_space() -> void:
 		fin.rotation.y = -a
 		_stage1.add_child(fin)
 
+	_sep_puff = CPUParticles3D.new()
+	_sep_puff.name = "SepPuff"
+	_sep_puff.amount = 16
+	_sep_puff.one_shot = true
+	_sep_puff.explosiveness = 1.0
+	_sep_puff.lifetime = 0.9
+	_sep_puff.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	_sep_puff.emission_sphere_radius = 0.6
+	_sep_puff.direction = Vector3(0, 0, 1)
+	_sep_puff.spread = 60.0
+	_sep_puff.initial_velocity_min = 1.0
+	_sep_puff.initial_velocity_max = 2.5
+	_sep_puff.gravity = Vector3.ZERO
+	_sep_puff.scale_amount_min = 0.6
+	_sep_puff.scale_amount_max = 1.4
+	_sep_puff.mesh = _smoke_mesh()
+	_sep_puff.position = Vector3(0, 0, 8.5)
+	_sep_puff.emitting = false
+	_ship.add_child(_sep_puff)
+
+	_sep_flash = OmniLight3D.new()
+	_sep_flash.name = "SepFlash"
+	_sep_flash.position = Vector3(0, 0, 8.5)
+	_sep_flash.omni_range = 14.0
+	_sep_flash.light_color = Color(1.0, 0.85, 0.6)
+	_sep_flash.light_energy = 0.0
+	_ship.add_child(_sep_flash)
+
 	_space_cam = Camera3D.new()
 	_space_cam.fov = 55
 	_space_cam.position = Vector3(6, 3.5, 16)
@@ -567,6 +621,51 @@ func _space_stage(top_r: float, bottom_r: float, height: float, color: Color) ->
 	nozzle.position = Vector3(0, 0, height * 0.5 + 0.4)
 	root.add_child(nozzle)
 	return root
+
+
+func _build_rumble() -> void:
+	_rumble = AudioStreamPlayer.new()
+	_rumble.name = "LaunchRumble"
+	_rumble.volume_db = -4.0
+	var stream: AudioStream = null
+	if ResourceLoader.exists(RUMBLE_FILE):
+		stream = load(RUMBLE_FILE) as AudioStream
+	if stream == null:
+		stream = _make_rumble()
+	_rumble.stream = stream
+	add_child(_rumble)
+
+
+## Procedural launch rumble (Member C, README §C step 7): brown noise + low-pass +
+## envelope. Drop a real file at res://audio/launch_rumble.wav to replace it.
+func _make_rumble() -> AudioStreamWAV:
+	var rate := 22050
+	var seconds := 4.0
+	var n := int(rate * seconds)
+	var data := PackedByteArray()
+	data.resize(n * 2)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var brown := 0.0
+	var lp := 0.0
+	for i in n:
+		var t := float(i) / float(rate)
+		brown = clampf(brown + rng.randf_range(-1.0, 1.0) * 0.02, -1.0, 1.0)
+		lp = lerpf(lp, brown, 0.06)
+		var env := 1.0
+		if t < 0.25:
+			env = t / 0.25
+		elif t > 3.0:
+			env = clampf(1.0 - (t - 3.0) / 1.0, 0.0, 1.0)
+		var wob := 0.80 + 0.20 * sin(t * 2.3) * sin(t * 0.8)
+		var v := clampf(lp * 5.0 * env * wob, -1.0, 1.0)
+		data.encode_s16(i * 2, int(v * 32000.0))
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = rate
+	stream.stereo = false
+	stream.data = data
+	return stream
 
 
 func _at(node: Node3D, pos: Vector3) -> Node3D:
