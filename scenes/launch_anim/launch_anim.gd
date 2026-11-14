@@ -701,6 +701,8 @@ func _build_pad() -> void:
 		l.light_energy = 6.0
 		l.light_color = Color(1.0, 0.95, 0.85)
 		_pad_root.add_child(l)
+		_pad_root.add_child(_at(_box(Vector3(0.2, 3, 0.2), Color(0.14, 0.15, 0.17), 0.3, 0.7), Vector3(p.x, 1.5, p.z)))
+		_pad_root.add_child(_at(_box(Vector3(1.0, 0.2, 1.0), Color(0.2, 0.2, 0.22), 0.2, 0.8), Vector3(p.x, 0.1, p.z)))
 		_pad_root.add_child(_at(_box(Vector3(1.2, 1.2, 1.2), Color(1, 1, 0.9), 0.0, 0.3), p))
 
 	var lv := str(design.get("launch_vehicle", ""))

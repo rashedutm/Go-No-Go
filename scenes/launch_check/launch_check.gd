@@ -49,11 +49,11 @@ func _build_world() -> void:
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = Color(0.02, 0.03, 0.08)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.25, 0.3, 0.5)
-	env.ambient_light_energy = 0.6
+	env.ambient_light_color = Color(0.26, 0.33, 0.43)
+	env.ambient_light_energy = 0.7
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.fog_enabled = true
-	env.fog_light_color = Color(0.08, 0.1, 0.2)
+	env.fog_light_color = Color(0.06, 0.09, 0.14)
 	env.fog_density = 0.012
 	we.environment = env
 	add_child(we)
@@ -61,7 +61,7 @@ func _build_world() -> void:
 	var moon := DirectionalLight3D.new()
 	moon.rotation_degrees = Vector3(-35, 140, 0)
 	moon.light_color = Color(0.6, 0.7, 1.0)
-	moon.light_energy = 0.5
+	moon.light_energy = 0.9
 	moon.shadow_enabled = true
 	add_child(moon)
 
@@ -74,10 +74,20 @@ func _build_world() -> void:
 		star.position = dir * 160.0
 		add_child(star)
 
-	# ground + pad
-	add_child(_at(SpacecraftModel3D._box(Vector3(400, 0.2, 400), Color(0.08, 0.1, 0.09), 0.0, 0.9), Vector3(0, -0.1, 0)))
+	# grass, hardstand and surrounding complex
+	var ground := SpacecraftModel3D._box(Vector3(400, 0.2, 400), Color(0.10, 0.19, 0.11), 0.0, 1.0)
+	var gm := ground.mesh.material as StandardMaterial3D
+	gm.emission_enabled = true
+	gm.emission = Color(0.015, 0.04, 0.015)
+	add_child(_at(ground, Vector3(0, -0.1, 0)))
+	var lawn := SpacecraftModel3D._box(Vector3(90, 0.08, 90), Color(0.11, 0.20, 0.11), 0.0, 1.0)
+	var lm := lawn.mesh.material as StandardMaterial3D
+	lm.emission_enabled = true
+	lm.emission = Color(0.018, 0.045, 0.018)
+	add_child(_at(lawn, Vector3(0, 0.04, 0)))
 	add_child(_at(SpacecraftModel3D._box(Vector3(18, 1.0, 18), Color(0.4, 0.4, 0.42), 0.2, 0.8), Vector3(0, 0.5, 0)))
 	add_child(_at(SpacecraftModel3D._box(Vector3(5, 0.3, 5), Color(0.2, 0.2, 0.22), 0.5, 0.6), Vector3(0, 1.15, 0)))
+	_build_pad_surroundings()
 
 	# rocket (scaled up to "real" pad size) and tower
 	var lv := str(MissionState.design.get("launch_vehicle", ""))
@@ -90,17 +100,21 @@ func _build_world() -> void:
 	for y in range(4, 40, 5):
 		add_child(_at(SpacecraftModel3D._box(Vector3(4.5, 0.4, 0.6), red, 0.4, 0.6), Vector3(-4.6, y, 0)))
 
-	# floodlights
-	for p in [Vector3(14, 3, 14), Vector3(-14, 3, 12), Vector3(12, 3, -14)]:
+	# floodlights on proper masts
+	for p in [Vector3(14, 0, 14), Vector3(-14, 0, 12), Vector3(12, 0, -14)]:
+		var top: Vector3 = p + Vector3(0, 7, 0)
 		var l := SpotLight3D.new()
-		l.position = p
-		l.look_at_from_position(p, Vector3(0, 14, 0), Vector3.UP)
+		l.position = top
+		l.look_at_from_position(top, Vector3(0, 14, 0), Vector3.UP)
 		l.spot_range = 60
 		l.spot_angle = 22
 		l.light_energy = 6.0
 		l.light_color = Color(1, 0.95, 0.85)
 		add_child(l)
-		add_child(_at(SpacecraftModel3D._box(Vector3(1, 1, 1), Color(1, 1, 0.9), 0.0, 0.3), p))
+		add_child(_at(SpacecraftModel3D._box(Vector3(0.35, 7, 0.35), Color(0.14, 0.15, 0.17), 0.3, 0.7), Vector3(p.x, 3.5, p.z)))
+		add_child(_at(SpacecraftModel3D._box(Vector3(1.3, 0.3, 1.3), Color(0.2, 0.2, 0.22), 0.2, 0.8), Vector3(p.x, 0.15, p.z)))
+		add_child(_at(SpacecraftModel3D._box(Vector3(1.8, 0.18, 0.18), Color(0.2, 0.2, 0.22), 0.2, 0.7), top))
+		add_child(_at(SpacecraftModel3D._box(Vector3(0.9, 0.6, 0.5), Color(1, 1, 0.9), 0.0, 0.3), top))
 
 	# beacon light on the tower that turns green/red with the poll result
 	_beacon = OmniLight3D.new()
@@ -114,6 +128,152 @@ func _build_world() -> void:
 	_cam.fov = 50
 	_cam.h_offset = -11.0
 	add_child(_cam)
+
+
+func _build_pad_surroundings() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 77
+	var concrete := Color(0.44, 0.45, 0.42)
+	var dark_concrete := Color(0.30, 0.31, 0.29)
+
+	add_child(_at(SpacecraftModel3D._box(Vector3(44, 0.05, 44), concrete, 0.0, 0.8), Vector3(0, 0.06, 0)))
+
+	# Crawlerway with side rails.
+	var way := SpacecraftModel3D._box(Vector3(14, 0.06, 130), dark_concrete, 0.0, 0.9)
+	way.position = Vector3(-38, 0.035, -38)
+	way.rotation.y = deg_to_rad(28)
+	add_child(way)
+	var across := Vector3(cos(way.rotation.y), 0, -sin(way.rotation.y))
+	for side in [-1.0, 1.0]:
+		var rail := SpacecraftModel3D._box(Vector3(0.9, 0.08, 130), Color(0.16, 0.17, 0.16), 0.1, 0.7)
+		rail.position = way.position + across * (side * 4.6) + Vector3(0, 0.02, 0)
+		rail.rotation.y = way.rotation.y
+		add_child(rail)
+
+	# Perimeter roads.
+	add_child(_at(SpacecraftModel3D._box(Vector3(120, 0.04, 3.5), dark_concrete, 0.0, 0.9), Vector3(0, 0.03, 52)))
+	add_child(_at(SpacecraftModel3D._box(Vector3(120, 0.04, 3.5), dark_concrete, 0.0, 0.9), Vector3(0, 0.03, -52)))
+	add_child(_at(SpacecraftModel3D._box(Vector3(3.5, 0.04, 100), dark_concrete, 0.0, 0.9), Vector3(-52, 0.03, 0)))
+	add_child(_at(SpacecraftModel3D._box(Vector3(3.5, 0.04, 100), dark_concrete, 0.0, 0.9), Vector3(52, 0.03, 0)))
+
+	# Distant water band.
+	var water := SpacecraftModel3D._box(Vector3(190, 0.04, 28), Color(0.02, 0.06, 0.10), 0.45, 0.25)
+	water.position = Vector3(-20, 0.02, -105)
+	var wm := water.mesh.material as StandardMaterial3D
+	wm.emission_enabled = true
+	wm.emission = Color(0.015, 0.045, 0.08)
+	add_child(water)
+
+	# Grass patches.
+	for i in 10:
+		var px := rng.randf_range(-130.0, 130.0)
+		var pz := rng.randf_range(-100.0, 100.0)
+		if absf(px) < 55.0 and absf(pz) < 55.0:
+			continue
+		var g := rng.randf_range(0.055, 0.10)
+		var patch := SpacecraftModel3D._box(Vector3(rng.randf_range(26.0, 68.0), 0.02, rng.randf_range(22.0, 52.0)),
+			Color(g * 0.6, g * 1.5, g * 0.8), 0.0, 1.0)
+		patch.position = Vector3(px, 0.012, pz)
+		add_child(patch)
+
+	# Treeline is outside the camera orbit, so it never blocks the rocket.
+	for i in 34:
+		var a := rng.randf_range(0.0, TAU)
+		var d := rng.randf_range(82.0, 155.0)
+		_pad_tree(Vector3(cos(a) * d, 0.0, sin(a) * d), rng.randf_range(0.9, 1.8))
+
+	_pad_building(Vector3(-88, 0, -18), Vector3(16, 6, 12), Color(0.34, 0.35, 0.36))
+	_pad_building(Vector3(84, 0, 28), Vector3(14, 5, 10), Color(0.30, 0.31, 0.33))
+	_pad_building(Vector3(-80, 0, 55), Vector3(12, 4, 9), Color(0.32, 0.33, 0.35))
+	_pad_building(Vector3(30, 0, 18), Vector3(12, 4, 8), Color(0.40, 0.41, 0.42))
+	_pad_building(Vector3(25, 0, -30), Vector3(14, 5, 10), Color(0.38, 0.39, 0.40))
+	_pad_water_tower(Vector3(-78, 0, 50))
+
+	# Lightning masts.
+	for p in [Vector3(38, 0, 28), Vector3(-38, 0, 34), Vector3(34, 0, -36)]:
+		add_child(_at(SpacecraftModel3D._box(Vector3(0.5, 32, 0.5), Color(0.17, 0.18, 0.18), 0.5, 0.5), p + Vector3(0, 16, 0)))
+		var beacon := SpacecraftModel3D._sphere(0.28, Color(1.0, 0.15, 0.08), true)
+		beacon.position = p + Vector3(0, 32.4, 0)
+		add_child(beacon)
+
+	for p in [Vector3(24, 2, 24), Vector3(-24, 2, 22), Vector3(22, 2, -24)]:
+		var l := OmniLight3D.new()
+		l.position = p
+		l.omni_range = 18
+		l.light_energy = 0.55
+		l.light_color = Color(1.0, 0.78, 0.52)
+		add_child(l)
+
+
+func _pad_tree(pos: Vector3, s: float) -> void:
+	var trunk := SpacecraftModel3D._box(Vector3(0.35 * s, 2.2 * s, 0.35 * s), Color(0.16, 0.12, 0.08), 0.0, 1.0)
+	trunk.position = pos + Vector3(0, 1.1 * s, 0)
+	add_child(trunk)
+	var canopy := MeshInstance3D.new()
+	var cone := CylinderMesh.new()
+	cone.top_radius = 0.0
+	cone.bottom_radius = 1.7 * s
+	cone.height = 4.6 * s
+	cone.radial_segments = 6
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.05, 0.13, 0.07)
+	mat.roughness = 1.0
+	mat.emission_enabled = true
+	mat.emission = Color(0.02, 0.045, 0.025)
+	cone.material = mat
+	canopy.mesh = cone
+	canopy.position = pos + Vector3(0, 3.6 * s, 0)
+	add_child(canopy)
+
+
+func _pad_building(pos: Vector3, size: Vector3, col: Color) -> void:
+	var body := SpacecraftModel3D._box(size, col, 0.0, 0.85)
+	body.position = pos + Vector3(0, size.y * 0.5, 0)
+	add_child(body)
+	var roof := SpacecraftModel3D._box(Vector3(size.x * 1.04, 0.35, size.z * 1.04), col.darkened(0.22), 0.0, 0.8)
+	roof.position = pos + Vector3(0, size.y, 0)
+	add_child(roof)
+	var win := SpacecraftModel3D._box(Vector3(size.x * 0.7, 0.5, 0.05), Color(0.7, 0.82, 1.0), 0.0, 0.3)
+	win.position = pos + Vector3(0, size.y * 0.55, size.z * 0.5 + 0.03)
+	var wmat := win.mesh.material as StandardMaterial3D
+	wmat.emission_enabled = true
+	wmat.emission = Color(0.35, 0.55, 0.9)
+	add_child(win)
+
+
+func _pad_water_tower(pos: Vector3) -> void:
+	add_child(_at(SpacecraftModel3D._box(Vector3(7, 0.6, 7), Color(0.32, 0.33, 0.31), 0, 0.9), pos + Vector3(0, 0.3, 0)))
+	var column := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.8
+	cyl.bottom_radius = 1.2
+	cyl.height = 20
+	cyl.radial_segments = 8
+	var cm := StandardMaterial3D.new()
+	cm.albedo_color = Color(0.42, 0.44, 0.45)
+	cm.metallic = 0.3
+	cm.roughness = 0.6
+	cyl.material = cm
+	column.mesh = cyl
+	column.position = pos + Vector3(0, 10, 0)
+	add_child(column)
+	var tank := MeshInstance3D.new()
+	var sph := SphereMesh.new()
+	sph.radius = 3.2
+	sph.height = 6.4
+	sph.radial_segments = 12
+	sph.rings = 6
+	var sm := StandardMaterial3D.new()
+	sm.albedo_color = Color(0.5, 0.53, 0.55)
+	sm.metallic = 0.3
+	sm.roughness = 0.5
+	sph.material = sm
+	tank.mesh = sph
+	tank.position = pos + Vector3(0, 22, 0)
+	add_child(tank)
+	var beacon := SpacecraftModel3D._sphere(0.35, Color(1.0, 0.15, 0.08), true)
+	beacon.position = pos + Vector3(0, 25.4, 0)
+	add_child(beacon)
 
 
 func _process(delta: float) -> void:
