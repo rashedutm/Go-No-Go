@@ -14,6 +14,9 @@ var _cam: Camera3D
 var _t := 0.0
 var _rows := {}
 var _status: Label
+var _status_meta: Label
+var _status_chip: PanelContainer
+var _status_chip_label: Label
 var _launch_btn: Button
 var _skip := false
 var _results := {}   # station -> Array of failed checks
@@ -139,26 +142,35 @@ func _build_ui() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(root)
 
+	var mid := MissionState.current_mission_id
+	var m := GameData.get_mission(mid)
+	var kick_row := HBoxContainer.new()
+	kick_row.position = Vector2(40, 22)
+	kick_row.add_theme_constant_override("separation", 10)
+	root.add_child(kick_row)
+	kick_row.add_child(NeonUI.stripes(NeonUI.GOLD))
+	var kick := NeonUI.kicker("MISSION %02d / %s" % [int(m.get("order", 0)), str(m.get("name", "")).to_upper()], NeonUI.CYAN, 11)
+	kick.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	kick_row.add_child(kick)
+
 	var title := Label.new()
 	title.text = "GO / NO-GO POLL"
-	title.add_theme_font_size_override("font_size", 40)
-	title.position = Vector2(40, 28)
+	NeonUI.display(title, 40, NeonUI.TEXT)
+	title.position = Vector2(40, 48)
 	root.add_child(title)
 	var sub := Label.new()
-	sub.text = "%s  ·  %s" % [GameData.get_mission(MissionState.current_mission_id).get("name", ""), GameData.get_mission(MissionState.current_mission_id).get("destination", "")]
-	sub.modulate = Color(0.7, 0.8, 1.0)
-	sub.position = Vector2(42, 80)
+	sub.text = "ALL STATIONS REPORT  ·  %s" % str(m.get("destination", "")).to_upper()
+	NeonUI.body(sub, 14, NeonUI.MUTED)
+	sub.position = Vector2(42, 100)
 	root.add_child(sub)
 
-	var panel := PanelContainer.new()
-	panel.position = Vector2(40, 130)
-	panel.custom_minimum_size = Vector2(620, 0)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.03, 0.05, 0.1, 0.82)
-	sb.set_corner_radius_all(14)
-	sb.set_content_margin_all(16)
-	panel.add_theme_stylebox_override("panel", sb)
-	root.add_child(panel)
+	var col := VBoxContainer.new()
+	col.position = Vector2(40, 140)
+	col.add_theme_constant_override("separation", 12)
+	root.add_child(col)
+	var panel := NeonUI.panel("cyan", 16)
+	panel.custom_minimum_size.x = 640
+	col.add_child(panel)
 	var list := VBoxContainer.new()
 	list.add_theme_constant_override("separation", 10)
 	panel.add_child(list)
@@ -169,11 +181,11 @@ func _build_ui() -> void:
 		row.modulate.a = 0.35
 		list.add_child(row)
 		var light := Panel.new()
-		light.custom_minimum_size = Vector2(22, 22)
+		light.custom_minimum_size = Vector2(20, 20)
 		light.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		var lsb := StyleBoxFlat.new()
-		lsb.bg_color = Color(0.3, 0.3, 0.35)
-		lsb.set_corner_radius_all(11)
+		lsb.bg_color = Color(0.22, 0.26, 0.34)
+		lsb.set_corner_radius_all(10)
 		light.add_theme_stylebox_override("panel", lsb)
 		row.add_child(light)
 		var text := VBoxContainer.new()
@@ -182,19 +194,19 @@ func _build_ui() -> void:
 		row.add_child(text)
 		var who := Label.new()
 		who.text = PartInfo.station(st)["long"].to_upper()
-		who.add_theme_font_size_override("font_size", 15)
-		who.modulate = Color(0.65, 0.75, 0.95)
+		NeonUI.caption(who, 12, NeonUI.MUTED)
 		text.add_child(who)
 		var call_l := Label.new()
-		call_l.text = "standing by…"
-		call_l.add_theme_font_size_override("font_size", 22)
+		call_l.text = "STANDING BY…"
+		NeonUI.heading(call_l, 20)
 		call_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		call_l.custom_minimum_size.x = 420
 		text.add_child(call_l)
 		var fix := Button.new()
-		fix.text = "Fix it"
+		fix.text = "FIX IT"
 		fix.visible = false
 		fix.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		NeonUI.ghost(fix, 13)
 		var station_key: String = st
 		fix.pressed.connect(func():
 			MissionState.set_meta("design_station", station_key)
@@ -202,11 +214,34 @@ func _build_ui() -> void:
 		row.add_child(fix)
 		_rows[st] = {"row": row, "light": lsb, "call": call_l, "fix": fix}
 
+	list.add_child(NeonUI.rule())
+	list.add_child(NeonUI.body("Four GO calls unlock LAUNCH.", 12, NeonUI.DIM))
+
+	# --- Flight Director comms card, stacked under the poll
+	var status_card := NeonUI.panel("cyan", 14)
+	status_card.custom_minimum_size.x = 640
+	col.add_child(status_card)
+	var srow := HBoxContainer.new()
+	srow.add_theme_constant_override("separation", 16)
+	status_card.add_child(srow)
+	var scol := VBoxContainer.new()
+	scol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scol.add_theme_constant_override("separation", 2)
+	srow.add_child(scol)
+	scol.add_child(NeonUI.kicker("◆ FLIGHT DIRECTOR", NeonUI.GOLD, 11))
 	_status = Label.new()
-	_status.add_theme_font_size_override("font_size", 30)
-	_status.position = Vector2(40, 560)
-	_status.custom_minimum_size.x = 800
-	root.add_child(_status)
+	NeonUI.body(_status, 19, NeonUI.TEXT, true)
+	_status.text = "All stations, go/no-go for launch."
+	_status.custom_minimum_size = Vector2(460, 0)
+	scol.add_child(_status)
+	_status_meta = Label.new()
+	NeonUI.mono_regular(_status_meta, 10, NeonUI.DIM)
+	_status_meta.text = "AWAITING STATION REPORTS"
+	scol.add_child(_status_meta)
+	_status_chip = NeonUI.pill("STANDBY", NeonUI.GOLD, 11)
+	_status_chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	srow.add_child(_status_chip)
+	_status_chip_label = _status_chip.get_node("PillLabel") as Label
 
 	var bottom := HBoxContainer.new()
 	bottom.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
@@ -218,17 +253,36 @@ func _build_ui() -> void:
 	bottom.add_theme_constant_override("separation", 12)
 	root.add_child(bottom)
 	var back := Button.new()
-	back.text = "< Hangar"
-	back.add_theme_font_size_override("font_size", 20)
+	back.text = "‹  HANGAR"
+	NeonUI.ghost(back, 16)
 	back.pressed.connect(func(): MissionState.go_to("hangar"))
 	bottom.add_child(back)
 	_launch_btn = Button.new()
-	_launch_btn.text = "LAUNCH!"
-	_launch_btn.custom_minimum_size = Vector2(240, 68)
-	_launch_btn.add_theme_font_size_override("font_size", 30)
+	_launch_btn.text = "LAUNCH  →"
+	_launch_btn.custom_minimum_size = Vector2(240, 62)
+	NeonUI.primary(_launch_btn, 22)
 	_launch_btn.disabled = true
 	_launch_btn.pressed.connect(func(): MissionState.go_to("launch_anim"))
 	bottom.add_child(_launch_btn)
+
+
+func _say(text: String, color: Color = NeonUI.TEXT) -> void:
+	_status.text = text
+	_status.modulate = Color(color.r, color.g, color.b, 0.0)
+	create_tween().tween_property(_status, "modulate:a", 1.0, 0.3)
+
+
+func _set_chip(text: String, color: Color) -> void:
+	if _status_chip_label == null:
+		return
+	_status_chip_label.text = text
+	_status_chip_label.add_theme_color_override("font_color", color)
+	_status_chip.add_theme_stylebox_override("panel", NeonUI.pill_style(color))
+
+
+func _set_meta(text: String) -> void:
+	if _status_meta:
+		_status_meta.text = text
 
 
 # ===================================================================== the poll
@@ -241,8 +295,9 @@ func _wait(seconds: float) -> void:
 
 
 func _run_poll() -> void:
-	_status.text = "Flight Director: \"All stations, go/no-go for launch.\""
-	_status.modulate = C_WAIT
+	_say("All stations, go/no-go for launch.", NeonUI.TEXT)
+	_set_chip("STANDBY", NeonUI.GOLD)
+	_set_meta("AWAITING STATION REPORTS")
 	await _wait(1.4)
 	var nogo := 0
 	for st in POLL_ORDER:
@@ -269,16 +324,18 @@ func _run_poll() -> void:
 			Sfx.play("nogo", -4.0)
 		await _wait(STEP_TIME * 0.4)
 	if nogo == 0:
-		_status.text = "Flight Director: \"We are GO for launch!\""
-		_status.modulate = C_GOOD
+		_say("We are GO for launch!", NeonUI.GREEN)
+		_set_chip("GO FOR LAUNCH", NeonUI.GREEN)
+		_set_meta("4 / 4 STATIONS  ·  RANGE GREEN")
 		_beacon.light_color = C_GOOD
 		_beacon.light_energy = 4.0
 		_launch_btn.disabled = false
 		Sfx.play("complete", -3.0)
 		_launch_btn.grab_focus()
 	else:
-		_status.text = "Flight Director: \"We are NO-GO. %d station%s must fix their systems.\"" % [nogo, "" if nogo == 1 else "s"]
-		_status.modulate = C_BAD
+		_say("We are NO-GO. %d station%s must fix their systems." % [nogo, "" if nogo == 1 else "s"], NeonUI.RED)
+		_set_chip("NO-GO", NeonUI.RED)
+		_set_meta("%d / 4 STATIONS  ·  RANGE HOLD" % (4 - nogo))
 		_beacon.light_color = C_BAD
 		Sfx.play("fail", -3.0)
 		_beacon.light_energy = 4.0

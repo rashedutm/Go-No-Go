@@ -1,76 +1,255 @@
-[gd_resource type="Theme" format=3]
+[gd_resource type="Theme" load_steps=29 format=3]
 
-[sub_resource type="StyleBoxFlat" id="panel"]
+[ext_resource type="FontFile" path="res://ui/fonts/Barlow-Regular.ttf" id="f_body"]
+[ext_resource type="FontFile" path="res://ui/fonts/Barlow-Medium.ttf" id="f_body_med"]
+[ext_resource type="FontFile" path="res://ui/fonts/Barlow-SemiBold.ttf" id="f_body_semi"]
+[ext_resource type="FontFile" path="res://ui/fonts/BarlowCondensed-SemiBold.ttf" id="f_disp_semi"]
+[ext_resource type="FontFile" path="res://ui/fonts/BarlowCondensed-Bold.ttf" id="f_disp_bold"]
+[ext_resource type="FontFile" path="res://ui/fonts/BarlowCondensed-ExtraBold.ttf" id="f_disp_xbold"]
+[ext_resource type="FontFile" path="res://ui/fonts/IBMPlexMono-Regular.ttf" id="f_mono"]
+[ext_resource type="FontFile" path="res://ui/fonts/IBMPlexMono-Medium.ttf" id="f_mono_med"]
+[ext_resource type="FontFile" path="res://ui/fonts/IBMPlexMono-SemiBold.ttf" id="f_mono_semi"]
+[ext_resource type="Texture2D" path="res://ui/panels/neon_cyan.png" id="t_cyan"]
+[ext_resource type="Texture2D" path="res://ui/panels/neon_cyan_soft.png" id="t_cyan_soft"]
+[ext_resource type="Texture2D" path="res://ui/panels/neon_gold.png" id="t_gold"]
+[ext_resource type="Texture2D" path="res://ui/panels/neon_red.png" id="t_red"]
+[ext_resource type="Texture2D" path="res://ui/panels/neon_dim.png" id="t_dim"]
+
+[sub_resource type="StyleBoxTexture" id="panel_cyan"]
+content_margin_left = 18.0
+content_margin_top = 16.0
+content_margin_right = 18.0
+content_margin_bottom = 16.0
+texture = ExtResource("t_cyan")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+
+[sub_resource type="StyleBoxTexture" id="panel_soft"]
 content_margin_left = 16.0
-content_margin_top = 12.0
+content_margin_top = 14.0
 content_margin_right = 16.0
-content_margin_bottom = 12.0
-bg_color = Color(0.11, 0.15, 0.28, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.27, 0.42, 0.8, 1)
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
+content_margin_bottom = 14.0
+texture = ExtResource("t_cyan_soft")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
 
-[sub_resource type="StyleBoxFlat" id="btn_normal"]
+[sub_resource type="StyleBoxTexture" id="panel_red"]
 content_margin_left = 18.0
-content_margin_top = 8.0
+content_margin_top = 16.0
 content_margin_right = 18.0
-content_margin_bottom = 8.0
-bg_color = Color(0.16, 0.45, 0.95, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+content_margin_bottom = 16.0
+texture = ExtResource("t_red")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
 
-[sub_resource type="StyleBoxFlat" id="btn_hover"]
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-bg_color = Color(0.25, 0.56, 1, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+[sub_resource type="StyleBoxTexture" id="btn_cyan"]
+content_margin_left = 16.0
+content_margin_top = 9.0
+content_margin_right = 16.0
+content_margin_bottom = 9.0
+texture = ExtResource("t_cyan")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
 
-[sub_resource type="StyleBoxFlat" id="btn_pressed"]
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-bg_color = Color(1, 0.72, 0.15, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+[sub_resource type="StyleBoxTexture" id="btn_cyan_hover"]
+content_margin_left = 16.0
+content_margin_top = 9.0
+content_margin_right = 16.0
+content_margin_bottom = 9.0
+texture = ExtResource("t_cyan")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+modulate_color = Color(1.3, 1.3, 1.3, 1)
 
-[sub_resource type="StyleBoxFlat" id="btn_disabled"]
+[sub_resource type="StyleBoxTexture" id="btn_cyan_pressed"]
+content_margin_left = 16.0
+content_margin_top = 9.0
+content_margin_right = 16.0
+content_margin_bottom = 9.0
+texture = ExtResource("t_cyan_soft")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+modulate_color = Color(1.2, 1.2, 1.2, 1)
+
+[sub_resource type="StyleBoxTexture" id="btn_gold"]
 content_margin_left = 18.0
-content_margin_top = 8.0
+content_margin_top = 10.0
 content_margin_right = 18.0
-content_margin_bottom = 8.0
-bg_color = Color(0.25, 0.28, 0.36, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+content_margin_bottom = 10.0
+texture = ExtResource("t_gold")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+
+[sub_resource type="StyleBoxTexture" id="btn_gold_hover"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+texture = ExtResource("t_gold")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+modulate_color = Color(1.12, 1.12, 1.12, 1)
+
+[sub_resource type="StyleBoxTexture" id="btn_gold_pressed"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+texture = ExtResource("t_gold")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+modulate_color = Color(0.88, 0.88, 0.88, 1)
+
+[sub_resource type="StyleBoxTexture" id="btn_red"]
+content_margin_left = 16.0
+content_margin_top = 9.0
+content_margin_right = 16.0
+content_margin_bottom = 9.0
+texture = ExtResource("t_red")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+
+[sub_resource type="StyleBoxTexture" id="btn_dim"]
+content_margin_left = 16.0
+content_margin_top = 9.0
+content_margin_right = 16.0
+content_margin_bottom = 9.0
+texture = ExtResource("t_dim")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+
+[sub_resource type="StyleBoxFlat" id="pb_bg"]
+bg_color = Color(0.04, 0.07, 0.12, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.31, 0.84, 1, 0.3)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="pb_fill"]
+bg_color = Color(0.31, 0.84, 1, 0.92)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="FontVariation" id="fv_mono"]
+base_font = ExtResource("f_mono_med")
+spacing_glyph = 2
 
 [resource]
-default_font_size = 20
-Button/colors/font_color = Color(1, 1, 1, 1)
+default_font = ExtResource("f_body")
+default_font_size = 15
+Button/colors/font_color = Color(0.88, 0.94, 1, 1)
 Button/colors/font_hover_color = Color(1, 1, 1, 1)
-Button/colors/font_pressed_color = Color(0.08, 0.08, 0.15, 1)
-Button/colors/font_disabled_color = Color(0.6, 0.63, 0.7, 1)
-Button/styles/normal = SubResource("btn_normal")
-Button/styles/hover = SubResource("btn_hover")
-Button/styles/pressed = SubResource("btn_pressed")
-Button/styles/disabled = SubResource("btn_disabled")
-Button/styles/focus = SubResource("btn_hover")
-Label/colors/font_color = Color(0.92, 0.95, 1, 1)
-PanelContainer/styles/panel = SubResource("panel")
-RichTextLabel/colors/default_color = Color(0.92, 0.95, 1, 1)
+Button/colors/font_pressed_color = Color(0.72, 0.88, 1, 1)
+Button/colors/font_disabled_color = Color(0.44, 0.49, 0.58, 1)
+Button/fonts/font = ExtResource("f_disp_bold")
+Button/font_sizes/font_size = 18
+Button/styles/normal = SubResource("btn_cyan")
+Button/styles/hover = SubResource("btn_cyan_hover")
+Button/styles/pressed = SubResource("btn_cyan_pressed")
+Button/styles/disabled = SubResource("btn_dim")
+Button/styles/focus = SubResource("btn_cyan_hover")
+Label/colors/font_color = Color(0.88, 0.94, 1, 1)
+Label/fonts/font = ExtResource("f_body")
+Label/font_sizes/font_size = 15
+PanelContainer/styles/panel = SubResource("panel_cyan")
+Panel/styles/panel = SubResource("panel_cyan")
+ProgressBar/styles/background = SubResource("pb_bg")
+ProgressBar/styles/fill = SubResource("pb_fill")
+RichTextLabel/colors/default_color = Color(0.88, 0.94, 1, 1)
+RichTextLabel/fonts/normal_font = ExtResource("f_body")
+RichTextLabel/fonts/bold_font = ExtResource("f_body_semi")
+RichTextLabel/font_sizes/normal_font_size = 15
+RichTextLabel/font_sizes/bold_font_size = 15
+DisplayLabel/base_type = &"Label"
+DisplayLabel/fonts/font = ExtResource("f_disp_xbold")
+DisplayLabel/font_sizes/font_size = 44
+DisplayLabel/colors/font_color = Color(0.9, 0.95, 1, 1)
+HeadingLabel/base_type = &"Label"
+HeadingLabel/fonts/font = ExtResource("f_disp_bold")
+HeadingLabel/font_sizes/font_size = 24
+HeadingLabel/colors/font_color = Color(0.9, 0.95, 1, 1)
+SectionLabel/base_type = &"Label"
+SectionLabel/fonts/font = ExtResource("f_disp_bold")
+SectionLabel/font_sizes/font_size = 20
+SectionLabel/colors/font_color = Color(0.31, 0.84, 1, 1)
+HudLabel/base_type = &"Label"
+HudLabel/fonts/font = ExtResource("f_disp_semi")
+HudLabel/font_sizes/font_size = 14
+HudLabel/colors/font_color = Color(0.72, 0.86, 1, 1)
+MonoLabel/base_type = &"Label"
+MonoLabel/fonts/font = ExtResource("f_mono_med")
+MonoLabel/font_sizes/font_size = 16
+MonoLabel/colors/font_color = Color(0.72, 0.9, 1, 1)
+TelemetryLabel/base_type = &"Label"
+TelemetryLabel/fonts/font = ExtResource("f_mono")
+TelemetryLabel/font_sizes/font_size = 14
+TelemetryLabel/colors/font_color = Color(0.62, 0.78, 0.92, 1)
+KickerLabel/base_type = &"Label"
+KickerLabel/fonts/font = SubResource("fv_mono")
+KickerLabel/font_sizes/font_size = 12
+KickerLabel/colors/font_color = Color(0.31, 0.84, 1, 1)
+CaptionLabel/base_type = &"Label"
+CaptionLabel/fonts/font = ExtResource("f_body_med")
+CaptionLabel/font_sizes/font_size = 13
+CaptionLabel/colors/font_color = Color(0.58, 0.68, 0.82, 1)
+PrimaryButton/base_type = &"Button"
+PrimaryButton/fonts/font = ExtResource("f_disp_bold")
+PrimaryButton/font_sizes/font_size = 20
+PrimaryButton/colors/font_color = Color(0.05, 0.06, 0.1, 1)
+PrimaryButton/colors/font_hover_color = Color(0.05, 0.06, 0.1, 1)
+PrimaryButton/colors/font_pressed_color = Color(0.03, 0.04, 0.07, 1)
+PrimaryButton/colors/font_disabled_color = Color(0.35, 0.38, 0.45, 1)
+PrimaryButton/styles/normal = SubResource("btn_gold")
+PrimaryButton/styles/hover = SubResource("btn_gold_hover")
+PrimaryButton/styles/pressed = SubResource("btn_gold_pressed")
+PrimaryButton/styles/disabled = SubResource("btn_dim")
+PrimaryButton/styles/focus = SubResource("btn_gold_hover")
+GhostButton/base_type = &"Button"
+GhostButton/fonts/font = ExtResource("f_disp_bold")
+GhostButton/font_sizes/font_size = 18
+GhostButton/colors/font_color = Color(0.82, 0.92, 1, 1)
+GhostButton/colors/font_hover_color = Color(1, 1, 1, 1)
+GhostButton/styles/normal = SubResource("btn_cyan")
+GhostButton/styles/hover = SubResource("btn_cyan_hover")
+GhostButton/styles/pressed = SubResource("btn_cyan_pressed")
+GhostButton/styles/disabled = SubResource("btn_dim")
+GhostButton/styles/focus = SubResource("btn_cyan_hover")
+DangerButton/base_type = &"Button"
+DangerButton/fonts/font = ExtResource("f_disp_bold")
+DangerButton/font_sizes/font_size = 18
+DangerButton/colors/font_color = Color(1, 0.72, 0.7, 1)
+DangerButton/colors/font_hover_color = Color(1, 0.9, 0.88, 1)
+DangerButton/styles/normal = SubResource("btn_red")
+DangerButton/styles/hover = SubResource("btn_red")
+DangerButton/styles/pressed = SubResource("btn_red")
+DangerButton/styles/disabled = SubResource("btn_dim")
+DangerButton/styles/focus = SubResource("btn_red")

@@ -383,30 +383,25 @@ func _build_ui() -> void:
 	dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(dot)
 
-	var info := PanelContainer.new()
+	var info := NeonUI.panel("cyan", 10)
 	info.position = Vector2(16, 16)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.03, 0.05, 0.1, 0.75)
-	sb.set_corner_radius_all(10)
-	sb.set_content_margin_all(10)
-	info.add_theme_stylebox_override("panel", sb)
 	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(info)
 	var hv := VBoxContainer.new()
 	hv.add_theme_constant_override("separation", 4)
-	hv.custom_minimum_size.x = 250
+	hv.custom_minimum_size.x = 330
 	info.add_child(hv)
 	_hud_clock = Label.new()
-	_hud_clock.add_theme_font_size_override("font_size", 16)
+	NeonUI.mono(_hud_clock, 13, NeonUI.CYAN)
 	hv.add_child(_hud_clock)
 	for g in [["battery", "Battery"], ["data", "Science returned"], ["health", "Health"], ["storage", "Memory"]]:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
 		hv.add_child(row)
 		var name_l := Label.new()
-		name_l.text = g[1]
+		name_l.text = str(g[1]).to_upper()
 		name_l.custom_minimum_size.x = 120
-		name_l.add_theme_font_size_override("font_size", 13)
+		NeonUI.caption(name_l, 11, NeonUI.MUTED)
 		row.add_child(name_l)
 		var bar := ProgressBar.new()
 		bar.show_percentage = false
@@ -415,12 +410,12 @@ func _build_ui() -> void:
 		bar.max_value = 100.0
 		row.add_child(bar)
 		var val := Label.new()
-		val.add_theme_font_size_override("font_size", 13)
+		NeonUI.mono(val, 11, NeonUI.TEXT)
 		row.add_child(val)
 		_hud_bars[g[0]] = {"bar": bar, "label": val}
 
 	_end_banner = Label.new()
-	_end_banner.add_theme_font_size_override("font_size", 56)
+	NeonUI.display(_end_banner, 52, NeonUI.TEXT)
 	_end_banner.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	_end_banner.add_theme_constant_override("outline_size", 12)
 	_end_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -430,8 +425,7 @@ func _build_ui() -> void:
 	root.add_child(_end_banner)
 
 	_alert_banner = Label.new()
-	_alert_banner.add_theme_font_size_override("font_size", 26)
-	_alert_banner.add_theme_color_override("font_color", Color(1, 0.4, 0.33))
+	NeonUI.heading(_alert_banner, 24, NeonUI.RED)
 	_alert_banner.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	_alert_banner.add_theme_constant_override("outline_size", 8)
 	_alert_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -441,7 +435,7 @@ func _build_ui() -> void:
 	root.add_child(_alert_banner)
 
 	_toast = Label.new()
-	_toast.add_theme_font_size_override("font_size", 18)
+	NeonUI.body(_toast, 16, NeonUI.TEXT)
 	_toast.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	_toast.add_theme_constant_override("outline_size", 6)
 	_toast.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -452,8 +446,7 @@ func _build_ui() -> void:
 	root.add_child(_toast)
 
 	_prompt = Label.new()
-	_prompt.add_theme_font_size_override("font_size", 24)
-	_prompt.add_theme_color_override("font_color", Color(1, 0.85, 0.35))
+	NeonUI.heading(_prompt, 22, NeonUI.GOLD)
 	_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	_prompt.add_theme_constant_override("outline_size", 6)
 	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -462,9 +455,8 @@ func _build_ui() -> void:
 	root.add_child(_prompt)
 
 	var hint := Label.new()
-	hint.text = "WASD walk  ·  mouse look  ·  E use console  ·  Space pause  ·  1/2/3 speed  ·  Esc free mouse"
-	hint.add_theme_font_size_override("font_size", 14)
-	hint.modulate = Color(0.7, 0.78, 0.95, 0.85)
+	hint.text = "WASD WALK  ·  MOUSE LOOK  ·  E USE CONSOLE  ·  SPACE PAUSE  ·  1/2/3 SPEED  ·  ESC FREE MOUSE"
+	NeonUI.caption(hint, 11, NeonUI.MUTED)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.position = Vector2(140, 690)
 	hint.size = Vector2(1000, 24)
@@ -472,7 +464,7 @@ func _build_ui() -> void:
 
 	_start_hint = Label.new()
 	_start_hint.text = "Click to look around"
-	_start_hint.add_theme_font_size_override("font_size", 30)
+	NeonUI.heading(_start_hint, 28, NeonUI.TEXT)
 	_start_hint.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	_start_hint.add_theme_constant_override("outline_size", 8)
 	_start_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -481,29 +473,24 @@ func _build_ui() -> void:
 	_start_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(_start_hint)
 
-	_panel = PanelContainer.new()
+	_panel = NeonUI.panel("cyan", 16)
 	_panel.position = Vector2(270, 100)
 	_panel.custom_minimum_size = Vector2(740, 500)
-	var psb := StyleBoxFlat.new()
-	psb.bg_color = Color(0.03, 0.05, 0.11, 0.95)
-	psb.border_color = Color(0.3, 0.45, 0.85)
-	psb.set_border_width_all(2)
-	psb.set_corner_radius_all(14)
-	psb.set_content_margin_all(20)
-	_panel.add_theme_stylebox_override("panel", psb)
 	_panel.visible = false
 	root.add_child(_panel)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 12)
 	_panel.add_child(v)
 	_panel_title = Label.new()
-	_panel_title.add_theme_font_size_override("font_size", 30)
+	NeonUI.display(_panel_title, 26, NeonUI.TEXT)
 	v.add_child(_panel_title)
 	_panel_body = RichTextLabel.new()
 	_panel_body.bbcode_enabled = true
 	_panel_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_panel_body.add_theme_font_size_override("normal_font_size", 18)
-	_panel_body.add_theme_font_size_override("bold_font_size", 20)
+	_panel_body.add_theme_font_override("normal_font", NeonUI.font("Barlow-Regular.ttf"))
+	_panel_body.add_theme_font_override("bold_font", NeonUI.font("Barlow-SemiBold.ttf"))
+	_panel_body.add_theme_font_size_override("normal_font_size", 15)
+	_panel_body.add_theme_font_size_override("bold_font_size", 16)
 	v.add_child(_panel_body)
 	_panel_actions = HFlowContainer.new()
 	_panel_actions.add_theme_constant_override("h_separation", 10)

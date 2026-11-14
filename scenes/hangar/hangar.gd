@@ -8,7 +8,7 @@ const C_GOOD := Color(0.35, 0.85, 0.45)
 const C_WARN := Color(1.0, 0.7, 0.2)
 const C_BAD := Color(1.0, 0.35, 0.35)
 const C_TILE := Color(0.1, 0.14, 0.26, 0.92)
-const C_TILE_SEL := Color(0.14, 0.38, 0.8, 0.95)
+const C_TILE_SEL := Color(0.34, 0.25, 0.06, 0.96)
 const C_TILE_OFF := Color(0.09, 0.1, 0.14, 0.85)
 const MODEL_POS := Vector3(0, 2.3, 0)
 const ROCKET_POS := Vector3(-11.0, 0.0, -11.0)
@@ -248,7 +248,7 @@ func _build_ui() -> void:
 	_ui.add_child(top)
 	var title := Label.new()
 	title.text = str(mission.get("name", "")).to_upper()
-	title.add_theme_font_size_override("font_size", 22)
+	NeonUI.heading(title, 20, NeonUI.TEXT)
 	title.custom_minimum_size.x = 200
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top.add_child(title)
@@ -289,17 +289,12 @@ func _build_ui() -> void:
 		left.add_child(btn)
 
 	# --- bottom tray
-	var tray := PanelContainer.new()
+	var tray := NeonUI.panel("cyan", 10)
 	tray.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	tray.offset_left = 16
 	tray.offset_right = -300
 	tray.offset_top = -178
 	tray.offset_bottom = -12
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.05, 0.07, 0.13, 0.85)
-	sb.set_corner_radius_all(14)
-	sb.set_content_margin_all(10)
-	tray.add_theme_stylebox_override("panel", sb)
 	_ui.add_child(tray)
 	var tv := VBoxContainer.new()
 	tv.add_theme_constant_override("separation", 8)
@@ -311,8 +306,7 @@ func _build_ui() -> void:
 	_tabs_box.add_theme_constant_override("separation", 6)
 	tabs_row.add_child(_tabs_box)
 	_blurb = Label.new()
-	_blurb.add_theme_font_size_override("font_size", 14)
-	_blurb.modulate = Color(0.7, 0.78, 0.95)
+	NeonUI.body(_blurb, 13, NeonUI.MUTED)
 	_blurb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_blurb.clip_text = true
 	tabs_row.add_child(_blurb)
@@ -336,19 +330,19 @@ func _build_ui() -> void:
 	_ui.add_child(right)
 	_issue_label = Label.new()
 	_issue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_issue_label.add_theme_font_size_override("font_size", 14)
+	NeonUI.body(_issue_label, 13, NeonUI.MUTED)
 	_issue_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_issue_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	right.add_child(_issue_label)
 	_go_btn = Button.new()
-	_go_btn.text = "GO / NO-GO POLL  >"
-	_go_btn.custom_minimum_size.y = 64
-	_go_btn.add_theme_font_size_override("font_size", 22)
+	_go_btn.text = "GO / NO-GO POLL  →"
+	_go_btn.custom_minimum_size.y = 58
+	NeonUI.primary(_go_btn, 19)
 	_go_btn.pressed.connect(func(): MissionState.go_to("launch_check"))
 	right.add_child(_go_btn)
 
 	# --- tooltip
-	_tip_panel = PanelContainer.new()
+	_tip_panel = NeonUI.panel("cyan", 12)
 	_tip_panel.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	_tip_panel.offset_left = -420
 	_tip_panel.offset_right = -16
@@ -361,44 +355,38 @@ func _build_ui() -> void:
 	_tip.bbcode_enabled = true
 	_tip.fit_content = true
 	_tip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_tip.add_theme_font_size_override("normal_font_size", 16)
-	_tip.add_theme_font_size_override("bold_font_size", 20)
+	_tip.add_theme_font_override("normal_font", NeonUI.font("Barlow-Regular.ttf"))
+	_tip.add_theme_font_override("bold_font", NeonUI.font("Barlow-SemiBold.ttf"))
+	_tip.add_theme_font_size_override("normal_font_size", 14)
+	_tip.add_theme_font_size_override("bold_font_size", 16)
 	_tip_panel.add_child(_tip)
 
 
 func _small_button(text: String) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.add_theme_font_size_override("font_size", 15)
+	NeonUI.ghost(b, 13)
 	return b
 
 
 func _make_chip(key: String, label_text: String) -> Control:
-	var panel := PanelContainer.new()
+	var panel := NeonUI.panel("cyan", 6)
 	panel.custom_minimum_size = Vector2(124, 0)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.06, 0.08, 0.15, 0.85)
-	sb.set_corner_radius_all(10)
-	sb.set_content_margin_all(6)
-	panel.add_theme_stylebox_override("panel", sb)
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 1)
+	v.add_theme_constant_override("separation", 0)
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(v)
-	var name_l := Label.new()
-	name_l.text = label_text
-	name_l.add_theme_font_size_override("font_size", 11)
-	name_l.modulate = Color(0.6, 0.7, 0.9)
+	var name_l := NeonUI.kicker(label_text, NeonUI.MUTED, 9)
 	v.add_child(name_l)
 	var bar := ProgressBar.new()
 	bar.show_percentage = false
-	bar.custom_minimum_size.y = 6
+	bar.custom_minimum_size.y = 5
 	bar.max_value = 1.0
 	bar.step = 0.0
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	v.add_child(bar)
 	var val := Label.new()
-	val.add_theme_font_size_override("font_size", 13)
+	NeonUI.mono(val, 12, NeonUI.TEXT)
 	v.add_child(val)
 	_chips[key] = {"bar": bar, "label": val, "panel": panel}
 	return panel

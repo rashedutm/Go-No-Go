@@ -496,7 +496,7 @@ func _build_ui() -> void:
 	layer.add_child(root)
 
 	# --- mission kicker card, top-left
-	var card := CineUI.glass(16)
+	var card := NeonUI.glass(16)
 	card.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	card.offset_left = 28
 	card.offset_top = 24
@@ -506,11 +506,11 @@ func _build_ui() -> void:
 	var kbox := VBoxContainer.new()
 	kbox.add_theme_constant_override("separation", 2)
 	card.add_child(kbox)
-	var kick := CineUI.kicker("◆ LAUNCH OPERATIONS")
+	var kick := NeonUI.kicker("◆ LAUNCH OPERATIONS")
 	kbox.add_child(kick)
-	var mname := CineUI.headline(str(mission.get("name", "")).to_upper(), 24)
+	var mname := NeonUI.heading(str(mission.get("name", "")).to_upper(), 24)
 	kbox.add_child(mname)
-	var dest := CineUI.body("DESTINATION · " + str(mission.get("destination", "")).to_upper(), 14, CineUI.CYAN)
+	var dest := NeonUI.body("DESTINATION · " + str(mission.get("destination", "")).to_upper(), 14, NeonUI.CYAN)
 	kbox.add_child(dest)
 
 	# --- centre captions, lifted above mid-frame so the vehicle stays readable
@@ -525,18 +525,16 @@ func _build_ui() -> void:
 
 	_big = Label.new()
 	_big.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_big.add_theme_font_size_override("font_size", 110)
-	_big.add_theme_color_override("font_color", CineUI.GOLD)
+	NeonUI.display(_big, 106, NeonUI.GOLD)
 	_big.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	_big.add_theme_constant_override("outline_size", 16)
+	_big.add_theme_constant_override("outline_size", 14)
 	vbox.add_child(_big)
 
 	_sub = Label.new()
 	_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_sub.add_theme_font_size_override("font_size", 24)
-	_sub.add_theme_color_override("font_color", CineUI.TEXT)
+	NeonUI.body(_sub, 22, NeonUI.TEXT)
 	_sub.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	_sub.add_theme_constant_override("outline_size", 8)
+	_sub.add_theme_constant_override("outline_size", 7)
 	vbox.add_child(_sub)
 
 	var spacer := Control.new()
@@ -544,7 +542,7 @@ func _build_ui() -> void:
 	vbox.add_child(spacer)
 
 	# --- phase timeline, bottom-centre
-	var track := CineUI.glass(12)
+	var track := NeonUI.glass(12)
 	track.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	track.offset_left = -330
 	track.offset_right = 330
@@ -560,22 +558,21 @@ func _build_ui() -> void:
 		cell.alignment = BoxContainer.ALIGNMENT_CENTER
 		cell.add_theme_constant_override("separation", 4)
 		phases.add_child(cell)
-		var dot := CineUI.dot(0)
+		var dot := NeonUI.dot(0)
 		var dwrap := CenterContainer.new()
 		dwrap.add_child(dot)
 		cell.add_child(dwrap)
 		var pl := Label.new()
 		pl.text = pname
 		pl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		pl.add_theme_font_size_override("font_size", 13)
-		pl.add_theme_color_override("font_color", CineUI.DIM)
+		NeonUI.mono(pl, 10, NeonUI.DIM)
 		cell.add_child(pl)
 		_phase_dots.append(dot)
 		_phase_labels.append(pl)
 
 	_skip = Button.new()
 	_skip.text = "SKIP  ▶"
-	CineUI.ghost(_skip, 18)
+	NeonUI.ghost(_skip, 18)
 	_skip.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	_skip.offset_left = -178
 	_skip.offset_top = -76
@@ -618,14 +615,14 @@ func _update_timeline() -> void:
 		var lab := _phase_labels[i]
 		var sb := dot.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
 		if i < idx:
-			sb.bg_color = CineUI.CYAN
-			lab.add_theme_color_override("font_color", CineUI.CYAN)
+			sb.bg_color = NeonUI.CYAN
+			lab.add_theme_color_override("font_color", NeonUI.CYAN)
 		elif i == idx:
-			sb.bg_color = CineUI.GOLD
-			lab.add_theme_color_override("font_color", CineUI.GOLD)
+			sb.bg_color = NeonUI.GOLD
+			lab.add_theme_color_override("font_color", NeonUI.GOLD)
 		else:
 			sb.bg_color = Color(0.25, 0.28, 0.36)
-			lab.add_theme_color_override("font_color", CineUI.DIM)
+			lab.add_theme_color_override("font_color", NeonUI.DIM)
 		dot.add_theme_stylebox_override("panel", sb)
 
 

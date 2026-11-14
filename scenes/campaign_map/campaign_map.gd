@@ -120,63 +120,81 @@ func _build_ui() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(root)
 
+	var kick_row := HBoxContainer.new()
+	kick_row.position = Vector2(32, 20)
+	kick_row.add_theme_constant_override("separation", 10)
+	root.add_child(kick_row)
+	kick_row.add_child(NeonUI.stripes(NeonUI.GOLD))
+	var kick := NeonUI.kicker("MISSION SELECT", NeonUI.CYAN, 11)
+	kick.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	kick_row.add_child(kick)
+
 	var title := Label.new()
 	title.text = "MISSION CAMPAIGN"
-	title.add_theme_font_size_override("font_size", 36)
-	title.position = Vector2(32, 22)
+	NeonUI.display(title, 36, NeonUI.TEXT)
+	title.position = Vector2(32, 44)
 	root.add_child(title)
 	var sub := Label.new()
 	sub.text = "From Earth orbit to Saturn. Earn at least 1 star to unlock the next mission."
-	sub.modulate = Color(0.7, 0.78, 0.95)
-	sub.position = Vector2(34, 72)
+	NeonUI.body(sub, 14, NeonUI.MUTED)
+	sub.position = Vector2(34, 94)
 	root.add_child(sub)
+
 	var back := Button.new()
-	back.text = "< Title"
-	back.position = Vector2(1150, 40)
+	back.text = "‹  TITLE"
+	NeonUI.ghost(back, 16)
+	back.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	back.offset_left = -170
+	back.offset_top = 28
+	back.offset_right = -28
+	back.offset_bottom = 70
 	back.pressed.connect(func(): MissionState.go_to("title"))
 	root.add_child(back)
 
 	# right info card
-	var card := PanelContainer.new()
-	card.position = Vector2(860, 120)
-	card.custom_minimum_size = Vector2(390, 360)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.04, 0.06, 0.13, 0.88)
-	sb.border_color = Color(0.3, 0.45, 0.85)
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(16)
-	sb.set_content_margin_all(20)
-	card.add_theme_stylebox_override("panel", sb)
+	var card := NeonUI.panel("cyan", 18)
+	card.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	card.offset_left = -420
+	card.offset_top = 100
+	card.offset_right = -28
+	card.offset_bottom = 480
 	root.add_child(card)
+	var backing := ColorRect.new()
+	backing.color = Color(0.01, 0.02, 0.05, 0.55)
+	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(backing)
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 10)
+	v.add_theme_constant_override("separation", 8)
 	card.add_child(v)
 	_info_name = Label.new()
-	_info_name.add_theme_font_size_override("font_size", 30)
-	_info_name.add_theme_color_override("font_color", Color(1, 0.82, 0.3))
+	NeonUI.heading(_info_name, 26, NeonUI.GOLD)
 	v.add_child(_info_name)
 	_info_dest = Label.new()
-	_info_dest.modulate = Color(0.7, 0.8, 1.0)
+	NeonUI.mono(_info_dest, 11, NeonUI.CYAN)
 	v.add_child(_info_dest)
 	_info_obj = Label.new()
-	_info_obj.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_info_obj.add_theme_font_size_override("font_size", 19)
+	NeonUI.body(_info_obj, 14, NeonUI.TEXT, true)
+	_info_obj.custom_minimum_size.x = 340
 	_info_obj.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	v.add_child(_info_obj)
 	_info_meta = Label.new()
-	_info_meta.add_theme_font_size_override("font_size", 16)
+	NeonUI.mono_regular(_info_meta, 11, NeonUI.MUTED)
 	v.add_child(_info_meta)
 	_brief_btn = Button.new()
-	_brief_btn.custom_minimum_size.y = 60
-	_brief_btn.add_theme_font_size_override("font_size", 24)
+	_brief_btn.custom_minimum_size.y = 54
+	NeonUI.primary(_brief_btn, 18)
 	_brief_btn.pressed.connect(func():
 		MissionState.start_mission(_selected)
 		MissionState.go_to("briefing"))
 	v.add_child(_brief_btn)
 
+	var sel_k := NeonUI.kicker("MISSION SELECT", NeonUI.CYAN, 10)
+	sel_k.position = Vector2(32, 552)
+	root.add_child(sel_k)
+
 	# bottom mission tiles
 	var row := HBoxContainer.new()
-	row.position = Vector2(32, 590)
+	row.position = Vector2(32, 578)
 	row.add_theme_constant_override("separation", 10)
 	root.add_child(row)
 	for m in GameData.get_missions_in_order():
@@ -184,7 +202,7 @@ func _build_ui() -> void:
 		b.custom_minimum_size = Vector2(230, 96)
 		b.toggle_mode = true
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.add_theme_font_size_override("font_size", 16)
+		b.add_theme_font_size_override("font_size", 15)
 		var id: String = m["id"]
 		b.pressed.connect(func(): _select(id))
 		row.add_child(b)
@@ -215,7 +233,8 @@ func _select(mid: String) -> void:
 		var st := int(MissionState.campaign["stars"].get(id, 0))
 		b.text = "%d. %s\n%s" % [int(mm.get("order", 0)), mm.get("name", ""), _stars(st) if un else "locked"]
 		b.button_pressed = id == mid
-		b.modulate = Color.WHITE if un else Color(0.6, 0.6, 0.65)
+		b.modulate = Color.WHITE if un else Color(0.5, 0.55, 0.65)
+		b.add_theme_color_override("font_color", NeonUI.GOLD if id == mid else (NeonUI.TEXT if un else NeonUI.DIM))
 	for id in _planets:
 		var label: Label3D = _planets[id]["label"]
 		var un := MissionState.is_unlocked(id)

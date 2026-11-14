@@ -5,6 +5,7 @@ extends Node3D
 
 var _earth: Node3D
 var _orbit: Node3D
+var _hero: Node3D
 var _cam: Camera3D
 var _t := 0.0
 var _overlay: PanelContainer
@@ -44,7 +45,7 @@ func _ready() -> void:
 
 	_earth = MenuPlanet.make("earth")
 	_earth.scale = Vector3.ONE * 3.2
-	_earth.position = Vector3(5.8, -1.6, 0)
+	_earth.position = Vector3(4.8, -1.6, 0)
 	add_child(_earth)
 
 	_orbit = Node3D.new()
@@ -52,9 +53,11 @@ func _ready() -> void:
 	_orbit.rotation_degrees = Vector3(12, 0, -14)
 	add_child(_orbit)
 	var craft := SpacecraftModel3D.build(Sim.make_test_design("mars"))
-	craft.scale = Vector3.ONE * 0.35
-	craft.position = Vector3(4.6, 0, 0)
-	_orbit.add_child(craft)
+	craft.scale = Vector3.ONE * 0.55
+	craft.position = Vector3(8.4, 1.0, 1.4)
+	craft.rotation = Vector3(0.1, 2.35, 0.05)
+	add_child(craft)
+	_hero = craft
 
 	_cam = Camera3D.new()
 	_cam.position = Vector3(0, 0, 13)
@@ -66,7 +69,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	_earth.rotation.y += delta * 0.05
-	_orbit.rotation.y += delta * 0.25
+	if _hero:
+		_hero.rotate_y(delta * 0.12)
 	_cam.position = Vector3(sin(_t * 0.1) * 0.6, cos(_t * 0.13) * 0.3, 13)
 
 
@@ -79,75 +83,82 @@ func _build_ui() -> void:
 	layer.add_child(root)
 
 	var box := VBoxContainer.new()
-	box.position = Vector2(80, 120)
-	box.add_theme_constant_override("separation", 14)
+	box.position = Vector2(72, 88)
+	box.add_theme_constant_override("separation", 10)
 	root.add_child(box)
+
+	var kick_row := HBoxContainer.new()
+	kick_row.add_theme_constant_override("separation", 10)
+	box.add_child(kick_row)
+	kick_row.add_child(NeonUI.stripes(NeonUI.GOLD))
+	var kick := NeonUI.kicker("SPACE MISSION DESIGN GAME", NeonUI.CYAN, 11)
+	kick.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	kick_row.add_child(kick)
 
 	var logo := Label.new()
 	logo.text = "GO / NO-GO"
-	logo.add_theme_font_size_override("font_size", 96)
-	logo.add_theme_color_override("font_color", Color(1, 0.82, 0.3))
-	logo.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
-	logo.add_theme_constant_override("shadow_offset_x", 4)
-	logo.add_theme_constant_override("shadow_offset_y", 4)
+	NeonUI.display(logo, 88, NeonUI.TEXT)
 	box.add_child(logo)
+
 	var tag := Label.new()
-	tag.text = "Design it. Launch it. Fly it from Mission Control."
-	tag.add_theme_font_size_override("font_size", 26)
+	tag.text = "DESIGN IT.  LAUNCH IT.  FLY IT."
+	NeonUI.heading(tag, 26, NeonUI.GOLD)
 	box.add_child(tag)
+
 	var tag2 := Label.new()
-	tag2.text = "\"Go/No-Go\" is the call every flight controller makes before launch.\nIn this game, you earn it."
-	tag2.add_theme_font_size_override("font_size", 17)
-	tag2.modulate = Color(0.7, 0.78, 0.95)
+	tag2.text = "\"Go/No-Go\" is the call every flight controller makes before launch. In this game, you earn it."
+	NeonUI.body(tag2, 15, NeonUI.MUTED, true)
+	tag2.custom_minimum_size.x = 430
 	box.add_child(tag2)
+
 	var gap := Control.new()
-	gap.custom_minimum_size.y = 20
+	gap.custom_minimum_size.y = 16
 	box.add_child(gap)
 
-	var play := _button("PLAY", 30, Vector2(300, 72))
+	var play := _button("PLAY", 24, Vector2(310, 62))
+	NeonUI.primary(play, 24)
 	play.pressed.connect(func(): MissionState.go_to("campaign_map"))
 	box.add_child(play)
-	var how := _button("How to play", 20, Vector2(300, 48))
+	var how := _button("HOW TO PLAY", 18, Vector2(310, 46))
+	NeonUI.ghost(how, 18)
 	how.pressed.connect(func(): _show(HOW_TO))
 	box.add_child(how)
-	var cred := _button("Credits & NASA sources", 20, Vector2(300, 48))
+	var cred := _button("CREDITS & NASA SOURCES", 18, Vector2(310, 46))
+	NeonUI.ghost(cred, 16)
 	cred.pressed.connect(func(): _show(CREDITS))
 	box.add_child(cred)
 
 	var foot := Label.new()
-	foot.text = "NASA Space Apps Challenge 2026  ·  Space Mission Design Game"
-	foot.add_theme_font_size_override("font_size", 14)
-	foot.modulate = Color(0.55, 0.62, 0.8)
-	foot.position = Vector2(80, 680)
+	foot.text = "NASA SPACE APPS CHALLENGE 2026  ·  SPACE MISSION DESIGN GAME"
+	NeonUI.mono_regular(foot, 10, NeonUI.DIM)
+	foot.position = Vector2(72, 682)
 	root.add_child(foot)
 
-	_overlay = PanelContainer.new()
+	_overlay = NeonUI.panel("cyan", 20)
 	_overlay.custom_minimum_size = Vector2(760, 520)
 	_overlay.position = Vector2(260, 100)
 	_overlay.visible = false
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.04, 0.06, 0.13, 0.96)
-	sb.border_color = Color(0.3, 0.45, 0.85)
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(16)
-	sb.set_content_margin_all(24)
-	_overlay.add_theme_stylebox_override("panel", sb)
 	root.add_child(_overlay)
 	var ov := VBoxContainer.new()
 	_overlay.add_child(ov)
+	ov.add_child(NeonUI.kicker("MISSION BRIEFING", NeonUI.GOLD, 11))
 	_overlay_text = RichTextLabel.new()
 	_overlay_text.bbcode_enabled = true
 	_overlay_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_overlay_text.add_theme_font_size_override("normal_font_size", 17)
-	_overlay_text.add_theme_font_size_override("bold_font_size", 18)
+	_overlay_text.add_theme_font_override("normal_font", NeonUI.font("Barlow-Regular.ttf"))
+	_overlay_text.add_theme_font_override("bold_font", NeonUI.font("Barlow-SemiBold.ttf"))
+	_overlay_text.add_theme_font_size_override("normal_font_size", 15)
+	_overlay_text.add_theme_font_size_override("bold_font_size", 15)
 	ov.add_child(_overlay_text)
-	var close := _button("Close", 18, Vector2(140, 44))
+	var close := _button("CLOSE", 16, Vector2(140, 42))
+	NeonUI.ghost(close, 16)
 	close.size_flags_horizontal = Control.SIZE_SHRINK_END
 	close.pressed.connect(func(): _overlay.visible = false)
 	ov.add_child(close)
 
-	var reset := _button("Reset progress", 13, Vector2(140, 30))
-	reset.position = Vector2(1120, 670)
+	var reset := _button("RESET PROGRESS", 12, Vector2(150, 30))
+	NeonUI.ghost(reset, 12)
+	reset.position = Vector2(1110, 670)
 	reset.pressed.connect(func(): MissionState.reset_progress())
 	root.add_child(reset)
 

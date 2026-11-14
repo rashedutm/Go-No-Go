@@ -47,38 +47,37 @@ func _build_ui() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(root)
 
+	var panel := NeonUI.panel("cyan", 18)
+	panel.position = Vector2(32, 24)
+	panel.custom_minimum_size.x = 660
+	root.add_child(panel)
+	var backing := ColorRect.new()
+	backing.color = Color(0.01, 0.02, 0.05, 0.55)
+	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(backing)
 	var v := VBoxContainer.new()
-	v.position = Vector2(56, 40)
-	v.custom_minimum_size.x = 600
-	v.add_theme_constant_override("separation", 12)
-	root.add_child(v)
+	v.add_theme_constant_override("separation", 8)
+	panel.add_child(v)
 
-	var kicker := Label.new()
-	kicker.text = "MISSION %d BRIEFING  ·  %s" % [int(mission.get("order", 0)), str(mission.get("destination", "")).to_upper()]
-	kicker.add_theme_font_size_override("font_size", 16)
-	kicker.modulate = Color(0.65, 0.75, 1.0)
+	var kicker := NeonUI.kicker("MISSION %d BRIEFING  ·  %s" % [int(mission.get("order", 0)), str(mission.get("destination", "")).to_upper()], NeonUI.CYAN, 11)
 	v.add_child(kicker)
 	var name_l := Label.new()
-	name_l.text = mission.get("name", "")
-	name_l.add_theme_font_size_override("font_size", 56)
-	name_l.add_theme_color_override("font_color", Color(1, 0.82, 0.3))
+	name_l.text = str(mission.get("name", "")).to_upper()
+	NeonUI.display(name_l, 48, NeonUI.GOLD)
 	v.add_child(name_l)
 	var obj := Label.new()
 	obj.text = mission.get("objective", "")
-	obj.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	obj.custom_minimum_size.x = 600
-	obj.add_theme_font_size_override("font_size", 24)
+	NeonUI.body(obj, 18, NeonUI.TEXT, true)
+	obj.custom_minimum_size.x = 620
 	v.add_child(obj)
 	var desc := Label.new()
 	desc.text = mission.get("description", "")
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.custom_minimum_size.x = 600
-	desc.add_theme_font_size_override("font_size", 17)
-	desc.modulate = Color(0.8, 0.85, 0.95)
+	NeonUI.body(desc, 14, NeonUI.MUTED, true)
+	desc.custom_minimum_size.x = 620
 	v.add_child(desc)
 
 	var chips := HBoxContainer.new()
-	chips.add_theme_constant_override("separation", 10)
+	chips.add_theme_constant_override("separation", 8)
 	v.add_child(chips)
 	var delay := float(mission.get("signal_delay_min", 0))
 	var delay_txt := ("%.1f s" % (delay * 60.0)) if delay < 1.0 and delay > 0.0 else ("instant" if delay == 0.0 else "%d min" % int(delay))
@@ -92,61 +91,44 @@ func _build_ui() -> void:
 	var names: Array = []
 	for t in mission.get("required_types", []):
 		names.append(TYPE_NAMES.get(t, t))
-	need.text = "Must carry: " + ", ".join(names)
-	need.add_theme_font_size_override("font_size", 18)
-	need.modulate = Color(0.55, 1.0, 0.65)
+	need.text = "MUST CARRY: " + ", ".join(names).to_upper()
+	NeonUI.mono(need, 13, NeonUI.GREEN)
 	v.add_child(need)
 
-	var fact := PanelContainer.new()
-	var fsb := StyleBoxFlat.new()
-	fsb.bg_color = Color(0.08, 0.1, 0.2, 0.85)
-	fsb.border_color = Color(1, 0.82, 0.3)
-	fsb.border_width_left = 4
-	fsb.set_corner_radius_all(8)
-	fsb.set_content_margin_all(14)
-	fact.add_theme_stylebox_override("panel", fsb)
-	fact.custom_minimum_size.x = 600
+	var fact := NeonUI.panel("cyan", 12)
+	fact.custom_minimum_size.x = 620
 	v.add_child(fact)
+	var fv := VBoxContainer.new()
+	fv.add_theme_constant_override("separation", 2)
+	fact.add_child(fv)
+	fv.add_child(NeonUI.kicker("DID YOU KNOW?", NeonUI.GOLD, 10))
 	var fl := Label.new()
-	fl.text = "Did you know?  " + str(mission.get("fact", ""))
-	fl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	fl.add_theme_font_size_override("font_size", 16)
-	fact.add_child(fl)
+	fl.text = str(mission.get("fact", ""))
+	NeonUI.body(fl, 13, NeonUI.TEXT, true)
+	fv.add_child(fl)
 
 	var buttons := HBoxContainer.new()
-	buttons.position = Vector2(780, 630)
-	buttons.add_theme_constant_override("separation", 12)
-	root.add_child(buttons)
+	buttons.add_theme_constant_override("separation", 10)
+	v.add_child(buttons)
 	var back := Button.new()
-	back.text = "< Map"
-	back.add_theme_font_size_override("font_size", 20)
+	back.text = "‹  MAP"
+	NeonUI.ghost(back, 16)
 	back.pressed.connect(func(): MissionState.go_to("campaign_map"))
 	buttons.add_child(back)
 	var go := Button.new()
-	go.text = "TO THE HANGAR  >"
-	go.custom_minimum_size = Vector2(300, 64)
-	go.add_theme_font_size_override("font_size", 24)
+	go.text = "TO THE HANGAR  →"
+	NeonUI.primary(go, 20)
+	go.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	go.pressed.connect(func(): MissionState.go_to("hangar"))
 	buttons.add_child(go)
 
 
 func _chip(label_text: String, value: String) -> Control:
-	var p := PanelContainer.new()
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.05, 0.08, 0.16, 0.85)
-	sb.set_corner_radius_all(10)
-	sb.set_content_margin_all(10)
-	p.add_theme_stylebox_override("panel", sb)
-	p.custom_minimum_size.x = 140
+	var p := NeonUI.panel("cyan", 9)
+	p.custom_minimum_size.x = 145
 	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 0)
 	p.add_child(v)
-	var a := Label.new()
-	a.text = label_text
-	a.add_theme_font_size_override("font_size", 12)
-	a.modulate = Color(0.6, 0.7, 0.9)
-	v.add_child(a)
-	var b := Label.new()
-	b.text = value
-	b.add_theme_font_size_override("font_size", 22)
-	v.add_child(b)
+	v.add_child(NeonUI.kicker(label_text, NeonUI.MUTED, 9))
+	v.add_child(NeonUI.mono(value, 14, NeonUI.TEXT))
 	return p
