@@ -421,6 +421,15 @@ res://
 - UI: Godot `Control` nodes + one shared `Theme` (rounded panels, bright accent colors, dark-navy background).
 - Tooltips everywhere: each card's `description` field from JSON.
 
+### 8.0 Web export & upload (Member A)
+- `export_presets.cfg` (in the repo) has a **"Web"** preset: no threads (works on any host), includes `data/*.json`, excludes `tests/`, and outputs to `export/web/index.html` (git-ignored).
+- Command-line export:
+  ```bash
+  godot --headless --path . --export-release "Web" export/web/index.html
+  ```
+- Local test (browsers can't run it from `file://`): `python -m http.server 8060 --directory export/web`, then open http://localhost:8060
+- **itch.io upload:** zip the *contents* of `export/web/` (index.html at the zip root) → itch.io → *Create new project* → Kind: **HTML** → upload the zip → tick **"This file will be played in the browser"** → viewport **1280×720**, tick **Fullscreen button** → Visibility **Public**. Test the link in a private window.
+
 ### 8.1 Shared code contract (fixed — this is how A's and B's parts talk to each other)
 
 All three are **autoloads** (Project Settings → Globals), written by Member A. Member B only *reads/calls* them.
