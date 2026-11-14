@@ -213,18 +213,18 @@ func _build_effects() -> void:
 
 	_sparks = CPUParticles3D.new()
 	_sparks.name = "Sparks"
-	_sparks.amount = 24
-	_sparks.lifetime = 0.8
+	_sparks.amount = 32
+	_sparks.lifetime = 1.1
 	_sparks.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
 	_sparks.emission_sphere_radius = 0.10
 	_sparks.direction = Vector3(0, 1, 0)
 	_sparks.spread = 70.0
-	_sparks.initial_velocity_min = 0.30
-	_sparks.initial_velocity_max = 1.00
+	_sparks.initial_velocity_min = 0.40
+	_sparks.initial_velocity_max = 1.20
 	_sparks.gravity = Vector3(0, -1.4, 0)
-	_sparks.scale_amount_min = 0.4
-	_sparks.scale_amount_max = 1.2
-	_sparks.mesh = _particle_mesh(0.022, Color(1.0, 0.75, 0.25))
+	_sparks.scale_amount_min = 0.8
+	_sparks.scale_amount_max = 2.0
+	_sparks.mesh = _particle_mesh(0.030, Color(1.0, 0.80, 0.30))
 	_sparks.local_coords = true
 	_sparks.position = Vector3(_orbit_r, 0, 0)
 	_sparks.emitting = false
