@@ -1,6 +1,7 @@
 # Part of Go/No-Go — written with AI assistance (Space Apps 2026).
 # Sfx (autoload): sound effects generated in code (no audio files or licenses needed),
-# a global Fullscreen / Sound button pair in the top-right corner, and F11 / M shortcuts.
+# a global main-menu button in the top-right corner (Esc) with Sound / Fullscreen /
+# Home / Mission Select / Exit inside, and F11 / M shortcuts.
 # If a real file exists at res://audio/<name>.wav|.ogg|.mp3 it is used instead (Daniel can drop
 # files in without touching code). Every Button plays "click" automatically. Owner: Member A.
 #
@@ -9,6 +10,7 @@
 #   Sfx.muted / Sfx.toggle_mute() / Sfx.toggle_fullscreen()
 extends Node
 
+const Neon := preload("res://scripts/ui/neon_ui.gd")
 const SETTINGS_PATH := "user://settings.cfg"
 const RATE := 22050
 const SOUNDS := ["click", "snap", "beep", "go", "nogo", "alarm", "fixed", "complete", "fail", "hum", "whoosh"]
@@ -17,8 +19,13 @@ var muted := false
 var _streams := {}
 var _players: Array[AudioStreamPlayer] = []
 var _loops := {}
-var _fs_btn: Button
-var _mute_btn: Button
+var _menu_btn: Button
+var _menu_layer: CanvasLayer
+var _menu_root: Control
+var _menu_open := false
+var _prev_mouse_mode := Input.MOUSE_MODE_VISIBLE
+var _menu_sound_btn: Button
+var _menu_fs_btn: Button
 
 
 func _ready() -> void:
@@ -35,6 +42,7 @@ func _ready() -> void:
 		_streams[n] = _load_or_make(n)
 	get_tree().node_added.connect(_on_node_added)
 	_build_buttons()
+	_build_menu()
 	if OS.has_feature("web"):
 		# Browsers only allow fullscreen inside the real click/key event. Godot handles button
 		# presses a frame later, so the page itself toggles fullscreen when the pointer is released
@@ -130,54 +138,174 @@ func toggle_fullscreen() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.physical_keycode == KEY_F11:
+		if event.physical_keycode == KEY_ESCAPE:
+			toggle_menu()
+			get_viewport().set_input_as_handled()
+		elif event.physical_keycode == KEY_F11:
 			toggle_fullscreen()
 		elif event.physical_keycode == KEY_M:
 			toggle_mute()
 
 
 func _on_node_added(node: Node) -> void:
-	if node is BaseButton and node != _fs_btn and node != _mute_btn and not node.has_meta("no_click"):
+	if node is BaseButton and not node.has_meta("no_click"):
 		node.pressed.connect(func(): play("click", -8.0))
 
 
-# ============================================================ corner buttons
+# ============================================================ corner menu
 
-var _icon_fs: Texture2D
-var _icon_snd_on: Texture2D
-var _icon_snd_off: Texture2D
+var _icon_menu: Texture2D
 
 
 func _build_buttons() -> void:
-	_icon_fs = load("res://ui/icons/fullscreen.svg")
-	_icon_snd_on = load("res://ui/icons/sound_on.svg")
-	_icon_snd_off = load("res://ui/icons/sound_off.svg")
+	_icon_menu = load("res://ui/icons/menu.svg")
 	var layer := CanvasLayer.new()
 	layer.layer = 100
 	add_child(layer)
 	var box := HBoxContainer.new()
 	box.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	box.offset_left = -100
+	box.offset_left = -54
 	box.offset_top = 6
 	box.offset_right = -6
 	box.offset_bottom = 40
 	box.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	box.grow_vertical = Control.GROW_DIRECTION_END
 	box.alignment = BoxContainer.ALIGNMENT_END
-	box.add_theme_constant_override("separation", 6)
 	layer.add_child(box)
-	_fs_btn = _corner_button(_icon_fs)
-	_fs_btn.tooltip_text = "Fullscreen on/off (F11)"
-	_fs_btn.pressed.connect(toggle_fullscreen)
-	if OS.has_feature("web"):
-		_fs_btn.mouse_entered.connect(func(): JavaScriptBridge.eval("window.goNoGoFS = true;", true))
-		_fs_btn.mouse_exited.connect(func(): JavaScriptBridge.eval("window.goNoGoFS = false;", true))
-	box.add_child(_fs_btn)
-	_mute_btn = _corner_button(_icon_snd_on)
-	_mute_btn.tooltip_text = "Sound on/off (M)"
-	_mute_btn.pressed.connect(toggle_mute)
-	box.add_child(_mute_btn)
+	_menu_btn = _corner_button(_icon_menu)
+	_menu_btn.tooltip_text = "Main menu (Esc)"
+	_menu_btn.pressed.connect(toggle_menu)
+	box.add_child(_menu_btn)
 	_update_buttons()
+
+
+func _build_menu() -> void:
+	_menu_layer = CanvasLayer.new()
+	_menu_layer.layer = 120
+	add_child(_menu_layer)
+	_menu_root = Control.new()
+	_menu_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_menu_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	_menu_root.visible = false
+	_menu_layer.add_child(_menu_root)
+
+	var backdrop := ColorRect.new()
+	backdrop.color = Color(0.005, 0.01, 0.025, 0.78)
+	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	_menu_root.add_child(backdrop)
+
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_menu_root.add_child(center)
+
+	var panel := Neon.panel("cyan", 26)
+	panel.custom_minimum_size = Vector2(400, 0)
+	center.add_child(panel)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 10)
+	panel.add_child(v)
+	v.add_child(Neon.kicker("GO / NO-GO", Neon.CYAN, 11))
+	v.add_child(Neon.display("MISSION MENU", 38, Neon.TEXT))
+	v.add_child(Neon.caption("FLIGHT OPERATIONS  ·  PAUSED", 13))
+	v.add_child(Neon.rule(Neon.CYAN_DIM))
+
+	var resume := Button.new()
+	resume.text = "RESUME"
+	resume.custom_minimum_size = Vector2(0, 46)
+	Neon.primary(resume, 18)
+	resume.pressed.connect(close_menu)
+	v.add_child(resume)
+
+	var missions := Button.new()
+	missions.text = "MISSION SELECT"
+	missions.custom_minimum_size = Vector2(0, 42)
+	Neon.ghost(missions, 16)
+	missions.pressed.connect(_menu_go.bind("campaign_map"))
+	v.add_child(missions)
+
+	var home := Button.new()
+	home.text = "HOME SCREEN"
+	home.custom_minimum_size = Vector2(0, 42)
+	Neon.ghost(home, 16)
+	home.pressed.connect(_menu_go.bind("title"))
+	v.add_child(home)
+
+	v.add_child(Neon.rule(Neon.CYAN_DIM))
+
+	_menu_sound_btn = Button.new()
+	_menu_sound_btn.custom_minimum_size = Vector2(0, 38)
+	Neon.ghost(_menu_sound_btn, 14)
+	_menu_sound_btn.pressed.connect(toggle_mute)
+	v.add_child(_menu_sound_btn)
+
+	_menu_fs_btn = Button.new()
+	_menu_fs_btn.custom_minimum_size = Vector2(0, 38)
+	Neon.ghost(_menu_fs_btn, 14)
+	_menu_fs_btn.pressed.connect(toggle_fullscreen)
+	if OS.has_feature("web"):
+		_menu_fs_btn.mouse_entered.connect(func(): JavaScriptBridge.eval("window.goNoGoFS = true;", true))
+		_menu_fs_btn.mouse_exited.connect(func(): JavaScriptBridge.eval("window.goNoGoFS = false;", true))
+	v.add_child(_menu_fs_btn)
+
+	if not OS.has_feature("web"):
+		var quit := Button.new()
+		quit.text = "EXIT GAME"
+		quit.custom_minimum_size = Vector2(0, 40)
+		Neon.danger(quit, 15)
+		quit.pressed.connect(_exit_game)
+		v.add_child(quit)
+
+	var hint := Neon.caption("ESC TO RESUME", 11)
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(hint)
+	_update_buttons()
+
+
+func toggle_menu() -> void:
+	if _menu_open:
+		close_menu()
+	else:
+		open_menu()
+
+
+func open_menu() -> void:
+	if _menu_open:
+		return
+	_menu_open = true
+	_prev_mouse_mode = Input.mouse_mode
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_menu_root.visible = true
+	get_tree().paused = true
+	_update_buttons()
+	play("beep", -10.0)
+
+
+func close_menu() -> void:
+	if not _menu_open:
+		return
+	_menu_open = false
+	_menu_root.visible = false
+	get_tree().paused = false
+	Input.mouse_mode = _prev_mouse_mode
+	_update_buttons()
+
+
+func _menu_go(key: String) -> void:
+	_menu_open = false
+	_menu_root.visible = false
+	get_tree().paused = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_update_buttons()
+	MissionState.go_to(key)
+
+
+func _exit_game() -> void:
+	_menu_open = false
+	_menu_root.visible = false
+	get_tree().paused = false
+	get_tree().quit()
 
 
 func _corner_button(icon: Texture2D) -> Button:
@@ -207,12 +335,12 @@ func _corner_button(icon: Texture2D) -> Button:
 
 
 func _update_buttons() -> void:
-	if _mute_btn:
-		_mute_btn.icon = _icon_snd_off if muted else _icon_snd_on
-		_mute_btn.tooltip_text = "Sound off (M) — click to unmute" if muted else "Sound on (M) — click to mute"
-		_mute_btn.modulate = Color.WHITE
-	if _fs_btn:
-		_fs_btn.tooltip_text = "Exit fullscreen (F11)" if is_fullscreen() else "Fullscreen (F11)"
+	if _menu_sound_btn:
+		_menu_sound_btn.text = "SOUND: OFF" if muted else "SOUND: ON"
+	if _menu_fs_btn:
+		_menu_fs_btn.text = "FULLSCREEN: ON" if is_fullscreen() else "FULLSCREEN: OFF"
+	if _menu_btn:
+		_menu_btn.tooltip_text = "Close menu (Esc)" if _menu_open else "Main menu (Esc)"
 
 
 # ============================================================ sound synthesis
