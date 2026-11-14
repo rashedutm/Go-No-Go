@@ -12,95 +12,110 @@
 
 ## 👥 TEAM SPLIT — START HERE
 
-We are 3 people working in parallel and merging through **GitHub**. Each person **owns different folders**, so our work never overwrites each other's (Godot scene files merge very badly).
+We are 3 coders, each with an AI assistant, working in parallel and merging through **GitHub**. Each person **owns different folders**, so nobody's work overwrites anyone else's (Godot scene files merge very badly).
 
-| Member | Has AI? | Owns | Read these sections |
-|---|---|---|---|
-| **Member A — Lead / Integrator** (team owner) | Claude | Project setup, shared code, **Design phase**, campaign map, Web export & upload | §A below, then §3–§8 |
-| **Member B — Emon** (Mission Control dev) | Claude Pro | **Live Mission Control**, **Events**, **Debrief** | §B below, then §6.7–§6.10, §7.6, §8 |
-| **Member C — Daniel** (Content, Art & Pitch) | No AI needed | Art & sound collection, playtesting, **demo video/slides**, submission text | §C below |
+### 🎮 The 3D vision (v2, decided Sat 14 Nov)
+Less text, fewer buttons, more *doing*:
+1. **3D Hangar** (design): your spacecraft stands in a hangar. Pick parts from a slim tray and they **snap onto the 3D model**. Orbit the camera around it. A few icons with bars, and hover to see numbers.
+2. **Go/No-Go poll** (launch check): the four flight controllers call out **"GO!"** or **"NO-GO: battery too small"** one by one, like real NASA. You need four GOs to launch.
+3. **3D launch & cruise**: the rocket lifts off, stages separate, the spacecraft unfolds its solar wings and flies to the planet (short and skippable).
+4. **3D Mission Control room (first-person)**: you **walk** around a NASA-style control room. A **big wall screen** shows your spacecraft orbiting the planet live. There are **4 consoles** (Director, Power/Engineer, Science, Comms). Alarms flash, an alert pops up ("SOLAR STORM, go to the POWER console!"), you **walk to the console, press E**, and fix it before the timer runs out.
+5. **Debrief**: score, stars, and "your design is like Juno."
+
+*Why a control room and not a cockpit?* Real robotic missions (Juno, Cassini, MRO) have no crew. They are flown by flight controllers on Earth, so this keeps the game scientifically valid, which judges score.
+
+| Member | Owns | Read these sections |
+|---|---|---|
+| **Member A — Lead / Integrator** (team owner) | Shared code & data, **3D Hangar** (design), **Go/No-Go poll** (launch check), title, campaign map, briefing, 3D spacecraft model builder, web export | §A, then §3–§8 |
+| **Member B — Emon** | **3D Mission Control room**: first-person player, 4 consoles, live simulation, **events**, alerts | §B, then §6.4–§6.8, §8 |
+| **Member C — Daniel** | **3D launch & cruise**, **space view** (spacecraft orbiting the planet, shown on the big screen), planets, **Debrief**, sounds, **demo video** | §C, then §6.9–§6.10, §7.6, §8 |
 
 ### 📍 Project status
 | Milestone | Status |
 |---|---|
-| **M1 Skeleton** | ✅ **Done.** Godot project, all `data/*.json`, the 3 autoloads (`GameData`, `MissionState`, `Sim`), and placeholder screens. The whole flow Title → Campaign → Briefing → Design → Launch Check → Launch → Mission Control → Debrief is clickable. On the Design screen, press **"Use test design"**. `tests/sim_test.tscn` checks that every mission's test design is GO. |
-| **M2 Design screen** | ✅ **Done.** 4 stations with part cards (hover for plain-English "why it matters"), a live resource bar (budget, launch mass, power, shadow energy, science data, slots), a cartoon spacecraft that updates as you add parts, an issue count per station, and buttons to load an example design or clear. Preview: `godot --path . res://tests/design_preview.tscn -- mars engineer` |
-| M3 Launch check screen | ⏳ Member A, next. The placeholder works already. |
-| M4–M6 Mission Control, Events, Debrief | ⏳ Member B (Emon). Until your scenes exist, the game uses `scenes/placeholders/` automatically. |
+| **M1 Skeleton** | ✅ **Done.** Godot project, all `data/*.json`, the 3 autoloads (`GameData`, `MissionState`, `Sim`) and placeholder screens. The whole flow is clickable. `tests/sim_test.tscn` checks that every mission's test design is GO. |
+| **M2 Design screen (2D)** | ✅ Done as a 2D version. It is the **fallback** while the 3D Hangar is built (`scenes/design/`). |
+| M2b 3D Hangar · M3 Go/No-Go poll | ⏳ Member A |
+| M4–M5 3D Mission Control + events | ⏳ Emon. Until his scene exists, the game automatically uses `scenes/placeholders/`. |
+| M6 Launch/cruise, space view, debrief | ⏳ Daniel |
 
 ### 🛠️ Getting started (everyone)
 
 **Repo:** https://github.com/rashedutm/Go-No-Go (Member A is the owner and adds the others as collaborators. Accept the email invite first.)
 
-**Members A & B — team owner & Emon (coders):**
 1. Install **Git** and **Godot 4.7.2** (standard version, not .NET).
-2. Clone:
+2. Clone the repo and create **your own branch**:
    ```bash
    git clone https://github.com/rashedutm/Go-No-Go.git
    cd Go-No-Go
-   ```
-3. Member B only: create your branch:
-   ```bash
    git checkout -b feat/mission-control
    ```
-4. Open Godot → **Import** → select `project.godot` in the cloned folder (exists after Member A's first push, M1).
-5. Install **Web export templates**: Godot → *Editor → Manage Export Templates → Download and Install*.
-6. Daily loop: `git pull` → work → `git add -A` → `git commit -m "short message"` → `git push`.
-   Member B pushes with `git push -u origin feat/mission-control` the first time, then opens a Pull Request on GitHub.
+   (Emon: `feat/mission-control` · Daniel: `feat/launch-debrief` · Member A works on `main`.)
+3. Open Godot → **Import** → select `project.godot`. Press **F5** to play the current skeleton.
+4. Install **Web export templates**: Godot → *Editor → Manage Export Templates → Download and Install*.
+5. Daily loop: `git pull origin main` → work → `git add -A` → `git commit -m "short message"` → `git push`.
+   The first push is `git push -u origin <your-branch>`. Then open a **Pull Request** to `main` on GitHub, and Member A merges it.
 
-**Member C — Daniel (no coding):** open https://github.com/rashedutm/Go-No-Go in the browser → go into the `content/` folder → **Add file → Upload files** → write a short message → **Commit changes**. That's it.
-
-**Backup rule:** if any part is not merged by its checkpoint time (see §9), Member A (or whoever is free) takes it over in a smaller "lite" version. Nobody waits on anybody — always build against the shared contract (§8.1) with fake data if the real part isn't ready.
+**Backup rule:** if any part is not merged by its checkpoint time (see §9), whoever is free builds a smaller "lite" version, and the existing 2D screens/placeholders stay as the fallback. Nobody waits on anybody: always build against the shared contract (§8.1) with `Sim.make_test_design()` as fake data.
 
 ---
 
 ### §A — Member A: Lead / Integrator
 
-**Goal:** the skeleton everyone builds on, plus the whole *before-launch* half of the game.
+**Goal:** everything *before launch*, plus keeping `main` working.
 
-1. **First 1–2 hours (blocks others — do this first, push immediately):**
-   - Create the Godot 4.7.2 project in the repo root, `.gitignore` (§8.2), folder layout (§8), shared `Theme`.
-   - Write all `data/*.json` files from §7.
-   - Write the three autoloads exactly as in the contract (§8.1): `GameData`, `MissionState`, `Sim`.
-   - Make an empty scene for every screen with a "Next" button so the full flow (§3) is clickable end-to-end.
-   - Push to `main` and tell Member B "skeleton is up".
-2. Build **Title**, **Campaign map**, **Briefing**, **Design (4 stations)** + resource bar, **Launch check** (M2, M3, M7).
-3. Merge Member B's branch, fix integration issues.
-4. Add Member C's art/sounds as they arrive.
-5. **Web export + upload** (M8) and test in a private browser window.
+1. ✅ M1 skeleton, ✅ M2 2D design screen (fallback).
+2. **`SpacecraftModel3D`** (`scripts/shared/spacecraft_model_3d.gd`): builds a 3D spacecraft from a design using Godot primitives (bus box, solar wings, RTGs, dish, instrument boxes, vault). **Push this early.** Daniel uses it for the launch and space view, and Emon for the wall screen. → **M2a, Sat ~13:00**
+3. **3D Hangar** (`scenes/hangar/`): hangar room, the spacecraft model in the middle, an orbit camera, 4 station icons, a slim part tray, a compact icon resource bar, hover tooltips. Clicking a part updates `MissionState.design` and the 3D model. Rocket choice shows the rocket standing next to it. → **M2b**
+4. **Go/No-Go poll** (`scenes/launch_check/`): the 4 controllers report one by one from `Sim.launch_check()`. A failed station shows its reason and a "Fix it" button that returns to that station in the hangar. → **M3**
+5. Make the title, campaign map and briefing prettier (Solar System strip with planet spheres). → **M7**
+6. Merge Pull Requests, add the web export, upload to itch.io. → **M8**
 
 **Prompt to paste into your AI:**
-> "Read README.md fully. I am Member A (Lead/Integrator). Start with §A step 1: create the Godot 4.7.2 project skeleton, the JSON data files from §7, and the three autoloads exactly matching the contract in §8.1. Only touch folders I own (§8.3)."
+> "Read README.md fully. I am Member A (Lead/Integrator). Continue §A from the first unfinished step. Keep the shared contract in §8.1 stable and only touch folders I own (§8.3)."
 
 ---
 
-### §B — Member B (Emon): Mission Control developer
+### §B — Member B (Emon): 3D Mission Control room
 
-**Goal:** the *after-launch* half — the exciting live part and the ending.
+**Goal:** the heart of the game. The player *lives* the mission here.
 
-1. Clone the repo. **Don't wait for Member A**: start in your own folders with a **fake design** (`Sim.make_test_design()` from §8.1 — if it doesn't exist yet, create a local copy of that dictionary inside your scene for testing).
-2. Build **Live Mission Control** scene (`scenes/mission_control/`) — ticking simulation, gauges, quick actions, time speed controls (§6.7). → M4
-3. Build the **Events system** (`scripts/events/`, `data/events.json`) — at least 8 events from §6.8 with choice cards and timers. → M5
-4. Build the **Debrief** scene (`scenes/debrief/`) — score, stars, NASA look-alike, cause→effect lines, retry/next buttons (§6.9, §6.10, §7.6). → M6
-5. Work on branch `feat/mission-control`, push often, open a Pull Request to `main` after each milestone.
-6. **Only read from** `MissionState` / `GameData` / `Sim` — never edit those files. If you need a new shared function, ask Member A (or add it in your own script).
+1. `git pull origin main`, then work on branch `feat/mission-control`. Start right away with `Sim.make_test_design("mars")` as the design.
+2. **Room + player** (`scenes/mission_control/`): a 3D control room built from boxes/CSG (rows of desks, a big wall screen, 4 glowing consoles labeled DIRECTOR · POWER · SCIENCE · COMMS). A **first-person controller**: WASD + mouse look, `E` to use a console, `Esc` to release the mouse. Mouse capture must start on a click (browsers require it). → **M4a**
+3. **Live simulation** (`scripts/mission_control/mission_sim.gd`): the tick loop from §6.7 (power, battery, eclipses, data, storage, downlink, health, mission clock, time speed). Use `Sim.summarize()`, `Sim.source_power_w()` and `Sim.downlink_rate_mbps()`, and don't re-invent the math. → **M4b**
+4. **Consoles**: walking up to a console and pressing `E` opens a **small 2D panel** with only that station's gauges + 2–3 big action buttons (Science: instruments on/off · Power: safe mode · Comms: downlink priority / buy contact time · Director: spend reserve). Console screens glow **red** when they need attention. → **M4c**
+5. **Events** (`data/events.json`, `scripts/events/`): ≥ 8 events from §6.8. An alert banner + alarm light + sound says which console to go to. The timer is shown on the HUD. Choices write cause→effect lines into the log. → **M5**
+6. **Wall screen**: show Daniel's `space_view.tscn` inside a `SubViewport` on the big screen (use a simple placeholder sphere until it exists). Call `set_status()` on it when events happen. → **M5**
+7. When the mission ends, fill `MissionState.last_result` (§8.1) and call `MissionState.go_to("debrief")`.
+8. **Fallback:** if 3D walking isn't stable by **Sun 12:00**, skip walking. Use a fixed camera that clicks between the 4 consoles. That's still 3D, just simpler.
 
 **Prompt to paste into your AI:**
-> "Read README.md fully. I am Member B (Emon, Mission Control developer). Build §B: the Live Mission Control scene, events system and debrief, in Godot 4.7.2 GDScript. Use the shared contract in §8.1 as the only interface to the rest of the game, use a fake test design until the real one exists, and only create/edit files in the folders I own (§8.3)."
+> "Read README.md fully. I am Member B (Emon). Build §B: the 3D first-person Mission Control room with 4 consoles, the live mission simulation and the events system, in Godot 4.7.2 GDScript (Compatibility renderer, must run in a web browser). Use only the shared contract in §8.1 to talk to the rest of the game, use Sim.make_test_design() as fake data, and only create/edit files in the folders I own (§8.3)."
 
 ---
 
-### §C — Member C (Daniel): Content, Art & Pitch (no AI or coding needed)
+### §C — Member C (Daniel): 3D launch, space view & debrief
 
-Small tasks, but each one really matters for the **Presentation** score. Put everything in the repo folder `content/` (upload via the GitHub website: *Add file → Upload files*) or send to Member A.
+**Goal:** the "wow" moments, plus the ending.
 
-1. **Collect free icons & art** (by Sat night): spacecraft parts, planets, gauges, UI icons. Use sites with free licenses, e.g. **Kenney.nl** (CC0), **OpenGameArt.org**, **NASA image library** (images.nasa.gov — NASA images are free to use, but **no NASA logo/meatball/worm**). For every file, write the **source link + license** in `content/CREDITS.md`.
-2. **Collect 3–5 sounds** (by Sat night): button click, alarm beep, launch rumble, success jingle — from **freesound.org** (CC0) or **Kenney**. Add to `CREDITS.md`.
-3. **Check the facts** in §7.6 on **science.nasa.gov** (launch years, one fun fact each). Fix any mistakes in `content/facts.md`.
-4. **Suggest game names** (5 ideas) in the team chat — we pick one.
-5. **Playtest** (Sunday afternoon): play every mission, write bugs in `content/bugs.md` like: *"Mission 3, clicked RTG, budget went negative, nothing happened."*
-6. **Make the demo** (Sunday evening): either a **video of 30 seconds or less** (record the screen with OBS or Xbox Game Bar `Win+G`, add English subtitles), **or 7 slides max** (Google Slides/Canva): Title · Team & challenge · Problem · Our game (screenshots) · How it teaches trade-offs · NASA data used · Future. Use the script in §10.1.
-7. **Draft the submission text** in `content/submission.md`: project summary, description, tools used (from §10).
+1. `git pull origin main`, then work on branch `feat/launch-debrief`. Use `Sim.make_test_design("mars")` as fake data.
+2. **Planets** (`scenes/space/planets/`): Earth, Moon, Mars, Jupiter, Saturn (with rings) as spheres with colors or textures. NASA images (images.nasa.gov / Solar System textures) are allowed, with **no NASA logos**. Credit every texture in `content/CREDITS.md`. → **M6a**
+3. **Space view** (`scenes/space/space_view.tscn`): the spacecraft (from `SpacecraftModel3D.build(design)`, made by Member A; use a simple box until it exists) orbiting the mission's planet, with a starfield and a slow camera. It must expose `set_status(status: String)`: `"normal"`, `"safe_mode"` (lights dim), `"solar_storm"` (orange particles), `"damaged"` (sparks), `"downlink"` (beam to Earth). Emon shows it on his wall screen. → **M6a**
+4. **Launch & cruise** (`scenes/launch_anim/launch_anim.tscn`): 10–15 s, skippable with a button/Space. Rocket on the pad → liftoff with smoke particles → stage separation → spacecraft unfolds → short cruise → arrives at the planet. Camera shake and countdown text ("T-3, 2, 1… LIFTOFF"). At the end, call `MissionState.go_to("mission_control")`. → **M6b**
+5. **Debrief** (`scenes/debrief/debrief.tscn`): the spacecraft slowly rotating in 3D, a big score, stars that pop in one by one, 3 score bars (science, survival, budget), the **"Your mission is like Juno"** card (`Sim.find_lookalike()`), 3 cause→effect lines from `last_result.log`, and Retry/Next buttons. **You must call** `MissionState.record_result(...)` (§8.1). → **M6c**
+**Original tasks (still yours, on top of the 3D work above):**
+
+6. **Collect free icons & art** (by Sat night): spacecraft parts, planets, gauges, UI icons. Use sites with free licenses, e.g. **Kenney.nl** (CC0), **OpenGameArt.org**, **NASA image library** (images.nasa.gov — NASA images are free to use, but **no NASA logo/meatball/worm**). For every file, write the **source link + license** in `content/CREDITS.md`. Put raw files in `content/`, and Member A or you import them into `art/`.
+7. **Collect 3–5 sounds** (by Sat night): button click, alarm beep, launch rumble, success jingle. Use **freesound.org** (CC0) or **Kenney**. Put them in `audio/` and credit them in `content/CREDITS.md`.
+8. **Check the facts** in §7.6 and `data/lookalikes.json` on **science.nasa.gov** (launch years, one fun fact each). Write corrections in `content/facts.md`, and Member A updates the JSON.
+9. **Playtest** (Sunday afternoon): play every mission and write bugs in `content/bugs.md`, like: *"Mission 3, clicked RTG, budget went negative, nothing happened."*
+10. **Make the demo** (Sunday evening): either a **video of 30 seconds or less** (record the screen with OBS or Xbox Game Bar `Win+G`, add English subtitles), **or 7 slides max** (Google Slides/Canva): Title · Team & challenge · Problem · Our game (screenshots) · How it teaches trade-offs · NASA data used · Future. Use the script in §10.1.
+11. **Draft the submission text** in `content/submission.md`: project summary, description, tools used (from §10).
+
+**Priority if time runs short:** 10 (demo) > 5 (debrief) > 3 (space view) > 4 (launch) > the rest. The demo is required for judging.
+
+**Prompt to paste into your AI:**
+> "Read README.md fully. I am Member C (Daniel). Build §C: the planets, the 3D space view with set_status(), the 3D launch & cruise sequence and the debrief screen, in Godot 4.7.2 GDScript (Compatibility renderer, must run in a web browser). Use only the shared contract in §8.1, use Sim.make_test_design() as fake data, and only create/edit files in the folders I own (§8.3)."
 
 ---
 
@@ -109,7 +124,7 @@ Small tasks, but each one really matters for the **Presentation** score. Put eve
 You are helping a small team build this game for a hackathon with a hard deadline.
 - **First ask (or check) which member you are working for (A, B or C) and stick to that member's section and owned folders (§8.3).** Never edit files owned by another member — create a new file in your own folder instead.
 - The shared code contract (§8.1) is fixed. Don't rename its functions, fields or signals.
-- Follow this README as the **source of truth** for design, data, and scope. Do not add multiplayer, 3D, or features marked *Stretch* until every *Core* milestone works.
+- Follow this README as the **source of truth** for design, data, and scope. Do not add multiplayer or features marked *Stretch* until every *Core* milestone works. 3D is in scope (see "The 3D vision"), but build with **Godot primitives/CSG and simple materials**, use **no heavy imported models**, and keep it fast in a web browser (Compatibility renderer).
 - Engine: **Godot 4.7.2, GDScript only** (no C#, no plugins that block Web export).
 - Keep all game numbers in **`data/*.json`** files (tables in §7), never hard-coded in scripts, so designers can tune balance without touching code.
 - Every system must explain itself to the player in **plain English** (the target player is a beginner student).
@@ -140,11 +155,13 @@ The player is the **whole mission team** of a robotic space mission. They travel
 |---|---|
 | Players | **Solo only.** No multiplayer. One player controls all 4 role stations. |
 | Destinations | Whole Solar System, unlocked as a **campaign** |
-| After launch | **Live mission control** with real-time events |
+| Design | **3D Hangar** builder: parts snap onto a 3D spacecraft (the 2D design screen stays as the fallback) |
+| Launch check | **Go/No-Go poll**: 4 flight controllers call GO / NO-GO |
+| After launch | **3D launch & cruise** → **first-person 3D Mission Control room** on Earth (walk to consoles, fix problems), with real-time events |
 | Events | Space weather · Hardware failures · Comms/data limits · Science opportunities |
 | Score | **Science returned · Budget efficiency · Mission survival** |
 | Debrief | **"Your design is like this real NASA mission"** + short cause→effect lines |
-| Style | Mission-control dashboard × friendly cartoon |
+| Style | Low-poly, colorful 3D (primitives) + minimal text. Show, don't tell: icons, bars, lights, sounds. |
 | Name | **Go/No-Go** (repo: `rashedutm/Go-No-Go`). The title screen explains the term in one line. |
 
 ---
@@ -163,10 +180,10 @@ Title ─► Campaign Map ─► Mission Briefing ─► DESIGN (4 stations) ─
 1. **Title** – Play / How to play / Credits & references.
 2. **Campaign map** – Solar System strip; locked planets greyed. A mission unlocks when the previous one earns ≥ 1 star.
 3. **Mission briefing** – objective, science goal (data to return), budget, minimum lifetime, a "Did you know?" fact.
-4. **Design** – four tabs/stations (§5). A **resource bar** is always visible at the top: Budget · Mass · Power balance · Data balance · Schedule.
-5. **Launch check** – automatic checklist (§6.6). Each failed item explains *why* in one sentence and which station fixes it.
-6. **Launch animation** – short 2D cartoon launch + cruise to target (skippable).
-7. **Live mission control** – 3–5 real minutes per mission (§6.7).
+4. **Design: 3D Hangar** (Member A). The four stations (§5) are icons. Parts snap onto the 3D spacecraft, and a compact icon resource bar is always visible: Budget · Mass · Power · Shadow energy · Data · Slots.
+5. **Launch check: Go/No-Go poll** (Member A). Each controller reports from `Sim.launch_check()` (§6.6). A NO-GO explains *why* in one sentence and has a "Fix it" button that returns to that station.
+6. **3D launch & cruise** (Daniel). 10–15 s, skippable.
+7. **3D Mission Control room** (Emon). First-person, 3–5 real minutes per mission (§6.7). The wall screen shows Daniel's space view.
 8. **Debrief** – score, stars, NASA look-alike card, cause→effect lines, buttons: *Redesign & retry* / *Next mission*.
 
 ---
@@ -256,7 +273,7 @@ Orbit-insertion Δv per destination (m/s): Earth LEO 0 · Moon 900 · Mars 1000 
 | Radiation (Jupiter only) | shielding ≥ Medium | "Jupiter's radiation will fry unshielded electronics." |
 
 ### 6.7 Live Mission Control
-- Screen layout: center = cartoon spacecraft orbiting the target; left = gauges (Battery %, Power in/out, Storage %, Data returned vs goal, Health %, Fuel, Reserve $); right = **event log**; bottom = 4 station buttons with quick actions.
+- **3D first-person room** (v2): the big wall screen shows the spacecraft orbiting the target (Daniel's `space_view`). The **HUD** is minimal: mission clock, time speed, Battery %, Data returned vs goal, Health %, Reserve $, plus an alert banner with a timer when an event is active. Detailed gauges live **on the 4 consoles**. Walk up and press `E` to open a console's small panel with its quick actions. A short **event log** sits on the Director console.
 - **Time compression:** total mission plays in ~3–5 real minutes (e.g. 1 s ≈ 4 days). Player can pause, ×1, ×2.
 - **Each tick:** generate power → charge/drain battery → instruments add data to storage → downlink when a ground contact is active → wear reduces health slightly.
 - **Quick actions** (always available):
@@ -378,7 +395,8 @@ Moon uses `near_rate_factor` 0.3 (weaker signal than Earth orbit). Operations co
 
 ## 8. Tech plan (Godot)
 
-- **Godot 4.7.2**, GDScript, 2D only, resolution 1280×720 stretch (`canvas_items`, `expand`).
+- **Godot 4.7.2**, GDScript, **3D + 2D UI**, **Compatibility renderer** (required for web), resolution 1280×720 stretch (`canvas_items`, `expand`).
+- 3D rules for web performance: primitives/CSG (`BoxMesh`, `CylinderMesh`, `SphereMesh`), `StandardMaterial3D` with flat colors/emission, at most one `DirectionalLight3D` with shadows, GPU particles kept small (≤ 200), no SDFGI/volumetrics. Bake CSG to meshes if it gets slow.
 - **Web export** (HTML5) — requires installing **Web export templates** (Editor → Manage Export Templates). Use the *no-threads* variant for easy hosting (itch.io / GitHub Pages). ⚠️ In the Web export preset set **Resources → Filters to export non-resource files: `data/*.json`**, otherwise the game loads no data in the browser.
 - Test the math anytime: `godot --headless --path . res://tests/sim_test.tscn` (prints each mission's budget/mass/power/data and `RESULT: ALL TEST DESIGNS GO`).
 - Autoloads (singletons):
@@ -495,6 +513,27 @@ Sim.source_power_w(source, distance_sun_au, years_elapsed)   # solar 1/d², RTG 
 `Sim.summarize()` also returns `budget_musd, launcher_capacity_kg, downlink_rate_mbps, data_goal_gb, slots_used, slots_max`.
 **Debrief must call** `MissionState.record_result(mission_id, stars, score)` so the next mission unlocks (the placeholder already does).
 
+**3D contracts (v2):**
+
+`SpacecraftModel3D` (Member A, `scripts/shared/spacecraft_model_3d.gd`, `class_name SpacecraftModel3D`):
+```gdscript
+static func build(design: Dictionary) -> Node3D
+#  Returns a new Node3D (about 2–4 m across, origin at the center of the bus, +Y up, -Z forward).
+#  Child nodes are named so others can animate them:
+#  "Bus", "SolarWings" (Node3D, its children are the wing panels), "RTGs", "Antenna", "Instruments", "Vault".
+static func deploy_wings(model: Node3D, t: float) -> void   # t: 0 = folded, 1 = open (for the launch animation)
+```
+
+`space_view.tscn` (Daniel, `scenes/space/space_view.tscn`, root script `space_view.gd`):
+```gdscript
+func setup(design: Dictionary) -> void         # builds the spacecraft + the mission's planet; called once
+func set_status(status: String) -> void        # "normal" | "safe_mode" | "solar_storm" | "damaged" | "downlink"
+func set_time_scale(days_per_second: float) -> void   # optional: orbit speed follows the mission clock
+```
+Emon embeds it like this: `SubViewport` → instance `space_view.tscn` → `ViewportTexture` on the wall-screen `MeshInstance3D` material. Until Daniel's scene exists, Emon uses a placeholder sphere. Check with `ResourceLoader.exists("res://scenes/space/space_view.tscn")`.
+
+**Design station memory:** `MissionState.set_meta("design_station", "engineer")` before `go_to("design")` (or `"hangar"`) opens that station. The Go/No-Go poll's "Fix it" button uses this.
+
 ### 8.2 `.gitignore` (repo root)
 ```
 .godot/
@@ -508,9 +547,11 @@ Commit `*.import` and `*.uid` files (Godot 4 needs them).
 ### 8.3 Folder ownership (only edit what you own)
 | Owner | Folders / files |
 |---|---|
-| **A** | `project.godot`, `export_presets.cfg`, `scripts/autoload/`, `data/` (except `events.json`), `ui/`, `scenes/title/`, `scenes/campaign_map/`, `scenes/briefing/`, `scenes/design/`, `scenes/launch_check/`, `scenes/launch_anim/`, `scenes/placeholders/`, `scripts/ui/`, `tests/` |
-| **B** | `scenes/mission_control/`, `scenes/debrief/`, `scripts/events/`, `data/events.json`, `scripts/mission_control/` |
-| **C** | `content/` (CREDITS.md, facts.md, bugs.md, submission.md, raw art & sounds) |
+| **A** | `project.godot`, `export_presets.cfg`, `scripts/autoload/`, `scripts/shared/`, `data/` (except `events.json`), `ui/`, `scenes/title/`, `scenes/campaign_map/`, `scenes/briefing/`, `scenes/design/`, `scenes/hangar/`, `scenes/launch_check/`, `scenes/placeholders/`, `scripts/ui/`, `tests/` |
+| **B — Emon** | `scenes/mission_control/`, `scripts/mission_control/`, `scripts/events/`, `data/events.json` |
+| **C — Daniel** | `scenes/launch_anim/`, `scenes/space/`, `scenes/debrief/`, `scripts/space/`, `audio/`, `art/`, `content/` (CREDITS.md, facts.md, bugs.md, submission.md) |
+
+`project.godot` is Member A's only. If you need an input action (e.g. `move_forward`) or an autoload, ask Member A, **or** create input actions in code at runtime with `InputMap.add_action()` inside your own scene. `launch_anim/` moved from A to Daniel in v2. A's old placeholder `launch_anim.tscn` is Daniel's to replace.
 | A imports C's files into | `art/`, `audio/` |
 
 ### 8.4 Git rules
@@ -525,23 +566,27 @@ Commit `*.import` and `*.uid` files (Godot 4 needs them).
 
 ## 9. Build milestones (Core first, Stretch only if time)
 
-| # | Milestone | Owner | Core / Stretch | Target time | Checkpoint (backup kicks in) |
-|---|---|---|---|---|---|
-| M1 | Project skeleton, theme, JSON data, 3 autoloads, clickable flow | A | Core | Sat 14 Nov, +2 h | — (everything depends on it) |
-| M2 | Design screen (4 stations) + live resource bar | A | Core | Sat evening | — |
-| M3 | Launch check with explanations | A | Core | Sat night | — |
-| M4 | Live Mission Control: ticking sim, gauges, quick actions | **B** | Core | Sun morning | **Sun 12:00** → A builds "lite" version: sim + gauges only, no quick actions |
-| M5 | Events system (≥ 8 events) | **B** | Core | Sun midday | **Sun 15:00** → ship with 3–4 events or none |
-| M6 | Debrief: score, stars, NASA look-alike, cause→effect | **B** | Core | Sun early afternoon | **Sun 15:00** → A builds simple results screen using `Sim.score()` |
-| M7 | Campaign map, 5 missions, save progress | A | Core | Sun afternoon | ship with 3 missions if short on time |
-| M8 | Web export + upload to itch.io / GitHub Pages, test in private window | A | Core | **Sun 18:00 latest** | — |
-| M9 | Demo video (≤ 30 s) or 7 slides + submission text | **C** (A reviews) | Core | Sun 18:00–22:00 | **Sun 21:00** → A makes 7 slides from screenshots |
-| C1 | Art, icons, sounds + CREDITS.md | **C** | Core | Sat night | A uses plain Godot shapes/colors |
-| C2 | Playtest + bugs.md | **C** | Core | Sun 15:00–18:00 | — |
-| S1 | Launch & cruise animation, sound | A or B | Stretch | — | — |
-| S2 | Difficulty levels (Easy: no timers, more budget) | B | Stretch | — | — |
-| S3 | Sandbox mode (no budget limits) | A | Stretch | — | — |
-| S4 | Tutorial overlay on Mission 1 | A | Stretch | — | — |
+| # | Milestone | Owner | Target time | Checkpoint (backup kicks in) |
+|---|---|---|---|---|
+| M1 | Skeleton: project, JSON data, 3 autoloads, clickable flow | A | ✅ Sat 09:00 | — |
+| M2 | 2D Design screen (fallback) | A | ✅ Sat 09:30 | — |
+| M2a | `SpacecraftModel3D.build()` pushed | A | **Sat 13:00** | blocks Daniel & Emon's wall screen, so it goes first |
+| M2b | 3D Hangar builder | A | Sat 20:00 | **Sun 10:00** → keep 2D design screen |
+| M3 | Go/No-Go poll launch check | A | Sat 23:00 | **Sun 10:00** → keep placeholder checklist |
+| M4a | 3D control room + first-person walk + `E` on consoles | **Emon** | Sat 18:00 | **Sun 12:00** → fixed camera clicking between consoles |
+| M4b–c | Live simulation + console panels + HUD | **Emon** | Sat night | **Sun 12:00** → Member A helps / simplifies |
+| M5 | Events (≥ 8) with alerts, alarms, timers; wall screen | **Emon** | Sun 12:00 | **Sun 15:00** → ship with 3–4 events |
+| M6a | Planets + space view with `set_status()` | **Daniel** | Sat 18:00 | **Sun 12:00** → wall screen shows a spinning planet only |
+| M6b | 3D launch & cruise | **Daniel** | Sat night | **Sun 14:00** → keep the text placeholder |
+| M6c | Debrief (3D spacecraft, stars, look-alike) | **Daniel** | Sun 12:00 | **Sun 15:00** → keep the placeholder debrief (already works) |
+| C1 | Art, icons, sounds + CREDITS.md, fact check | **Daniel** | Sat night | A uses plain shapes/colors |
+| M7 | Prettier title / campaign map / briefing | A | Sun afternoon | keep current |
+| M8 | Merge all, web export, upload, test in private window | A | **Sun 18:00 latest** | — |
+| C2 | Playtest + bugs.md | **Daniel** (+ everyone) | Sun 15:00–18:00 | — |
+| M9 | Demo video (≤ 30 s) or 7 slides + submission text | **Daniel** (A reviews) | Sun 18:00–22:00 | **Sun 21:00** → A makes 7 slides from screenshots |
+| S1 | Difficulty levels (Easy: no timers, more budget) | Emon | Stretch | — |
+| S2 | Sandbox mode (no budget limits) | A | Stretch | — |
+| S3 | Tutorial hints on Mission 1 | A | Stretch | — |
 
 **Rules:**
 - If behind schedule at M8 time, stop features and export what works.
@@ -567,10 +612,11 @@ Commit `*.import` and `*.uid` files (Godot 4 needs them).
 | Time | Show on screen | Say / subtitle |
 |---|---|---|
 | 0:00–0:03 | Title screen | "Hi, we're team ___, and this is Go/No-Go for the Space Mission Design Game challenge." |
-| 0:03–0:08 | Design screen, adding parts, bars moving | "Design a real space mission: every part costs money, mass, power and data." |
-| 0:08–0:14 | Launch check failing → fixing → passing | "The launch check tells you why your design fails — and how to fix it." |
-| 0:14–0:22 | Live Mission Control, a solar storm event | "Then fly it live: solar storms, failing batteries, and surprise discoveries." |
-| 0:22–0:30 | Debrief with NASA look-alike card, Solar System map | "Built with NASA data, it teaches anyone how real missions are made — from Earth to Saturn." |
+| 0:03–0:09 | 3D Hangar: parts snapping onto the spacecraft, bars moving | "Build a real space mission: every part costs money, mass, power and data." |
+| 0:09–0:13 | Go/No-Go poll: one NO-GO → fix → four GOs | "Flight controllers tell you why your design fails, and how to fix it." |
+| 0:13–0:17 | 3D launch, wings unfolding | "Launch it…" |
+| 0:17–0:24 | First-person Mission Control: alarm, walk to console, fix the solar storm | "…then fly it live from Mission Control: solar storms, failing batteries, surprise discoveries." |
+| 0:24–0:30 | Debrief stars + "Your mission is like Juno" | "Built with NASA data, it teaches anyone how real missions are made, from Earth to Saturn." |
 
 ## 11. AI usage disclosure
 

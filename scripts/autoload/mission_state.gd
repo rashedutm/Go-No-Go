@@ -13,6 +13,7 @@ const SCREENS := {
 	"campaign_map": "res://scenes/campaign_map/campaign_map.tscn",
 	"briefing": "res://scenes/briefing/briefing.tscn",
 	"design": "res://scenes/design/design.tscn",
+	"hangar": "res://scenes/hangar/hangar.tscn",   # v2 3D design; falls back to 2D design
 	"launch_check": "res://scenes/launch_check/launch_check.tscn",
 	"launch_anim": "res://scenes/launch_anim/launch_anim.tscn",
 	"mission_control": "res://scenes/mission_control/mission_control.tscn",
@@ -21,6 +22,7 @@ const SCREENS := {
 const PLACEHOLDERS := {
 	"mission_control": "res://scenes/placeholders/mission_control_placeholder.tscn",
 	"debrief": "res://scenes/placeholders/debrief_placeholder.tscn",
+	"hangar": "res://scenes/design/design.tscn",
 }
 
 var current_mission_id: String = "earth"
