@@ -13,4 +13,5 @@
 ## UI fonts
 
 - **Barlow, Barlow Condensed and IBM Plex Mono** — [Google Fonts](https://fonts.google.com/), licensed under the [SIL Open Font License 1.1](https://openfontlicense.org/). License texts are in `ui/fonts/OFL-Barlow.txt`, `OFL-BarlowCondensed.txt` and `OFL-IBMPlexMono.txt`.
+- **Fullscreen and sound icons** (`ui/icons/`) — [Lucide](https://lucide.dev/), ISC license.
 - The neon HUD panel textures in `ui/panels/` are generated in-house — no third-party assets.
