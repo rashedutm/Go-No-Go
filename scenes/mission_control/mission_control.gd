@@ -37,6 +37,18 @@ var _panel_title: Label
 var _panel_body: RichTextLabel
 var _panel_buttons: HBoxContainer
 var _hud_clock: Label
+var _hud_bars := {}         # key -> {bar, label}
+var _end_banner: Label
+
+# --- live simulation (M4b)
+var sim: MissionSim
+var days_per_second := 4.0  # base speed: the whole mission plays in about 3 minutes
+var speed := 1.0            # 1, 2 or 4 (keys 1/2/3)
+var paused := false
+var _ending := false
+var _panel_refresh := 0.0
+const SPEEDS := [1.0, 2.0, 4.0]
+var _acked := {}           # condition alerts the player already checked (cleared when the problem goes away)
 
 
 func _ready() -> void:
@@ -45,6 +57,8 @@ func _ready() -> void:
 		design = Sim.make_test_design(MissionState.current_mission_id)
 		MissionState.design = design
 	mission = GameData.get_mission(design.get("mission_id", "mars"))
+	sim = MissionSim.new(design)
+	days_per_second = sim.total_days / 180.0
 	_build_room()
 	_build_wall_screen()
 	_build_consoles()
@@ -53,6 +67,7 @@ func _ready() -> void:
 	add_child(player)
 	player.interact_pressed.connect(_on_interact)
 	_build_ui()
+	sim.add_log("Arrived at %s. Science operations begin." % mission.get("destination", "the target"))
 
 
 # ============================================================== room
@@ -155,6 +170,7 @@ func set_console_alert(key: String, on: bool) -> void:
 
 func open_console(key: String) -> void:
 	_open = key
+	_acked[key] = true
 	var st: ConsoleStation = consoles[key]
 	_panel_title.text = st.title + " CONSOLE"
 	_panel_title.add_theme_color_override("font_color", st.color)
@@ -189,37 +205,84 @@ func close_console() -> void:
 	console_closed.emit(key)
 
 
-## Placeholder text for each console. M4c replaces this with real gauges + action buttons.
+## Live text for each console. M4c adds action buttons below it.
 func _console_body(key: String) -> String:
-	var s := Sim.summarize(design)
+	var f := PartInfo.fmt
 	match key:
 		"engineer":
-			return "[b]Power & spacecraft health[/b]\nPower made: %d W   ·   Power used: %d W\nBattery: %d Wh\n\n[i]Coming in M4c: live battery gauge, SAFE MODE button.[/i]" % [s["power_gen_w"], s["power_load_w"], s["battery_wh"]]
+			return "[b]Power & spacecraft health[/b]\nPower made: %d W   ·   Power used: %d W\nBattery: %d%%  (%s / %s Wh)\nHealth: %d%%%s\n\n[i]Coming in M4c: SAFE MODE button.[/i]" % [
+				sim.power_gen_w, sim.power_load_w, sim.battery_pct(), f.call(sim.battery_wh), f.call(sim.battery_max), sim.health,
+				"   ·   [color=#ffb74d]SAFE MODE[/color]" if sim.safe_mode else ""]
 		"science":
-			return "[b]Instruments[/b]\n%s\nData made: %.1f Gb/day   ·   Goal: %s Gb\n\n[i]Coming in M4c: switch each instrument on/off.[/i]" % [", ".join(design.get("instruments", [])), s["data_per_day_gb"], PartInfo.fmt(s["data_goal_gb"])]
+			var lines: Array = []
+			for i in sim.instruments_on:
+				lines.append("%s: %s" % [GameData.get_item("instruments", i).get("name", i), "ON" if sim.instruments_on[i] else "off"])
+			return "[b]Instruments[/b]\n%s\n\nMaking %.1f Gb/day   ·   Returned %s / %s Gb (%d%%)\n\n[i]Coming in M4c: switch each instrument on/off.[/i]" % [
+				"\n".join(lines), sim.data_rate_gb_day, f.call(sim.data_returned_gb), f.call(sim.mission.get("data_goal_gb", 0)),
+				int(100.0 * sim.data_returned_gb / maxf(float(sim.mission.get("data_goal_gb", 1)), 1.0))]
 		"comms":
-			return "[b]Communications[/b]\nDownlink: %.2f Mbps   ·   %.1f Gb/day\nMemory: %s Gb   ·   Signal delay: %.1f min\n\n[i]Coming in M4c: downlink priority, buy extra antenna time.[/i]" % [s["downlink_rate_mbps"], s["downlink_per_day_gb"], PartInfo.fmt(s["storage_gb"]), s["signal_delay_min"]]
+			return "[b]Communications[/b]\nSending %.1f Gb/day%s\nMemory: %d%% full  (%s / %s Gb)\nData lost: %s Gb   ·   Signal delay: %.1f min\n\n[i]Coming in M4c: buy extra antenna time.[/i]" % [
+				sim.downlink_gb_day, "   ·   [color=#ff8a80]BLACKOUT[/color]" if sim.blackout_days > 0.0 else "", sim.storage_pct(),
+				f.call(sim.storage_gb), f.call(sim.storage_max), f.call(sim.data_lost_gb), float(mission.get("signal_delay_min", 0))]
 		"director":
-			return "[b]Mission overview[/b]\n%s: %s\nReserve: $%s M   ·   Planned lifetime: %d years\n\n[i]Coming in M4c/M5: event log, spend reserve on repairs.[/i]" % [mission.get("name", ""), mission.get("objective", ""), PartInfo.fmt(s["reserve_musd"]), int(design.get("target_years", 1))]
+			var recent: Array = []
+			for i in range(maxi(sim.event_log.size() - 5, 0), sim.event_log.size()):
+				recent.append("Day %d: %s" % [sim.event_log[i]["day"], sim.event_log[i]["text"]])
+			return "[b]%s[/b]: %s\nDay %d of %d   ·   Reserve: $%s M\n\n[b]Mission log[/b]\n%s" % [
+				mission.get("name", ""), mission.get("objective", ""), int(sim.day), int(sim.total_days), f.call(sim.reserve_musd), "\n".join(recent)]
 	return ""
 
 
 func _end_mission_test() -> void:
-	var s := Sim.summarize(design)
-	MissionState.last_result = {
-		"mission_id": design.get("mission_id", ""),
-		"end_reason": "completed",
-		"data_returned_gb": s["est_total_data_gb"],
-		"data_goal_gb": s["data_goal_gb"],
-		"science_bonus": 0,
-		"lifetime_years": float(design.get("target_years", 1.0)),
-		"target_years": float(design.get("target_years", 1.0)),
-		"reserve_left_musd": s["reserve_musd"],
-		"budget_musd": s["budget_musd"],
-		"log": [],
-	}
+	sim.abort()
+
+
+## Called once when the simulation finishes: show a banner, then go to the debrief.
+func _finish_mission() -> void:
+	if _ending:
+		return
+	_ending = true
+	close_console()
+	MissionState.last_result = sim.result()
+	_end_banner.text = {"completed": "MISSION COMPLETE", "power_dead": "CONTACT LOST: POWER FAILURE",
+		"destroyed": "CONTACT LOST: SPACECRAFT FAILED", "aborted": "MISSION ENDED"}.get(sim.end_reason, "MISSION OVER")
+	_end_banner.modulate = Color(0.4, 1, 0.5) if sim.end_reason == "completed" else Color(1, 0.4, 0.35)
+	_end_banner.visible = true
+	await get_tree().create_timer(2.5).timeout
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	MissionState.go_to("debrief")
+
+
+# ============================================================== live loop
+
+func _process(delta: float) -> void:
+	if sim == null:
+		return
+	if not paused and not sim.finished:
+		sim.tick(delta * days_per_second * speed)
+	if wall_view and wall_view.has_method("set_time_scale"):
+		wall_view.set_time_scale(0.0 if paused else days_per_second * speed)
+	_auto_alerts()
+	_update_hud()
+	if _open != "":
+		_panel_refresh -= delta
+		if _panel_refresh <= 0.0:
+			_panel_refresh = 0.25
+			_panel_body.text = _console_body(_open)
+	if sim.finished:
+		_finish_mission()
+
+
+## Simple condition-based alerts (events in M5 add more).
+func _auto_alerts() -> void:
+	var cond := {
+		"engineer": sim.battery_pct() < 25.0 or sim.health < 30.0 or sim.power_load_w > sim.power_gen_w,
+		"comms": sim.storage_pct() > 85.0 or sim.blackout_days > 0.0,
+	}
+	for key in cond:
+		if not cond[key]:
+			_acked.erase(key)
+		set_console_alert(key, cond[key] and not _acked.has(key))
 
 
 # ============================================================== interaction
@@ -255,10 +318,19 @@ func _on_interact() -> void:
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if not event.pressed or event.is_echo():
+		return
 	# E / Esc also close the panel while the player's controls are disabled
-	if _open != "" and event.pressed and (event.is_action("mc_interact") or event.is_action("mc_release")):
+	if _open != "" and (event.is_action("mc_interact") or event.is_action("mc_release")):
 		close_console()
 		get_viewport().set_input_as_handled()
+		return
+	var k: int = event.physical_keycode
+	if k == KEY_SPACE or k == KEY_P:
+		paused = not paused
+	elif k >= KEY_1 and k <= KEY_3:
+		speed = SPEEDS[k - KEY_1]
+		paused = false
 
 
 # ============================================================== HUD
@@ -287,10 +359,42 @@ func _build_ui() -> void:
 	info.add_theme_stylebox_override("panel", sb)
 	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(info)
+	var hv := VBoxContainer.new()
+	hv.add_theme_constant_override("separation", 4)
+	hv.custom_minimum_size.x = 250
+	info.add_child(hv)
 	_hud_clock = Label.new()
-	_hud_clock.text = "%s\nMission clock: Day 0 (live simulation: M4b)" % mission.get("name", "")
 	_hud_clock.add_theme_font_size_override("font_size", 16)
-	info.add_child(_hud_clock)
+	hv.add_child(_hud_clock)
+	for g in [["battery", "Battery"], ["data", "Science returned"], ["health", "Health"], ["storage", "Memory"]]:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		hv.add_child(row)
+		var name_l := Label.new()
+		name_l.text = g[1]
+		name_l.custom_minimum_size.x = 120
+		name_l.add_theme_font_size_override("font_size", 13)
+		row.add_child(name_l)
+		var bar := ProgressBar.new()
+		bar.show_percentage = false
+		bar.custom_minimum_size = Vector2(80, 10)
+		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		bar.max_value = 100.0
+		row.add_child(bar)
+		var val := Label.new()
+		val.add_theme_font_size_override("font_size", 13)
+		row.add_child(val)
+		_hud_bars[g[0]] = {"bar": bar, "label": val}
+
+	_end_banner = Label.new()
+	_end_banner.add_theme_font_size_override("font_size", 56)
+	_end_banner.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	_end_banner.add_theme_constant_override("outline_size", 12)
+	_end_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_end_banner.position = Vector2(140, 200)
+	_end_banner.size = Vector2(1000, 80)
+	_end_banner.visible = false
+	root.add_child(_end_banner)
 
 	_prompt = Label.new()
 	_prompt.add_theme_font_size_override("font_size", 24)
@@ -303,12 +407,12 @@ func _build_ui() -> void:
 	root.add_child(_prompt)
 
 	var hint := Label.new()
-	hint.text = "WASD walk  ·  mouse look  ·  E use console  ·  Esc free mouse"
+	hint.text = "WASD walk  ·  mouse look  ·  E use console  ·  Space pause  ·  1/2/3 speed  ·  Esc free mouse"
 	hint.add_theme_font_size_override("font_size", 14)
 	hint.modulate = Color(0.7, 0.78, 0.95, 0.85)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.position = Vector2(340, 690)
-	hint.size = Vector2(600, 24)
+	hint.position = Vector2(140, 690)
+	hint.size = Vector2(1000, 24)
 	root.add_child(hint)
 
 	_start_hint = Label.new()
@@ -350,3 +454,35 @@ func _build_ui() -> void:
 	_panel_buttons.alignment = BoxContainer.ALIGNMENT_END
 	_panel_buttons.add_theme_constant_override("separation", 10)
 	v.add_child(_panel_buttons)
+
+
+func _hud_bar(key: String, pct: float, text: String, bad_low := true, color_pct := -1.0) -> void:
+	var b: Dictionary = _hud_bars[key]
+	var bar: ProgressBar = b["bar"]
+	bar.value = clampf(pct, 0.0, 100.0)
+	var col: Color
+	if color_pct >= 0.0:
+		pct = color_pct
+	if bad_low:
+		col = Color(1, 0.35, 0.3) if pct < 25.0 else (Color(1, 0.75, 0.2) if pct < 50.0 else Color(0.35, 0.9, 0.45))
+	else:
+		col = Color(1, 0.35, 0.3) if pct > 85.0 else (Color(1, 0.75, 0.2) if pct > 60.0 else Color(0.35, 0.9, 0.45))
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = col
+	fill.set_corner_radius_all(3)
+	bar.add_theme_stylebox_override("fill", fill)
+	b["label"].text = text
+	b["label"].modulate = col.lightened(0.3)
+
+
+func _update_hud() -> void:
+	var state := "PAUSED" if paused else "x%d" % int(speed)
+	_hud_clock.text = "%s  ·  Day %d / %d  ·  %s" % [mission.get("name", ""), int(sim.day), int(sim.total_days), state]
+	_hud_bar("battery", sim.battery_pct(), "%d%%" % int(sim.battery_pct()))
+	var goal := maxf(float(mission.get("data_goal_gb", 1)), 1.0)
+	var dp := 100.0 * sim.data_returned_gb / goal
+	# colour = on track? (returned vs. how far into the mission we are)
+	var on_track := 100.0 if sim.progress() < 0.02 else clampf(dp / (sim.progress() * 100.0) * 100.0, 0.0, 100.0)
+	_hud_bar("data", dp, "%d%%" % int(dp), true, on_track)
+	_hud_bar("health", sim.health, "%d%%" % int(sim.health))
+	_hud_bar("storage", sim.storage_pct(), "%d%%" % int(sim.storage_pct()), false)
