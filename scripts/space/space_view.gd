@@ -10,6 +10,7 @@ const CRAFT_SCALE := {"earth": 0.70, "moon": 0.70, "mars": 0.70, "jupiter": 0.82
 const ORBIT_EXTRA := {"earth": 3.0, "moon": 3.0, "mars": 3.0, "jupiter": 3.2, "saturn": 6.0}
 const STATUSES := ["normal", "safe_mode", "solar_storm", "damaged", "downlink"]
 const CAMERA_FOV := 52.0
+const STARS_MAP := "res://art/planets/2k_stars.jpg"
 
 var _design: Dictionary = {}
 var _planet: Node3D
@@ -42,8 +43,7 @@ func _default_setup() -> void:
 func setup(design: Dictionary) -> void:
 	_design = design.duplicate(true)
 	_clear()
-	MenuPlanet.add_space(self, 500, 180.0)
-	_fade_environment()
+	_build_space()
 	_build_lights()
 	_build_planet()
 	_build_orbit()
@@ -96,6 +96,32 @@ func _clear() -> void:
 	_sparks = null
 	_beam = null
 	_beam_mats.clear()
+
+
+func _build_space() -> void:
+	var tex: Texture2D = null
+	if ResourceLoader.exists(STARS_MAP):
+		tex = load(STARS_MAP) as Texture2D
+	if tex == null:
+		MenuPlanet.add_space(self, 500, 180.0)
+		_fade_environment()
+		return
+	var we := WorldEnvironment.new()
+	we.name = "SpaceEnvironment"
+	var env := Environment.new()
+	var sky := Sky.new()
+	var sm := PanoramaSkyMaterial.new()
+	sm.panorama = tex
+	sky.sky_material = sm
+	env.background_mode = Environment.BG_SKY
+	env.sky = sky
+	env.background_energy_multiplier = 1.3
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.20, 0.22, 0.32)
+	env.ambient_light_energy = 0.22
+	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	we.environment = env
+	add_child(we)
 
 
 func _fade_environment() -> void:

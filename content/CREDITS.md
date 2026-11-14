@@ -2,5 +2,6 @@
 
 ## M6a — planets and space view
 
-- **Earth, Moon, Mars, Jupiter and Saturn are procedural.** Their colours, bands, craters, polar caps and Saturn's rings are generated in `scripts/space/planet_body.gd`. No external textures or NASA imagery are used, so there is nothing to license for these.
-- The starfield and space environment use Godot primitives (`MenuPlanet.add_space`).
+- **Planet, Sun, star and Saturn-ring textures:** [Solar System Scope](https://www.solarsystemscope.com/textures/), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Based on NASA data. Files in `art/planets/`: Earth day map, Earth clouds, Moon, Mars, Jupiter, Saturn, Saturn ring alpha, Sun and stars.
+- The menu starfields (outside the space view) still use Godot primitive stars from `MenuPlanet.add_space`.
+- If any texture file is missing, `scripts/space/planet_body.gd` falls back to fully procedural surfaces, so the game still runs with no art at all.

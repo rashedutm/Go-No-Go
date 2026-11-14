@@ -5,10 +5,23 @@
 extends Node3D
 class_name PlanetBody
 
-@export_enum("earth", "moon", "mars", "jupiter", "saturn") var planet_id: String = "earth"
+@export_enum("earth", "moon", "mars", "jupiter", "saturn", "sun") var planet_id: String = "earth"
 
 const TEX_W := 256
 const TEX_H := 128
+
+# Real 2K maps (Solar System Scope, CC BY 4.0). If a file is missing we fall back
+# to the procedural surface below, so the game still runs with no art at all.
+const MAPS := {
+	"earth": "res://art/planets/2k_earth_daymap.jpg",
+	"moon": "res://art/planets/2k_moon.jpg",
+	"mars": "res://art/planets/2k_mars.jpg",
+	"jupiter": "res://art/planets/2k_jupiter.jpg",
+	"saturn": "res://art/planets/2k_saturn.jpg",
+	"sun": "res://art/planets/2k_sun.jpg",
+}
+const CLOUD_MAP := "res://art/planets/2k_earth_clouds.jpg"
+const RING_MAP := "res://art/planets/2k_saturn_ring_alpha.png"
 
 const PLANETS := {
 	"earth": {"seed": 11, "tilt": 23.4},
@@ -16,6 +29,7 @@ const PLANETS := {
 	"mars": {"seed": 33, "tilt": 25.2},
 	"jupiter": {"seed": 44, "tilt": 3.1},
 	"saturn": {"seed": 55, "tilt": 26.7},
+	"sun": {"seed": 0, "tilt": 7.25},
 }
 
 const MOON_CRATERS := [
@@ -50,8 +64,22 @@ void fragment() {
 }
 """
 
+const CLOUD_SHADER := """
+shader_type spatial;
+render_mode blend_mix, depth_draw_never, cull_back;
+
+uniform sampler2D cloud_tex : source_color, filter_linear_mipmap;
+
+void fragment() {
+	float c = texture(cloud_tex, UV).r;
+	ALBEDO = vec3(1.0);
+	ALPHA = smoothstep(0.08, 0.62, c) * 0.90;
+}
+"""
+
 static var _textures: Dictionary = {}
 static var _cloud_texture: ImageTexture
+static var _cloud_shader: Shader
 
 
 func _ready() -> void:
@@ -91,11 +119,15 @@ func _build() -> void:
 	mesh.radial_segments = 64
 	mesh.rings = 32
 	var mat := StandardMaterial3D.new()
-	mat.albedo_texture = _texture(planet_id)
+	var map := _load_map(planet_id)
+	mat.albedo_texture = map if map != null else _texture(planet_id)
 	mat.roughness = 0.95
 	mat.metallic = 0.0
 	mat.metallic_specular = 0.12
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	if planet_id == "sun":
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.albedo_color = Color(1.0, 0.93, 0.78)
 	mesh.material = mat
 	body.mesh = mesh
 	spin.add_child(body)
@@ -115,12 +147,23 @@ func _add_clouds(parent: Node3D) -> void:
 	sm.height = 2.024
 	sm.radial_segments = 48
 	sm.rings = 24
-	var m := StandardMaterial3D.new()
-	m.albedo_texture = _get_cloud_texture()
-	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	m.roughness = 1.0
-	m.metallic_specular = 0.0
-	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	var m: Material
+	if ResourceLoader.exists(CLOUD_MAP):
+		if _cloud_shader == null:
+			_cloud_shader = Shader.new()
+			_cloud_shader.code = CLOUD_SHADER
+		var smat := ShaderMaterial.new()
+		smat.shader = _cloud_shader
+		smat.set_shader_parameter("cloud_tex", load(CLOUD_MAP))
+		m = smat
+	else:
+		var std := StandardMaterial3D.new()
+		std.albedo_texture = _get_cloud_texture()
+		std.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		std.roughness = 1.0
+		std.metallic_specular = 0.0
+		std.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		m = std
 	sm.material = m
 	mi.mesh = sm
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -149,12 +192,35 @@ func _add_rings(parent: Node3D) -> void:
 	var mi := MeshInstance3D.new()
 	mi.name = "Rings"
 	mi.mesh = _ring_mesh(1.35, 2.3, 96)
-	mi.material_override = _ring_material()
+	var ring := _load_ring_texture()
+	if ring != null:
+		var m := StandardMaterial3D.new()
+		m.albedo_texture = ring
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		mi.material_override = m
+	else:
+		mi.material_override = _ring_material()
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(mi)
 
 
 # ---------------------------------------------------------------- textures
+
+static func _load_map(id: String) -> Texture2D:
+	var path := str(MAPS.get(id, ""))
+	if path.is_empty() or not ResourceLoader.exists(path):
+		return null
+	return load(path) as Texture2D
+
+
+static func _load_ring_texture() -> Texture2D:
+	if not ResourceLoader.exists(RING_MAP):
+		return null
+	return load(RING_MAP) as Texture2D
+
 
 static func _texture(id: String) -> ImageTexture:
 	if _textures.has(id):
@@ -232,6 +298,8 @@ static func _make_image(id: String) -> Image:
 					c = _jupiter_color(dir, lat, lon, n, n2)
 				"saturn":
 					c = _saturn_color(dir, lat, n, n2)
+				"sun":
+					c = Color(1.0, 0.50, 0.10).lerp(Color(1.0, 0.95, 0.60), _n01(n, dir * 5.0))
 				_:
 					c = Color(0.5, 0.5, 0.5)
 			img.set_pixel(x, y, c)
