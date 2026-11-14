@@ -251,11 +251,13 @@ func _run_poll() -> void:
 		r["light"].bg_color = C_WAIT
 		r["call"].text = "checking…"
 		r["call"].modulate = C_WAIT
+		Sfx.play("beep", -6.0)
 		await _wait(STEP_TIME * 0.6)
 		var fails: Array = _results[st]
 		if fails.is_empty():
 			r["light"].bg_color = C_GOOD
 			r["call"].text = "GO!"
+			Sfx.play("go", -4.0)
 			r["call"].modulate = C_GOOD
 		else:
 			nogo += 1
@@ -264,6 +266,7 @@ func _run_poll() -> void:
 			r["call"].text = "NO-GO. %s%s" % [fails[0]["message"], more]
 			r["call"].modulate = C_BAD
 			r["fix"].visible = true
+			Sfx.play("nogo", -4.0)
 		await _wait(STEP_TIME * 0.4)
 	if nogo == 0:
 		_status.text = "Flight Director: \"We are GO for launch!\""
@@ -271,11 +274,13 @@ func _run_poll() -> void:
 		_beacon.light_color = C_GOOD
 		_beacon.light_energy = 4.0
 		_launch_btn.disabled = false
+		Sfx.play("complete", -3.0)
 		_launch_btn.grab_focus()
 	else:
 		_status.text = "Flight Director: \"We are NO-GO. %d station%s must fix their systems.\"" % [nogo, "" if nogo == 1 else "s"]
 		_status.modulate = C_BAD
 		_beacon.light_color = C_BAD
+		Sfx.play("fail", -3.0)
 		_beacon.light_energy = 4.0
 
 

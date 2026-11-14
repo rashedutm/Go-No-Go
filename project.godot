@@ -20,6 +20,7 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 GameData="*res://scripts/autoload/game_data.gd"
 MissionState="*res://scripts/autoload/mission_state.gd"
 Sim="*res://scripts/autoload/sim.gd"
+Sfx="*res://scripts/autoload/sfx.gd"
 
 [display]
 

@@ -27,7 +27,7 @@ Less text, fewer buttons, more *doing*:
 | Member | Owns | Read these sections |
 |---|---|---|
 | **Member A — Lead / Integrator** (team owner) | Shared code & data, **3D Hangar** (design), **Go/No-Go poll** (launch check), title, campaign map, briefing, 3D spacecraft model builder, web export | §A, then §3–§8 |
-| **Member B — Emon** | **3D Mission Control room**: first-person player, 4 consoles, live simulation, **events**, alerts | §B, then §6.4–§6.8, §8 |
+| **Member B — Emon** | **3D Mission Control room**: first-person player, 4 consoles, live simulation, **events**, alerts | **§B2 (new tasks!)**, then §B, §6.4–§6.8, §8 |
 | **Member C — Daniel** | **3D launch & cruise**, **space view** (spacecraft orbiting the planet, shown on the big screen), planets, **Debrief**, sounds, **demo video** | §C, then §6.9–§6.10, §7.6, §8 |
 
 ### 📍 Project status
@@ -43,7 +43,8 @@ Less text, fewer buttons, more *doing*:
 | **M4b Live simulation** | ✅ **Done (built by Member A for Emon).** `scripts/mission_control/mission_sim.gd` (`MissionSim`): a day-by-day model of power (solar falls with distance², RTGs decay, eclipses vs. battery), data (instruments → memory → antenna, with overflow lost), health (aging + Jupiter radiation by vault level), reserve and a cause→effect log. The mission ends as `completed`, `power_dead`, `destroyed` or `aborted` → `MissionState.last_result` → debrief. In the room: a live HUD (day, battery, science vs. goal, health, memory), **Space** pauses, **1/2/3** set the speed (a whole mission is about 3 min at x1), consoles show live numbers, **POWER/COMMS blink red automatically** on low battery, overflow or blackout (opening the console acknowledges it), and the wall screen orbit follows the clock. Balance test: `godot --headless --path . res://tests/live_sim_test.tscn`. All 5 test designs score 2–3 stars, and broken designs fail for the right reason. |
 | **M4c Console actions** | ✅ **Done (built by Member A for Emon).** Panel buttons: **POWER**: enter/leave SAFE MODE · **SCIENCE**: switch each instrument on/off (shows its power and data) · **COMMS**: buy +4 h/day antenna time ($4 M, max +8 h) · **DIRECTOR**: software fix (+15% health for $15 M), end mission now, plus the mission log. The logic lives in `MissionSim` (`set_safe_mode`, `toggle_instrument`, `buy_contact_time`, `repair`, `abort`), and every action writes a cause→effect log line for the debrief. |
 | **M5 Events** | ✅ **Done (built by Member A for Emon).** `data/events.json` has **14 events**: solar storm, micrometeoroid, battery wear, stuck solar wing, Jupiter radiation spike, ground station down, memory error, budget cut, plus science chances (wildfires, lunar ice, Mars dust storm, Io volcano, Enceladus plume, comet), each filtered by destination. `scripts/events/event_system.gd` (`EventSystem`) fires one every ~18–30 s (the first after 12 s). A **red alarm light + beep** plays (it uses `audio/alarm.wav/.ogg` if Daniel adds one), a top banner shows **"Go to the POWER console! 18 s"**, and the console blinks red. The countdown **freezes once you reach the console**. You pick a choice (choices you can't afford are disabled), and no answer means the worst option. Toasts explain the outcome, including the **signal delay** ("Your command takes 43 minutes to reach the spacecraft"), the wall screen shows `solar_storm`/`damaged`/`safe_mode` status, and everything goes into the debrief log. Scoring: discoveries add `bonus × 0.5` to the total. Test: `godot --headless --path . res://tests/events_test.tscn`. Ignoring alarms is risky (Jupiter at 11% health, Saturn 1 star), and good answers reach 90–100. |
-| **Emon's list (M4a–M5)** | ✅ **All done.** Emon can now polish: more events, a nicer room, sounds, or help Daniel. |
+| **Emon's list (M4a–M5)** | ✅ **All done** (built by Member A). **Emon: see your new tasks in §B2.** |
+| **Sound + fullscreen** | ✅ **Done (Member A).** `Sfx` autoload: 11 sound effects generated in code (no files or licenses needed): click (every button, automatically), snap (part added in the hangar), whoosh, poll beep / GO chime / NO-GO buzz, alarm, fixed, mission complete jingle, fail tones, and a Mission Control room hum. A **Fullscreen** and **Sound on/off** button pair sits in the top-right corner of every screen (keys **F11** / **M**), and the mute setting is remembered. |
 | M6 Launch/cruise, space view, debrief | ⏳ Daniel |
 
 ### 🛠️ Getting started (everyone)
@@ -109,6 +110,25 @@ Less text, fewer buttons, more *doing*:
 
 ---
 
+### §B2 — Member B (Emon): round 2 tasks (M4a–M5 are already built for you)
+
+Everything in §B exists and works (room, walking, consoles, live simulation, buttons, 14 events). **Pull `main` first**, play a mission (Play → Fire Watch → hangar → **Load example** → poll → LAUNCH), then take these in order. Work on branch `feat/mission-control` and open a Pull Request after each one.
+
+| # | Task | Files (yours) | Target |
+|---|---|---|---|
+| **E1** | **Play-test Mission Control in the browser**: export (README §8.0), then check mouse capture, WASD, E, alarms, sounds, the frame rate, and the end of a mission → debrief. Fix bugs and write anything outside your folders into `content/bugs.md`. | `scenes/mission_control/`, `scripts/mission_control/`, `scripts/events/` | Sat night |
+| **E2** | **Difficulty levels** Easy / Normal / Hard. Read `MissionState.get_meta("difficulty", "normal")` in `EventSystem`: Easy = timers ×1.5, gaps between events ×1.4; Hard = timers ×0.7, gaps ×0.75, and risk chances +0.15. Build a small reusable picker control in `scripts/mission_control/difficulty_picker.gd` (3 toggle buttons that set the meta), and Member A will place it on the briefing screen (tell A when it's pushed). | `scripts/events/event_system.gd`, `scripts/mission_control/difficulty_picker.gd` | Sun 10:00 |
+| **E3** | **First-mission tutorial**: on Fire Watch only, show step-by-step hints in Mission Control ("Click to look around" → "Walk to the POWER console (WASD)" → "Press E" → "Watch the battery" → first event is guaranteed to be a simple one). Add a Skip button and save "tutorial_done" in `user://settings.cfg` so it shows only once. | `scenes/mission_control/`, `scripts/mission_control/tutorial.gd` | Sun 11:00 |
+| **E4** | **6+ new events** in `data/events.json` (same format), with real-space ideas, for example: **Mars solar conjunction** (the Sun sits between Earth and Mars and blocks radio for ~2 weeks, a real event every ~26 months), **star tracker blinded by the Sun**, **thruster leak**, **software bug → reboot**, **Saturn ring-plane crossing**, **a partner agency offers a data relay**. Re-run `tests/events_test.tscn` so ignoring alarms stays risky and good answers stay rewarding. | `data/events.json` | Sun 12:00 |
+| **E5** | **Room polish (fast in the browser!)**: wall posters as `Label3D` with real facts about the mission's planet, a big mission-clock board above the wall screen, blinking lights on the decorative desks, simple low-poly robot "colleagues" (capsule bodies, no human likeness needed) at the empty desks. | `scenes/mission_control/`, `scripts/mission_control/` | Sun 13:00 |
+| **E6** | **Wall-screen overlay**: a 2D layer inside the wall-screen `SubViewport` with the day counter, a data-downlink bar, and "SAFE MODE" / "BLACKOUT" stamps. It must keep working when Daniel's `space_view.tscn` replaces the placeholder. | `scenes/mission_control/mission_control.gd` | Sun 14:00 |
+| **E7** | **Backup for Daniel**: if `scenes/debrief/debrief.tscn` is not on `main` by **Sun 15:00**, build it yourself following §C step 5 (score, stars, NASA look-alike, cause→effect lines, `MissionState.record_result`). | `scenes/debrief/` (only in this case) | Sun 15:00 |
+
+**Prompt to paste into your AI:**
+> "Read README.md fully. I am Member B (Emon). M4a–M5 are already built. Do the §B2 tasks in order, starting with E1. Godot 4.7.2 GDScript, Compatibility renderer, must run in a web browser. Use the shared contract in §8.1 (including Sfx for sounds) and only edit files in my folders (§8.3)."
+
+---
+
 ### §C — Member C (Daniel): 3D launch, space view & debrief
 
 **Goal:** the "wow" moments, plus the ending.
@@ -121,7 +141,7 @@ Less text, fewer buttons, more *doing*:
 **Original tasks (still yours, on top of the 3D work above):**
 
 6. **Collect free icons & art** (by Sat night): spacecraft parts, planets, gauges, UI icons. Use sites with free licenses, e.g. **Kenney.nl** (CC0), **OpenGameArt.org**, **NASA image library** (images.nasa.gov — NASA images are free to use, but **no NASA logo/meatball/worm**). For every file, write the **source link + license** in `content/CREDITS.md`. Put raw files in `content/`, and Member A or you import them into `art/`.
-7. **Collect 3–5 sounds** (by Sat night): button click, alarm beep, launch rumble, success jingle. Use **freesound.org** (CC0) or **Kenney**. Put them in `audio/` and credit them in `content/CREDITS.md`.
+7. **Sounds** (by Sat night): the game already has generated sounds (see `Sfx` in §8.1). Your job: a **launch rumble** for your launch scene (play it with your own `AudioStreamPlayer`), and optionally nicer replacements named exactly `click/alarm/complete/fail/go/nogo/fixed/hum.wav` (they are picked up automatically). Use **freesound.org** (CC0) or **Kenney**, put them in `audio/` and credit them in `content/CREDITS.md`.
 8. **Check the facts** in §7.6 and `data/lookalikes.json` on **science.nasa.gov** (launch years, one fun fact each). Write corrections in `content/facts.md`, and Member A updates the JSON.
 9. **Playtest** (Sunday afternoon): play every mission and write bugs in `content/bugs.md`, like: *"Mission 3, clicked RTG, budget went negative, nothing happened."*
 10. **Make the demo** (Sunday evening): either a **video of 30 seconds or less** (record the screen with OBS or Xbox Game Bar `Win+G`, add English subtitles), **or 7 slides max** (Google Slides/Canva): Title · Team & challenge · Problem · Our game (screenshots) · How it teaches trade-offs · NASA data used · Future. Use the script in §10.1.
@@ -537,6 +557,16 @@ Sim.source_power_w(source, distance_sun_au, years_elapsed)   # solar 1/d², RTG 
 `Sim.summarize()` also returns `budget_musd, launcher_capacity_kg, downlink_rate_mbps, data_goal_gb, slots_used, slots_max`.
 **Debrief must call** `MissionState.record_result(mission_id, stars, score)` so the next mission unlocks (the placeholder already does).
 
+**Sound (`Sfx` autoload, Member A, `scripts/autoload/sfx.gd`):**
+```gdscript
+Sfx.play("snap")                  # one-shot: click, snap, whoosh, beep, go, nogo, alarm, fixed, complete, fail
+Sfx.play("go", -6.0, 1.2)         # optional volume (dB) and pitch
+Sfx.start_loop("hum") / Sfx.stop_loop("hum")
+Sfx.toggle_mute() / Sfx.toggle_fullscreen()
+```
+Every `Button` plays `click` automatically (to opt out: `button.set_meta("no_click", true)`).
+**To replace a generated sound with a real one, drop a file named exactly `audio/<name>.wav` (or `.ogg`/`.mp3`) into the repo.** It is picked up automatically, with no code change. New sound names (e.g. `launch_rumble`) can be added to `Sfx.SOUNDS` by Member A, or played directly in your own scene with an `AudioStreamPlayer`.
+
 **3D contracts (v2):**
 
 `SpacecraftModel3D` (Member A, `scripts/shared/spacecraft_model_3d.gd`, `class_name SpacecraftModel3D`):
@@ -609,7 +639,7 @@ Commit `*.import` and `*.uid` files (Godot 4 needs them).
 | M8 | Merge all, web export, upload, test in private window | A | **Sun 18:00 latest** | — |
 | C2 | Playtest + bugs.md | **Daniel** (+ everyone) | Sun 15:00–18:00 | — |
 | M9 | Demo video (≤ 30 s) or 7 slides + submission text | **Daniel** (A reviews) | Sun 18:00–22:00 | **Sun 21:00** → A makes 7 slides from screenshots |
-| S1 | Difficulty levels (Easy: no timers, more budget) | Emon | Stretch | — |
+| E1–E7 | Emon's round 2 (browser test, difficulty, tutorial, more events, room polish, wall overlay, debrief backup) | **Emon** | Sat night → Sun 15:00 | see §B2 |
 | S2 | Sandbox mode (no budget limits) | A | Stretch | — |
 | S3 | Tutorial hints on Mission 1 | A | Stretch | — |
 

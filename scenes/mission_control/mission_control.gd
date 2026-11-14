@@ -54,7 +54,6 @@ var _alert_banner: Label
 var _toast: Label
 var _toast_time := 0.0
 var _alarm_light: OmniLight3D
-var _alarm_player: AudioStreamPlayer
 var _alarm_repeat := 0.0
 var _status_reset := -1.0
 var _acked := {}           # condition alerts the player already checked (cleared when the problem goes away)
@@ -78,6 +77,7 @@ func _ready() -> void:
 	_build_ui()
 	sim.add_log("Arrived at %s. Science operations begin." % mission.get("destination", "the target"))
 	_setup_events()
+	Sfx.start_loop("hum")
 
 
 # ============================================================== room
@@ -258,6 +258,8 @@ func _finish_mission() -> void:
 		"destroyed": "CONTACT LOST: SPACECRAFT FAILED", "aborted": "MISSION ENDED"}.get(sim.end_reason, "MISSION OVER")
 	_end_banner.modulate = Color(0.4, 1, 0.5) if sim.end_reason == "completed" else Color(1, 0.4, 0.35)
 	_end_banner.visible = true
+	Sfx.stop_loop("hum")
+	Sfx.play("complete" if sim.end_reason == "completed" else "fail")
 	await get_tree().create_timer(2.5).timeout
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	MissionState.go_to("debrief")
@@ -620,22 +622,13 @@ func _setup_events() -> void:
 	_alarm_light.light_color = Color(1, 0.15, 0.1)
 	_alarm_light.light_energy = 0.0
 	add_child(_alarm_light)
-	_alarm_player = AudioStreamPlayer.new()
-	_alarm_player.volume_db = -6.0
-	for path in ["res://audio/alarm.wav", "res://audio/alarm.ogg", "res://audio/alarm.mp3"]:
-		if ResourceLoader.exists(path):
-			_alarm_player.stream = load(path)
-			break
-	if _alarm_player.stream == null:
-		_alarm_player.stream = EventSystem.make_beep()
-	add_child(_alarm_player)
 
 
 func _on_event_started(ev: Dictionary) -> void:
 	_acked.erase(ev.get("console", ""))
 	if wall_view and wall_view.has_method("set_status") and ev.get("status", "normal") != "normal":
 		wall_view.set_status(ev["status"])
-	_alarm_player.play()
+	Sfx.play("alarm", -4.0)
 	_alarm_repeat = 3.0
 	if _open != "":
 		_after_action()
@@ -649,6 +642,7 @@ func _on_event_resolved(ev: Dictionary, choice: Dictionary, outcome: String, tim
 	if delay >= 1.0:
 		msg += "\n(Your command takes %d minutes to reach the spacecraft.)" % int(delay)
 	_show_toast(msg, Color(1, 0.55, 0.45) if timed_out else Color(0.6, 1, 0.65))
+	Sfx.play("fail" if timed_out else "fixed", -4.0)
 	if wall_view and wall_view.has_method("set_status"):
 		wall_view.set_status("safe_mode" if sim.safe_mode else "normal")
 	if _open != "":
@@ -681,4 +675,8 @@ func _update_event_fx(delta: float) -> void:
 		_alarm_repeat -= delta
 		if _alarm_repeat <= 0.0:
 			_alarm_repeat = 3.0
-			_alarm_player.play()
+			Sfx.play("alarm", -4.0)
+
+
+func _exit_tree() -> void:
+	Sfx.stop_loop("hum")

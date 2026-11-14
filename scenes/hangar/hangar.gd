@@ -405,6 +405,7 @@ func _set_station(key: String) -> void:
 	station = key
 	section_idx = 0
 	MissionState.set_meta("design_station", key)
+	Sfx.play("whoosh", -6.0)
 	_set_view(key)
 	_refresh()
 
@@ -525,9 +526,12 @@ func _rebuild_tray() -> void:
 		if sec["mode"] == "multi_count" and count > 0:
 			name_text = "x%d %s" % [count, name_text]
 		var tile := _tile(name_text, PartInfo.key_stat(sec, it, mission), PartInfo.cost_stat(it), count > 0, prob)
-		tile.pressed.connect(func(): PartInfo.click(sec, id))
+		tile.pressed.connect(func():
+			Sfx.play("snap")
+			PartInfo.click(sec, id))
 		tile.gui_input.connect(func(ev):
 			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT:
+				Sfx.play("whoosh", -4.0, 1.3)
 				PartInfo.remove(sec, id))
 		tile.mouse_entered.connect(func(): _show_tip(sec, it))
 		tile.mouse_exited.connect(func(): _tip_panel.visible = false)

@@ -132,7 +132,7 @@ func _build_ui() -> void:
 	root.add_child(sub)
 	var back := Button.new()
 	back.text = "< Title"
-	back.position = Vector2(1150, 24)
+	back.position = Vector2(1150, 40)
 	back.pressed.connect(func(): MissionState.go_to("title"))
 	root.add_child(back)
 
