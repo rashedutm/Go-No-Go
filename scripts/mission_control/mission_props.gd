@@ -14,7 +14,7 @@ const COMPUTER_SCALE := 1.7
 # The Kenney monitor is authored screen-side at -Z; flip it so the display
 # faces the player, then centre the frame and put the UI quad on the front.
 const MODEL_OFFSET := Vector3(-0.1965, 0.0, 0.0)
-const SCREEN_CENTER := Vector3(0.1965, 0.1715, 0.003)
+const SCREEN_CENTER := Vector3(0.1965, 0.1715, -0.033)
 const SCREEN_SIZE := Vector2(0.355, 0.213)
 
 
@@ -94,7 +94,7 @@ static func computer(accent: Color, screen_title: String = "MISSION OPS") -> Nod
 	foot.position = Vector2(18, 276)
 	sub.add_child(foot)
 
-	sub.render_target_update_mode = SubViewport.UPDATE_ONCE
+	sub.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 
 	# Screen quad sits just in front of the Kenney monitor's display.
 	var screen := MeshInstance3D.new()
