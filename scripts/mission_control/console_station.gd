@@ -30,15 +30,15 @@ func setup(p_key: String, p_title: String, p_color: Color) -> void:
 	MCBuild.box(self, Vector3(0.11, 0.03, 0.17), Vector3(0.55, 0.91, 0.18), Color(0.05, 0.06, 0.08), true)
 	# monitors (Asset Store sci-fi computer with a small console UI)
 	var computer := Props.computer(color, p_title)
-	computer.position = Vector3(0, 0, -0.62)
+	computer.position = Vector3(0, 0.9, -0.30)
 	add_child(computer)
 	_screen_mat = computer.get_meta("screen_material", null) as StandardMaterial3D
 	# chair (Asset Store low-poly office chair, facing the desk)
 	var chair := Props.chair()
-	chair.position = Vector3(0.78, 0, 0.98)
+	chair.position = Vector3(0.39, 0, 0.98)
 	add_child(chair)
 	# sign
-	MCBuild.label(self, p_title, Vector3(0, 2.3, -0.25), p_color, 56, 0.005)
+	MCBuild.label(self, p_title, Vector3(0, 1.95, -0.25), p_color, 56, 0.005)
 	# light
 	_light = OmniLight3D.new()
 	_light.position = Vector3(0, 1.9, 0.4)

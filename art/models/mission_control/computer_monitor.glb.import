@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://tckxxvpctha8"
-path="res://.godot/imported/Prop_Computer.gltf-70c993a563141c2de5c0c2de8e98151d.scn"
+uid="uid://ctpd6d4yjhol3"
+path="res://.godot/imported/computer_monitor.glb-81b0da2271987a8713cb8b731fd6d708.scn"
 
 [deps]
 
-source_file="res://art/models/mission_control/Prop_Computer.gltf"
-dest_files=["res://.godot/imported/Prop_Computer.gltf-70c993a563141c2de5c0c2de8e98151d.scn"]
+source_file="res://art/models/mission_control/computer_monitor.glb"
+dest_files=["res://.godot/imported/computer_monitor.glb-81b0da2271987a8713cb8b731fd6d708.scn"]
 
 [params]
 

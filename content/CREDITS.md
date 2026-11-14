@@ -12,9 +12,9 @@
 
 ## Mission Control — 3D props
 
-- **Sci-fi computer (`art/models/mission_control/Prop_Computer.gltf`)** — from [Modular Sci-Fi MegaKit (Standard)](https://store.godotengine.org/asset/quaternius/modular-sci-fi-megakit/) by [Quaternius](https://quaternius.com/), downloaded from the Godot Asset Store. **CC0 1.0 Universal**; license text in `art/models/mission_control/LICENSE-Quaternius-Megakit.txt`.
+- **Computer monitor (`art/models/mission_control/computer_monitor.glb`)** — "Computer Screen" from [Kenney's Furniture Kit](https://kenney.nl/assets/furniture-kit), downloaded from [Poly Pizza](https://poly.pizza/m/V5Qo141OcB). **CC0 1.0 Universal**; licence note in `art/models/mission_control/LICENSE-Kenney-Furniture.txt`.
 - **Office chair (`art/models/mission_control/chair_office.glb`)** — from [Lowpoly Furniture Asset Pack](https://store.godotengine.org/asset/abstract-duck/texture-pack/) by **Abstract_Duck**, downloaded from the Godot Asset Store. **MIT**; license text in `art/models/mission_control/LICENSE-AbstractDuck-Furniture.txt`.
-- Both models were re-oriented/scaled in code to fit the Mission Control consoles. No other changes were made.
+- Both models were re-oriented/scaled in code to fit the Mission Control consoles. The monitor's screen is a viewport texture; no changes were made to the model itself.
 
 ## UI fonts
 
