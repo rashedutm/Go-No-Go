@@ -79,10 +79,22 @@ func _ready() -> void:
 		# over our Fullscreen button (armed on hover) or when F11 is pressed.
 		JavaScriptBridge.eval("""
 			window.goNoGoFS = false;
+			// standard + webkit (older Safari) fullscreen calls
+			window.goNoGoIsFS = function () { return !!(document.fullscreenElement || document.webkitFullscreenElement); };
+			window.goNoGoExitFS = function () {
+				try {
+					if (document.exitFullscreen) { var p = document.exitFullscreen(); if (p && p.catch) { p.catch(function () {}); } }
+					else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
+				} catch (e) {}
+			};
 			window.goNoGoToggleFS = function () {
-				if (!document.fullscreenElement) {
-					(document.documentElement.requestFullscreen ? document.documentElement.requestFullscreen() : Promise.resolve()).catch(function () {});
-				} else if (document.exitFullscreen) { document.exitFullscreen(); }
+				var el = document.documentElement;
+				try {
+					if (!window.goNoGoIsFS()) {
+						if (el.requestFullscreen) { var p = el.requestFullscreen(); if (p && p.catch) { p.catch(function () {}); } }
+						else if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); }
+					} else { window.goNoGoExitFS(); }
+				} catch (e) {}
 			};
 			document.addEventListener('pointerup', function () { if (window.goNoGoFS) { window.goNoGoToggleFS(); } }, true);
 			document.addEventListener('keydown', function (e) { if (e.key === 'F11') { e.preventDefault(); window.goNoGoToggleFS(); } }, true);
@@ -92,7 +104,34 @@ func _ready() -> void:
 var _fs_poll := 0.0
 
 
+## Auto quality: on a slow computer the 3D is drawn at a lower resolution (the UI stays sharp).
+## Only kicks in below 28 fps (checked every 4 s), one step to 75%, never lower: quality first.
+var _fps_time := 0.0
+var _fps_frames := 0
+var _fps_skip := 3.0
+const QUALITY_STEPS := [1.0, 0.75]
+var _quality := 0
+
+
+func _auto_quality(delta: float) -> void:
+	if _fps_skip > 0.0:                     # ignore loading hitches
+		_fps_skip -= delta
+		return
+	_fps_time += delta
+	_fps_frames += 1
+	if _fps_time < 4.0:
+		return
+	var fps := _fps_frames / _fps_time
+	_fps_time = 0.0
+	_fps_frames = 0
+	if fps < 28.0 and _quality < QUALITY_STEPS.size() - 1 and not get_tree().paused:
+		_quality += 1
+		get_viewport().scaling_3d_scale = QUALITY_STEPS[_quality]
+		print("Go/No-Go: %.0f fps, 3D resolution lowered to %d%%" % [fps, int(QUALITY_STEPS[_quality] * 100)])
+
+
 func _process(delta: float) -> void:
+	_auto_quality(delta)
 	_fs_poll -= delta
 	if _fs_poll <= 0.0:
 		_fs_poll = 0.5
@@ -101,7 +140,7 @@ func _process(delta: float) -> void:
 
 func is_fullscreen() -> bool:
 	if OS.has_feature("web"):
-		return bool(JavaScriptBridge.eval("!!document.fullscreenElement", true))
+		return bool(JavaScriptBridge.eval("!!(document.fullscreenElement || document.webkitFullscreenElement)", true))
 	return DisplayServer.window_get_mode() in [DisplayServer.WINDOW_MODE_FULLSCREEN, DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN]
 
 
@@ -365,8 +404,8 @@ func _exit_game() -> void:
 		_music.stop()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	JavaScriptBridge.eval("""
-		if (document.fullscreenElement && document.exitFullscreen) { document.exitFullscreen().catch(function () {}); }
-		if (document.exitPointerLock) { document.exitPointerLock(); }
+		if (window.goNoGoExitFS) { window.goNoGoExitFS(); }
+		try { if (document.exitPointerLock) { document.exitPointerLock(); } } catch (e) {}
 		try { window.close(); } catch (e) {}
 	""", true)
 	_show_goodbye()

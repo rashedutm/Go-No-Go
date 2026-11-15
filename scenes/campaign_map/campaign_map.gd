@@ -177,10 +177,11 @@ func _build_ui() -> void:
 	back.text = "‹  TITLE"
 	NeonUI.ghost(back, 16)
 	back.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	back.offset_left = -170
-	back.offset_top = 28
-	back.offset_right = -28
-	back.offset_bottom = 70
+	# sits left of the global menu icon (top-right corner, 48 px wide), same row
+	back.offset_left = -206
+	back.offset_top = 6
+	back.offset_right = -64
+	back.offset_bottom = 42
 	back.pressed.connect(func(): MissionState.go_to("title"))
 	root.add_child(back)
 

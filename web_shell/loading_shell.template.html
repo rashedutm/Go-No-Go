@@ -9,21 +9,23 @@
 		<title>$GODOT_PROJECT_NAME</title>
 		<style>
 @font-face { font-family: 'GNGDisplay'; src: url(data:font/ttf;base64,__DISP__) format('truetype'); font-display: block; }
+@font-face { font-family: 'GNGBody'; src: url(data:font/ttf;base64,__BODY__) format('truetype'); font-display: swap; }
 @font-face { font-family: 'GNGMono'; src: url(data:font/ttf;base64,__MONO__) format('truetype'); font-display: block; }
 
 html, body, #canvas { margin: 0; padding: 0; border: 0; }
-body { color: white; background-color: #050a17; overflow: hidden; touch-action: none; }
+body { color: white; background-color: #050a17; overflow: hidden; touch-action: none; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+#device-note { display: none; margin-top: 2vh; font-family: 'GNGBody', Arial, sans-serif; font-size: 13px; color: #f5b83d; text-align: center; padding: 0 16px; }
 #canvas { display: block; }
 #canvas:focus { outline: none; }
 
 #status {
-	position: absolute; inset: 0;
+	position: absolute; top: 0; right: 0; bottom: 0; left: 0;
 	background: radial-gradient(ellipse at 50% 45%, #0d1a36 0%, #050a17 70%);
 	display: flex; flex-direction: column; justify-content: center; align-items: center;
 	visibility: hidden; transition: opacity 0.5s ease;
 }
 #status.done { opacity: 0; }
-#stars { position: absolute; inset: 0; width: 100%; height: 100%; }
+#stars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 #status > *:not(#stars) { position: relative; }
 #kicker {
 	font-family: 'GNGMono', 'Courier New', monospace; font-size: clamp(10px, 1.3vw, 14px);
@@ -57,7 +59,7 @@ body { color: white; background-color: #050a17; overflow: hidden; touch-action: 
 	letter-spacing: 0.35em; padding-left: 0.35em; color: #f5b83d; margin-bottom: 0.8em;
 }
 #fact-text {
-	font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: clamp(14px, 1.9vw, 19px);
+	font-family: 'GNGBody', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: clamp(14px, 1.9vw, 19px);
 	line-height: 1.45; color: #dce8fb;
 }
 #status-notice {
@@ -126,6 +128,7 @@ body { color: white; background-color: #050a17; overflow: hidden; touch-action: 
 				<div id="fact-kicker">DID YOU KNOW?</div>
 				<div id="fact-text"></div>
 			</div>
+			<div id="device-note">Go/No-Go is made for a computer with a mouse and keyboard. On a phone or tablet it may be hard to control.</div>
 			<div id="status-notice"></div>
 		</div>
 
@@ -183,6 +186,13 @@ const engine = new Engine(GODOT_CONFIG);
 			factBox.classList.remove('fading');
 		}, 600);
 	}, 7000);
+
+	// phones/tablets (touch only, no mouse): show a friendly note
+	try {
+		if (matchMedia('(pointer: coarse)').matches && !matchMedia('(any-pointer: fine)').matches) {
+			document.getElementById('device-note').style.display = 'block';
+		}
+	} catch (e) {}
 
 	// ---- bubbles rising inside the water
 	const bubbleGroup = document.getElementById('bubbles');
@@ -309,7 +319,8 @@ const engine = new Engine(GODOT_CONFIG);
 				console.error('Error while registering service worker:', err);
 			});
 		} else {
-			displayFailureNotice('Error\nThe following features required to run Godot projects on the Web are missing:\n' + missing.join('\n'));
+			displayFailureNotice('This browser is missing features the game needs:\n' + missing.join('\n') +
+				'\n\nPlease use an up-to-date Chrome, Edge, Firefox, Brave or Safari (version 15 or newer).');
 		}
 	} else {
 		setStatusMode('progress');
