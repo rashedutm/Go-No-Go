@@ -85,7 +85,8 @@ func _ready() -> void:
 	var hits := int(MissionState.get_meta("launch_hits", 0))
 	if hits > 0:
 		sim.health = maxf(sim.health - 15.0 * hits, 10.0)
-		sim.add_log("%d asteroid impact%s on the way: spacecraft health starts at %d%%." % [hits, "" if hits == 1 else "s", int(sim.health)])
+		var what := "space debris" if mission.get("id", "") == "earth" else "asteroid"
+		sim.add_log("%d %s impact%s on the way: spacecraft health starts at %d%%." % [hits, what, "" if hits == 1 else "s", int(sim.health)])
 	MissionState.set_meta("launch_hits", 0)
 	_setup_events()
 	decor = RoomDecor.new()
@@ -217,6 +218,9 @@ func open_console(key: String) -> void:
 	close.pressed.connect(close_console)
 	_panel_buttons.add_child(close)
 	_panel.visible = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE   # free cursor so the panel buttons can be clicked
+	if tutorial and is_instance_valid(tutorial):
+		tutorial.set_panel_open(true)
 	Sfx.play("open", -6.0)
 	_start_hint.visible = false
 	_prompt.text = ""
@@ -233,6 +237,10 @@ func close_console() -> void:
 	_panel.visible = false
 	Sfx.play("close", -8.0)
 	player.set_controls_enabled(true)
+	if tutorial and is_instance_valid(tutorial):
+		tutorial.set_panel_open(false)
+	if sim.end_reason == "":
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED   # back to mouse-look (close is a click/key, so browsers allow it)
 	console_closed.emit(key)
 
 
@@ -417,6 +425,7 @@ func _build_ui() -> void:
 	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(info)
 	var hv := VBoxContainer.new()
+	hv.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hv.add_theme_constant_override("separation", 4)
 	hv.custom_minimum_size.x = 330
 	info.add_child(hv)

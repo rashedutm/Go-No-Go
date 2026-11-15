@@ -44,6 +44,7 @@ func setup(p_mc: Node, ui_root: Control) -> void:
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui_root.add_child(_panel)
 	var v := VBoxContainer.new()
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE   # never catch clicks meant for console buttons
 	_panel.add_child(v)
 	var head := NeonUI.kicker("TUTORIAL  ·  STEP 1 / %d  ·  PRESS T TO SKIP" % STEPS.size(), NeonUI.GOLD, 10)
 	head.name = "Head"
@@ -52,6 +53,12 @@ func setup(p_mc: Node, ui_root: Control) -> void:
 	NeonUI.body(_label, 17, NeonUI.TEXT, true)
 	v.add_child(_label)
 	_show()
+
+
+## Moves the card below the console panel while one is open, so it never covers its buttons.
+func set_panel_open(open: bool) -> void:
+	if _panel:
+		_panel.position.y = 612.0 if open else 500.0
 
 
 func _show() -> void:

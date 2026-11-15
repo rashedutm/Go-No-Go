@@ -19,6 +19,8 @@ const CONTROL_END := 19.6
 const ARRIVE_T := 21.6
 const FADE_OUT_T := 22.6
 const STAGE2_T := 8.5
+const EARTH_BELOW_POS := Vector3(0, -66.0, -30.0)   # Earth-orbit mission: big planet under the ship
+const EARTH_BELOW_SCALE := 60.0
 const RUMBLE_FILE := "res://audio/jerryblessed-space-rocket-launch-rumble-544846.wav"
 const STARS_MAP := "res://art/planets/2k_stars.jpg"
 const ASTEROID_MODELS := [
@@ -231,7 +233,7 @@ func _enter_space() -> void:
 	_asteroid_timer = 0.0
 	_space_cam.fov = 55.0
 	if _dest:
-		_dest.scale = Vector3.ONE * 2.6
+		_dest.scale = Vector3.ONE * (EARTH_BELOW_SCALE if mid == "earth" else 2.6)
 	if _engine_glow:
 		_engine_glow.light_energy = 0.0
 	if _engine_cone:
@@ -307,7 +309,14 @@ func _update_space(delta: float) -> void:
 			_phase_track.visible = false
 		_sub.visible = false
 		_big.visible = false
-	if _dest:
+	if _dest and mid == "earth":
+		# Earth-orbit mission: we launched FROM Earth, so it stays below us as a curved horizon
+		# that slowly drops away while we climb to orbit (never a planet ahead to fly to).
+		_dest.scale = Vector3.ONE * EARTH_BELOW_SCALE
+		_dest.position = EARTH_BELOW_POS + Vector3(0, -2.0 * flight - 2.0 * cine, 0)
+		if _dest.has_method("spin_by"):
+			_dest.spin_by(delta * 0.01)
+	elif _dest:
 		var ds := 2.6
 		if _t >= CONTROL_T and _t < CONTROL_END:
 			ds = lerpf(2.6, 5.6, flight)
@@ -557,7 +566,10 @@ func _update_cockpit_hud() -> void:
 	if _co_dist == null:
 		return
 	var p := clampf((_t - CONTROL_T) / (CONTROL_END - CONTROL_T), 0.0, 1.0)
-	_co_dist.text = "TO %s  ·  %05d KM" % [mid.to_upper(), int(round(lerpf(12000.0, 0.0, p)))]
+	if mid == "earth":
+		_co_dist.text = "CLIMBING TO ORBIT  ·  ALT %03d KM" % int(round(lerpf(180.0, 500.0, p)))
+	else:
+		_co_dist.text = "TO %s  ·  %05d KM" % [mid.to_upper(), int(round(lerpf(12000.0, 0.0, p)))]
 	_co_auto.text = "AUTOPILOT IN  %0.1fs" % maxf(0.0, CONTROL_END - _t)
 	for i in range(_co_hull.size()):
 		_co_hull[i].modulate = Color(1, 1, 1, 1) if i < _hull else Color(1, 1, 1, 0.12)
@@ -605,6 +617,11 @@ func _update_fade() -> void:
 	_fade.modulate.a = a
 
 
+## Near Earth the danger is old satellites and rocket parts (space debris), farther out it's asteroids.
+func _rock_word() -> String:
+	return "space debris" if mid == "earth" else "asteroid"
+
+
 ## Third asteroid hit: the spacecraft is destroyed. The flight stops and the player retries.
 func _lose() -> void:
 	_lost = true
@@ -626,7 +643,7 @@ func _lose() -> void:
 	_big.add_theme_font_size_override("font_size", 56)
 	_big.add_theme_color_override("font_color", NeonUI.RED)
 	_big.text = "SPACECRAFT LOST"
-	_sub.text = "Three asteroid impacts broke the hull before it reached %s.\nThe mission is over. Fly more carefully and try again." % str(mission.get("destination", "the target"))
+	_sub.text = "Three %s impacts broke the hull before it reached %s.\nThe mission is over. Fly more carefully and try again." % [_rock_word(), str(mission.get("destination", "the target"))]
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 18)
 	row.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -1026,6 +1043,10 @@ func _build_space() -> void:
 		_dest.name = "Destination"
 		_dest.position = Vector3(0, 0, -60)
 		_dest.scale = Vector3.ONE * 2.6
+		if mid == "earth":
+			_dest.name = "EarthBelow"
+			_dest.position = EARTH_BELOW_POS
+			_dest.scale = Vector3.ONE * EARTH_BELOW_SCALE
 		_space_root.add_child(_dest)
 
 	_asteroid_root = Node3D.new()
