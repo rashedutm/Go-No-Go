@@ -13,12 +13,18 @@ const LAYOUT := {
 	"saturn": ["saturn", Vector3(14.5, 0, 0), 1.6],
 }
 const C_GOOD := Color(0.35, 0.9, 0.45)
+const CAM_DIST := 15.0
+const CAM_STIFFNESS := 32.0
+const CAM_DAMPING := 11.3
 
 var _selected := "earth"
+var _hovered := ""
 var _planets := {}
 var _cam: Camera3D
 var _cam_target := Vector3.ZERO
+var _cam_vel := Vector3.ZERO
 var _t := 0.0
+var _frames_root: Control
 
 var _info_name: Label
 var _info_dest: Label
@@ -70,6 +76,13 @@ func _ready() -> void:
 		area.input_event.connect(func(_c, ev, _p, _n, _i):
 			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
 				_select(id))
+		area.mouse_entered.connect(func():
+			_hovered = id
+			_refresh_highlights())
+		area.mouse_exited.connect(func():
+			if _hovered == id:
+				_hovered = ""
+				_refresh_highlights())
 		var label := Label3D.new()
 		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		label.font_size = 48
@@ -103,11 +116,15 @@ func _process(delta: float) -> void:
 	_t += delta
 	for mid in _planets:
 		_planets[mid]["node"].rotation.y += delta * 0.15
+	# Critically damped spring: constant camera distance, no zoom pop between planets.
+	var dt := minf(delta, 0.05)
 	var goal := _focus_point(_selected)
-	_cam_target = _cam_target.lerp(goal, 1.0 - exp(-delta * 3.0))
-	var dist := 13.0 + float(LAYOUT[_selected][2]) * 3.5
-	_cam.position = _cam_target + Vector3(-2.5 + sin(_t * 0.2) * 0.4, 2.0, dist)
+	var accel := (goal - _cam_target) * CAM_STIFFNESS - _cam_vel * CAM_DAMPING
+	_cam_vel += accel * dt
+	_cam_target += _cam_vel * dt
+	_cam.position = _cam_target + Vector3(-2.5 + sin(_t * 0.2) * 0.4, 2.0, CAM_DIST)
 	_cam.look_at(_cam_target + Vector3(3.2, -0.6, 0), Vector3.UP)
+	_update_frames()
 
 
 # ================================================================ UI
@@ -119,6 +136,21 @@ func _build_ui() -> void:
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(root)
+
+	# Selection rings track the planets in screen space (behind the HUD panels).
+	_frames_root = Control.new()
+	_frames_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_frames_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_frames_root)
+	for mid in _planets:
+		var frame := Panel.new()
+		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		frame.visible = false
+		var style := _make_frame_style(NeonUI.GOLD)
+		frame.add_theme_stylebox_override("panel", style)
+		_frames_root.add_child(frame)
+		_planets[mid]["frame"] = frame
+		_planets[mid]["style"] = style
 
 	var kick_row := HBoxContainer.new()
 	kick_row.position = Vector2(32, 20)
@@ -241,3 +273,55 @@ func _select(mid: String) -> void:
 		var st := int(MissionState.campaign["stars"].get(id, 0))
 		label.text = GameData.get_mission(id).get("name", "") + ("\n" + _stars(st) if un else "\nlocked")
 		label.modulate = (Color(1, 0.85, 0.35) if id == mid else Color.WHITE) if un else Color(0.55, 0.55, 0.6)
+	_refresh_highlights()
+
+
+func _make_frame_style(color: Color) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(color.r, color.g, color.b, 0.035)
+	sb.border_color = Color(color.r, color.g, color.b, 0.55)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(26)
+	sb.shadow_color = Color(color.r, color.g, color.b, 0.18)
+	sb.shadow_size = 6
+	sb.shadow_offset = Vector2.ZERO
+	return sb
+
+
+func _apply_frame_color(style: StyleBoxFlat, color: Color, selected: bool) -> void:
+	var border_a := 0.55 if selected else 0.40
+	var shadow_a := 0.18 if selected else 0.10
+	style.border_color = Color(color.r, color.g, color.b, border_a)
+	style.shadow_color = Color(color.r, color.g, color.b, shadow_a)
+	style.bg_color = Color(color.r, color.g, color.b, 0.035)
+
+
+func _refresh_highlights() -> void:
+	for id in _planets:
+		var frame: Panel = _planets[id]["frame"]
+		var style: StyleBoxFlat = _planets[id]["style"]
+		var is_selected: bool = id == _selected
+		var is_hovered: bool = id == _hovered
+		frame.visible = is_selected or is_hovered
+		if is_selected:
+			_apply_frame_color(style, NeonUI.GOLD, true)
+		elif is_hovered:
+			_apply_frame_color(style, NeonUI.CYAN, false)
+
+
+func _update_frames() -> void:
+	for id in _planets:
+		var frame: Panel = _planets[id]["frame"]
+		if not frame.visible:
+			continue
+		var node: Node3D = _planets[id]["node"]
+		var radius := float(LAYOUT[id][2])
+		var center := _cam.unproject_position(node.global_position)
+		var right := _cam.unproject_position(node.global_position + _cam.global_transform.basis.x * radius)
+		var up := _cam.unproject_position(node.global_position + _cam.global_transform.basis.y * radius)
+		var r := maxf(center.distance_to(right), center.distance_to(up))
+		var side := maxf(52.0, r * 2.0 + 12.0)
+		frame.position = center - Vector2(side, side) * 0.5
+		frame.size = Vector2(side, side)
+		var style: StyleBoxFlat = _planets[id]["style"]
+		style.set_corner_radius_all(int(side * 0.5))

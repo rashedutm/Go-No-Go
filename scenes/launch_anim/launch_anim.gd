@@ -4,17 +4,29 @@
 # Skippable with the SKIP button or Space. Owner: Member C (Daniel).
 extends Node3D
 
-const TOTAL := 12.2
+const TOTAL := 23.6
 const LIFTOFF_T := 3.0
-const CUT_T := 5.4
-const SEP_T := 6.1
-const DEPLOY_T := 6.4
-const DEPLOY_END := 8.2
-const ARRIVE_T := 10.5
-const FADE_OUT_T := 11.6
-const STAGE2_T := 8.6
+const CUT_T := 7.0
+const CUT_FADE_OUT := 0.8
+const CUT_FADE_IN := 1.0
+const CUT_HOLD := 0.15
+const SEP_T := 7.7
+const DEPLOY_T := 8.0
+const DEPLOY_END := 9.0
+const COCKPIT_IN_T := 8.2
+const CONTROL_T := 11.0
+const CONTROL_END := 19.6
+const ARRIVE_T := 21.6
+const FADE_OUT_T := 22.6
+const STAGE2_T := 8.5
 const RUMBLE_FILE := "res://audio/jerryblessed-space-rocket-launch-rumble-544846.wav"
 const STARS_MAP := "res://art/planets/2k_stars.jpg"
+const ASTEROID_MODELS := [
+	preload("res://art/models/asteroids/rock_A.gltf"),
+	preload("res://art/models/asteroids/rock_B.gltf"),
+	preload("res://art/models/asteroids/rocks_A.gltf"),
+	preload("res://art/models/asteroids/rocks_B.gltf"),
+]
 
 var design: Dictionary
 var mission: Dictionary
@@ -44,6 +56,9 @@ var _flame: MeshInstance3D
 var _flame_inner: MeshInstance3D
 var _glow: OmniLight3D
 var _smoke: CPUParticles3D
+var _smoke_left: CPUParticles3D
+var _smoke_right: CPUParticles3D
+var _trail_smoke: CPUParticles3D
 var _pad_cam: Camera3D
 var _space_cam: Camera3D
 
@@ -54,6 +69,36 @@ var _stage2: Node3D
 var _dest: Node3D
 var _env: Environment
 
+var _mission_card: PanelContainer
+var _phase_track: PanelContainer
+
+var _frame_layer: CanvasLayer
+var _frame_root: Control
+var _cockpit_layer: CanvasLayer
+var _cockpit_root: Control
+var _co_dist: Label
+var _co_msg: Label
+var _co_auto: Label
+var _co_hull: Array[Panel] = []
+var _hit_flash: ColorRect
+var _letterbox_top: ColorRect
+var _letterbox_bottom: ColorRect
+
+var _asteroid_root: Node3D
+var _asteroids: Array[Dictionary] = []
+var _asteroid_timer := 0.0
+var _ship_vel := Vector2.ZERO
+var _mouse_steer := Vector2.ZERO
+var _hull := 3
+var _shake := 0.0
+var _cockpit_on := false
+var _autopilot := false
+var _cockpit_vis := 0.0
+var _letterbox_vis := 0.0
+var _hud_swapped := false
+var _engine_glow: OmniLight3D
+var _engine_cone: MeshInstance3D
+
 var _big: Label
 var _sub: Label
 var _skip: Button
@@ -62,7 +107,7 @@ var _phase := -1
 var _phase_dots: Array[Panel] = []
 var _phase_labels: Array[Label] = []
 
-const PHASES := ["COUNTDOWN", "LIFTOFF", "SEPARATION", "DEPLOY", "ARRIVAL"]
+const PHASES := ["COUNTDOWN", "LIFTOFF", "SEPARATION", "FLIGHT", "ARRIVAL"]
 
 
 func _ready() -> void:
@@ -124,6 +169,12 @@ func _launch() -> void:
 	_flame_inner.visible = true
 	_glow.light_energy = 6.0
 	_smoke.emitting = true
+	if _smoke_left:
+		_smoke_left.emitting = true
+	if _smoke_right:
+		_smoke_right.emitting = true
+	if _trail_smoke:
+		_trail_smoke.emitting = true
 	Sfx.play("whoosh", -2.0)
 	Sfx.play("go", -6.0)
 	if _rumble:
@@ -140,7 +191,11 @@ func _update_pad() -> void:
 	_pad_cam.look_at(_rocket.position + Vector3(0, 10, 0), Vector3.UP)
 	if ft > 1.4:
 		_big.text = ""
-		_sub.text = "ASCENT  ·  STAGE SEPARATION"
+		_sub.text = "ASCENT  ·  STAGE 1 NOMINAL"
+	if ft > 2.6:
+		_sub.text = "MAX Q  ·  STAGE 1 NOMINAL"
+	if ft > 3.6:
+		_sub.text = "STAGE SEPARATION ARMED"
 
 
 func _enter_space() -> void:
@@ -151,9 +206,43 @@ func _enter_space() -> void:
 	if _env:
 		_env.fog_enabled = false
 		_env.ambient_light_energy = 0.22
+	_ship.position = Vector3.ZERO
+	_ship_vel = Vector2.ZERO
+	_mouse_steer = Vector2.ZERO
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_hull = 3
+	_shake = 0.0
+	_cockpit_on = false
+	_autopilot = false
+	_cockpit_vis = 0.0
+	_letterbox_vis = 0.0
+	_hud_swapped = false
+	_arrive_sfx = false
+	_clear_asteroids()
+	_asteroid_timer = 0.0
+	_space_cam.fov = 55.0
+	if _dest:
+		_dest.scale = Vector3.ONE * 2.6
+	if _engine_glow:
+		_engine_glow.light_energy = 0.0
+	if _engine_cone:
+		_engine_cone.visible = false
+	if _mission_card:
+		_mission_card.visible = true
+	if _phase_track:
+		_phase_track.visible = true
+	_sub.visible = true
+	_big.visible = true
 	_big.text = ""
 	_sub.text = "STAGE SEPARATION"
-	_fade.color = Color.WHITE
+	if _co_msg:
+		_co_msg.text = "STANDBY"
+		_co_msg.add_theme_color_override("font_color", NeonUI.GREEN)
+	if _hit_flash:
+		_hit_flash.modulate.a = 0.0
+	_apply_cockpit_vis()
+	_apply_letterbox()
+	_fade.color = Color.BLACK
 	_fade.modulate.a = 1.0
 	if _rumble:
 		_rumble.stop()
@@ -199,42 +288,298 @@ func _update_space(delta: float) -> void:
 		_deploy_blip = true
 		Sfx.play("fixed", -8.0)
 
-	var ship_z := -clampf((_t - 7.4) * 2.4, 0.0, 10.0)
-	_ship.position.z = ship_z
-	var approach := clampf((_t - 7.4) / 4.0, 0.0, 1.0)
+	var flight := clampf((_t - CONTROL_T) / (CONTROL_END - CONTROL_T), 0.0, 1.0)
+	var cine := clampf((_t - CONTROL_END) / (ARRIVE_T - CONTROL_END), 0.0, 1.0)
+	if _t >= COCKPIT_IN_T and not _hud_swapped:
+		_hud_swapped = true
+		if _mission_card:
+			_mission_card.visible = false
+		if _phase_track:
+			_phase_track.visible = false
+		_sub.visible = false
+		_big.visible = false
 	if _dest:
-		_dest.scale = Vector3.ONE * lerpf(2.8, 8.0, approach)
+		var ds := 2.6
+		if _t >= CONTROL_T and _t < CONTROL_END:
+			ds = lerpf(2.6, 5.6, flight)
+		elif _t >= CONTROL_END:
+			ds = lerpf(5.6, 9.0, cine)
+		_dest.scale = Vector3.ONE * ds
 		if _dest.has_method("spin_by"):
 			_dest.spin_by(delta * 0.02)
 		else:
 			_dest.rotate_y(delta * 0.02)
 
-	_space_cam.position = Vector3(6.0 + sin(_t * 0.25) * 0.6, 3.5, ship_z + 16.0)
-	_space_cam.look_at(Vector3(0, 0, ship_z - 2.0), Vector3.UP)
+	if _hit_flash:
+		_hit_flash.modulate.a = maxf(0.0, _hit_flash.modulate.a - delta * 1.6)
 
-	if _t < SEP_T + 0.5:
-		_sub.text = "STAGE SEPARATION"
-	elif _t < DEPLOY_END:
-		_sub.text = "SOLAR ARRAYS DEPLOY" if _has_solar else "SPACECRAFT SYSTEMS ONLINE"
-	elif _t < ARRIVE_T:
-		_sub.text = "CRUISE TO %s" % str(mission.get("destination", "")).to_upper()
+	if _t < COCKPIT_IN_T:
+		# --- chase the upper stage through separation + wing deploy
+		_cockpit_vis = 0.0
+		_space_cam.fov = 55.0
+		_space_cam.position = Vector3(6.0 + sin(_t * 0.25) * 0.6, 3.5, 16.0)
+		_space_cam.look_at(Vector3(0, 0, -2.0), Vector3.UP)
+	elif _t < CONTROL_T:
+		# --- curved dolly around the nose into the cockpit
+		var k := smoothstep(0.0, 1.0, (_t - COCKPIT_IN_T) / (CONTROL_T - COCKPIT_IN_T))
+		_cockpit_vis = clampf((k - 0.55) / 0.40, 0.0, 1.0)
+		var p0 := Vector3(6.0, 3.5, 16.0)
+		var p1 := Vector3(7.0, 3.2, -7.0)
+		var p2 := Vector3(3.0, 1.2, -7.0)
+		var p3 := _ship.position + Vector3(0.0, 0.55, -2.8)
+		_space_cam.position = _bezier3(p0, p1, p2, p3, k)
+		_space_cam.look_at(Vector3(0, 0, -2.0).lerp(_ship.position + Vector3(0, 0.55, -25.0), k), Vector3.UP)
+		_space_cam.fov = lerpf(55.0, 70.0, k)
+	elif _t < CONTROL_END:
+		if not _cockpit_on:
+			_cockpit_on = true
+			_mouse_steer = Vector2.ZERO
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+			if _mission_card:
+				_mission_card.visible = false
+			if _phase_track:
+				_phase_track.visible = false
+			_sub.visible = false
+			_big.visible = false
+			if _co_msg:
+				_co_msg.text = "MANUAL CONTROL"
+				_co_msg.add_theme_color_override("font_color", NeonUI.GREEN)
+			Sfx.play("go", -8.0)
+		_cockpit_vis = 1.0
+
+		# --- player steering: captured mouse (self-centering) + keyboard
+		_mouse_steer = _mouse_steer.lerp(Vector2.ZERO, 1.0 - exp(-delta * 2.6))
+		var ix := _mouse_steer.x
+		var iy := _mouse_steer.y
+		if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
+			ix -= 1.0
+		if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
+			ix += 1.0
+		if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
+			iy -= 1.0
+		if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
+			iy += 1.0
+		_ship_vel = _ship_vel.lerp(Vector2(clampf(ix, -1.0, 1.0), clampf(iy, -1.0, 1.0)) * Vector2(3.4, 2.2), 1.0 - exp(-delta * 6.5))
+		_ship.position.x = clampf(_ship.position.x + _ship_vel.x * delta, -3.2, 3.2)
+		_ship.position.y = clampf(_ship.position.y + _ship_vel.y * delta, -1.9, 1.9)
+		_ship.position.z = 0.0
+
+		# --- asteroid field
+		_asteroid_timer -= delta
+		if _asteroid_timer <= 0.0 and _t < CONTROL_END - 1.2:
+			_spawn_asteroid()
+			_asteroid_timer = randf_range(0.34, 0.62)
+		_update_asteroids(delta)
+
+		_shake = maxf(_shake - delta * 2.4, 0.0)
+		var sh := Vector3(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0), 0.0) * _shake
+		_space_cam.fov = 70.0
+		_space_cam.position = _ship.position + Vector3(0.0, 0.55, -2.8) + sh
+		_space_cam.look_at(_ship.position + Vector3(0.0, 0.55, -25.0), Vector3.UP)
+		_space_cam.rotate_object_local(Vector3(0, 0, 1), -_ship_vel.x * 0.02)
+		_update_cockpit_hud()
 	else:
-		_sub.text = "ARRIVAL  ·  MISSION CONTROL HANDOFF"
-		_big.add_theme_font_size_override("font_size", 56)
-		_big.text = "ARRIVED AT %s" % str(mission.get("destination", "")).to_upper()
-		if not _arrive_sfx:
-			_arrive_sfx = true
-			Sfx.play("complete", -4.0)
+		if not _autopilot:
+			_autopilot = true
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			_clear_asteroids()
+			_letterbox_vis = 0.0
+			_big.visible = true
+			_sub.visible = true
+			_big.add_theme_font_size_override("font_size", 52)
+			_big.text = "AUTOPILOT ENGAGED"
+			_sub.text = "ORBIT INSERTION  ·  %s" % str(mission.get("destination", "")).to_upper()
+			if _engine_glow:
+				_engine_glow.light_energy = 3.5
+			if _engine_cone:
+				_engine_cone.visible = true
+			Sfx.play("fixed", -6.0)
+		_cockpit_vis = move_toward(_cockpit_vis, 0.0, delta * 3.0)
+		_letterbox_vis = move_toward(_letterbox_vis, 1.0, delta * 1.6)
+		_ship.position.z = move_toward(_ship.position.z, -24.0, delta * 3.2)
+		_ship.position.x = move_toward(_ship.position.x, 0.0, delta * 1.4)
+		_ship.position.y = move_toward(_ship.position.y, 0.0, delta * 1.2)
+		_space_cam.fov = 50.0
+		_space_cam.position = _ship.position + Vector3(8.0, 3.6, 14.0)
+		_space_cam.look_at(_ship.position + Vector3(0, 0, -8.0), Vector3.UP)
+		if _t >= ARRIVE_T:
+			_big.text = "ARRIVED AT %s" % str(mission.get("destination", "")).to_upper()
+			_sub.text = "MISSION CONTROL HANDOFF"
+			if not _arrive_sfx:
+				_arrive_sfx = true
+				Sfx.play("complete", -4.0)
+
+	_apply_cockpit_vis()
+	_apply_letterbox()
+
+
+func _rock_color() -> Color:
+	if randf() < 0.18:
+		return Color(0.36, 0.44, 0.52)   # icy
+	var g := randf_range(0.18, 0.34)
+	return Color(g * randf_range(0.95, 1.08), g * randf_range(0.92, 1.0), g * randf_range(0.82, 0.95))
+
+
+func _paint_rock(root: Node, col: Color) -> void:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = col
+	mat.roughness = 1.0
+	mat.metallic = 0.0
+	for n in root.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		if mi.mesh:
+			mi.material_override = mat
+
+
+func _rock_aabb(root: Node) -> AABB:
+	var out := AABB()
+	var first := true
+	for n in root.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		if mi.mesh == null:
+			continue
+		var box := mi.transform * mi.get_aabb()
+		if first:
+			out = box
+			first = false
+		else:
+			out = out.merge(box)
+	return out
+
+
+func _make_rock(radius: float) -> Node3D:
+	var wrap := Node3D.new()
+	var scene: PackedScene = ASTEROID_MODELS[randi() % ASTEROID_MODELS.size()]
+	var model := scene.instantiate() as Node3D
+	wrap.add_child(model)
+	var box := _rock_aabb(model)
+	var size := box.size
+	var base := maxf(size.x, maxf(size.y, size.z)) * 0.5
+	model.position = -box.get_center()
+	var s := radius / maxf(base, 0.001)
+	wrap.scale = Vector3(s, s * randf_range(1.0, 1.35), s)
+	_paint_rock(wrap, _rock_color())
+	return wrap
+
+
+func _spawn_asteroid() -> void:
+	if _asteroid_root == null:
+		return
+	var node := Node3D.new()
+	node.name = "Asteroid"
+	var r := randf_range(0.55, 1.15)
+	node.add_child(_make_rock(r))
+
+	# --- companion fragments: broken-off chunks that travel with the rock
+	if randf() < 0.55:
+		for i in randi_range(1, 2):
+			var frag := _make_rock(r * randf_range(0.28, 0.48))
+			frag.position = Vector3(randf_range(-1.2, 1.2), randf_range(-0.9, 0.9), randf_range(-1.2, 1.2))
+			node.add_child(frag)
+
+	node.position = Vector3(randf_range(-4.6, 4.6), randf_range(-2.8, 2.8), -randf_range(48.0, 68.0))
+	node.rotation = Vector3(randf_range(0, TAU), randf_range(0, TAU), randf_range(0, TAU))
+	_asteroid_root.add_child(node)
+	_asteroids.append({
+		"node": node,
+		"speed": randf_range(12.0, 20.0),
+		"radius": r,
+		"spin": Vector3(randf_range(-0.9, 0.9), randf_range(-0.9, 0.9), randf_range(-0.9, 0.9)),
+	})
+
+
+func _update_asteroids(delta: float) -> void:
+	for i in range(_asteroids.size() - 1, -1, -1):
+		var a: Dictionary = _asteroids[i]
+		var node := a["node"] as Node3D
+		if not is_instance_valid(node):
+			_asteroids.remove_at(i)
+			continue
+		node.position.z += float(a["speed"]) * delta
+		var spin: Vector3 = a["spin"]
+		node.rotate_x(spin.x * delta)
+		node.rotate_y(spin.y * delta)
+		node.rotate_z(spin.z * delta)
+		if node.position.z > _ship.position.z + 8.0:
+			node.queue_free()
+			_asteroids.remove_at(i)
+			continue
+		var d := node.position - _ship.position
+		var r := float(a["radius"])
+		if absf(d.z) < 1.1 + r and Vector2(d.x, d.y).length() < 0.9 + r:
+			_handle_hit()
+			node.queue_free()
+			_asteroids.remove_at(i)
+
+
+func _handle_hit() -> void:
+	_hull = maxi(_hull - 1, 0)
+	_shake = 0.55
+	if _hit_flash:
+		_hit_flash.modulate.a = 0.55
+	Sfx.play("alarm", -6.0)
+	if _co_msg:
+		_co_msg.text = ("IMPACT  ·  HULL %d/3" % _hull) if _hull > 0 else "HULL CRITICAL"
+		_co_msg.add_theme_color_override("font_color", NeonUI.GOLD if _hull > 0 else NeonUI.RED)
+
+
+func _clear_asteroids() -> void:
+	for a in _asteroids:
+		var n := a["node"] as Node3D
+		if is_instance_valid(n):
+			n.queue_free()
+	_asteroids.clear()
+
+
+func _update_cockpit_hud() -> void:
+	if _co_dist == null:
+		return
+	var p := clampf((_t - CONTROL_T) / (CONTROL_END - CONTROL_T), 0.0, 1.0)
+	_co_dist.text = "DISTANCE  %05d KM" % int(round(lerpf(12000.0, 0.0, p)))
+	_co_auto.text = "AUTOPILOT IN  %0.1fs" % maxf(0.0, CONTROL_END - _t)
+	for i in range(_co_hull.size()):
+		_co_hull[i].modulate = Color(1, 1, 1, 1) if i < _hull else Color(1, 1, 1, 0.12)
+	if _hull <= 0 and _co_msg:
+		_co_msg.text = "HULL CRITICAL"
+		_co_msg.add_theme_color_override("font_color", NeonUI.RED)
+
+
+func _bezier3(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, t: float) -> Vector3:
+	var u := 1.0 - t
+	return p0 * (u * u * u) + p1 * (3.0 * u * u * t) + p2 * (3.0 * u * t * t) + p3 * (t * t * t)
+
+
+func _apply_cockpit_vis() -> void:
+	var on := _cockpit_vis > 0.01
+	if _frame_root:
+		_frame_root.visible = on
+		_frame_root.modulate.a = _cockpit_vis
+	if _cockpit_root:
+		_cockpit_root.visible = on
+		_cockpit_root.modulate.a = _cockpit_vis
+
+
+func _apply_letterbox() -> void:
+	var on := _letterbox_vis > 0.01
+	if _letterbox_top:
+		_letterbox_top.visible = on
+		_letterbox_top.offset_bottom = 56.0 * _letterbox_vis
+	if _letterbox_bottom:
+		_letterbox_bottom.visible = on
+		_letterbox_bottom.offset_top = -56.0 * _letterbox_vis
 
 
 func _update_fade() -> void:
 	var a := 0.0
-	if _space:
-		if _t < CUT_T + 0.6:
-			a = 1.0 - clampf((_t - CUT_T) / 0.6, 0.0, 1.0)
+	if not _space:
+		# --- pad: ease down to black just before the cut to space
+		a = smoothstep(0.0, 1.0, clampf((_t - (CUT_T - CUT_FADE_OUT)) / CUT_FADE_OUT, 0.0, 1.0))
+	else:
+		# --- space: hold black for a beat, then ease in; hold clear until the ending
+		a = 1.0 - smoothstep(0.0, 1.0, clampf((_t - (CUT_T + CUT_HOLD)) / CUT_FADE_IN, 0.0, 1.0))
 		if _t > FADE_OUT_T:
 			_fade.color = Color.BLACK
-			a = clampf((_t - FADE_OUT_T) / 0.6, 0.0, 1.0)
+			a = smoothstep(0.0, 1.0, clampf((_t - FADE_OUT_T) / 1.0, 0.0, 1.0))
 	_fade.modulate.a = a
 
 
@@ -242,12 +587,22 @@ func _finish() -> void:
 	if _done:
 		return
 	_done = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	MissionState.go_to("mission_control")
 
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
 		_finish()
+		return
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		return
+	if _cockpit_on and event is InputEventMouseMotion:
+		var mm := event as InputEventMouseMotion
+		_mouse_steer.x = clampf(_mouse_steer.x + mm.relative.x * 0.0065, -1.0, 1.0)
+		# mouse down = ship down (screen-space, not flight-stick pitch)
+		_mouse_steer.y = clampf(_mouse_steer.y - mm.relative.y * 0.0065, -1.0, 1.0)
 
 
 # ===================================================================== world
@@ -270,12 +625,12 @@ func _build_world() -> void:
 		env.background_mode = Environment.BG_COLOR
 		env.background_color = Color(0.015, 0.025, 0.07)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.22, 0.28, 0.45)
-	env.ambient_light_energy = 0.5
+	env.ambient_light_color = Color(0.26, 0.33, 0.43)
+	env.ambient_light_energy = 0.7
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.fog_enabled = true
-	env.fog_light_color = Color(0.05, 0.07, 0.14)
-	env.fog_density = 0.006
+	env.fog_light_color = Color(0.06, 0.09, 0.14)
+	env.fog_density = 0.011
 	we.environment = env
 	_env = env
 	add_child(we)
@@ -283,7 +638,7 @@ func _build_world() -> void:
 	var moon := DirectionalLight3D.new()
 	moon.rotation_degrees = Vector3(-32, 140, 0)
 	moon.light_color = Color(0.60, 0.70, 1.0)
-	moon.light_energy = 0.6
+	moon.light_energy = 0.9
 	moon.shadow_enabled = true
 	add_child(moon)
 
@@ -293,10 +648,19 @@ func _build_pad() -> void:
 	_pad_root.name = "Pad"
 	add_child(_pad_root)
 
-	_pad_root.add_child(_at(_box(Vector3(400, 0.2, 400), Color(0.08, 0.11, 0.09), 0.0, 0.95), Vector3(0, -0.1, 0)))
-	_pad_root.add_child(_at(_box(Vector3(70, 0.08, 70), Color(0.16, 0.18, 0.20), 0.1, 0.9), Vector3(0, 0.04, 0)))
+	var ground := _box(Vector3(400, 0.2, 400), Color(0.10, 0.19, 0.11), 0.0, 1.0)
+	var gm := ground.mesh.material as StandardMaterial3D
+	gm.emission_enabled = true
+	gm.emission = Color(0.015, 0.04, 0.015)
+	_pad_root.add_child(_at(ground, Vector3(0, -0.1, 0)))
+	var lawn := _box(Vector3(70, 0.08, 70), Color(0.11, 0.20, 0.11), 0.0, 1.0)
+	var lm := lawn.mesh.material as StandardMaterial3D
+	lm.emission_enabled = true
+	lm.emission = Color(0.018, 0.045, 0.018)
+	_pad_root.add_child(_at(lawn, Vector3(0, 0.04, 0)))
 	_pad_root.add_child(_at(_box(Vector3(20, 1.0, 20), Color(0.36, 0.37, 0.41), 0.2, 0.8), Vector3(0, 0.5, 0)))
 	_pad_root.add_child(_at(_box(Vector3(6, 0.3, 6), Color(0.18, 0.18, 0.2), 0.5, 0.6), Vector3(0, 1.15, 0)))
+	_build_pad_surroundings()
 
 	var pad_fill := OmniLight3D.new()
 	pad_fill.position = Vector3(0, 6, 2)
@@ -337,6 +701,8 @@ func _build_pad() -> void:
 		l.light_energy = 6.0
 		l.light_color = Color(1.0, 0.95, 0.85)
 		_pad_root.add_child(l)
+		_pad_root.add_child(_at(_box(Vector3(0.2, 3, 0.2), Color(0.14, 0.15, 0.17), 0.3, 0.7), Vector3(p.x, 1.5, p.z)))
+		_pad_root.add_child(_at(_box(Vector3(1.0, 0.2, 1.0), Color(0.2, 0.2, 0.22), 0.2, 0.8), Vector3(p.x, 0.1, p.z)))
 		_pad_root.add_child(_at(_box(Vector3(1.2, 1.2, 1.2), Color(1, 1, 0.9), 0.0, 0.3), p))
 
 	var lv := str(design.get("launch_vehicle", ""))
@@ -381,12 +747,188 @@ func _build_pad() -> void:
 	_smoke.emitting = false
 	_pad_root.add_child(_smoke)
 
+	# --- ground billows pushed out to either side of the pad
+	_smoke_left = _smoke_particles(150, 4.6, Vector3(-1.0, 0.25, 0.35), 36.0,
+		4.0, 8.5, 2.0, 4.8, Vector3(0, 1.3, 0))
+	_smoke_left.name = "SmokeLeft"
+	_smoke_left.position = Vector3(-4.2, 1.6, 1.2)
+	_pad_root.add_child(_smoke_left)
+
+	_smoke_right = _smoke_particles(150, 4.6, Vector3(1.0, 0.25, 0.35), 36.0,
+		4.0, 8.5, 2.0, 4.8, Vector3(0, 1.3, 0))
+	_smoke_right.name = "SmokeRight"
+	_smoke_right.position = Vector3(4.2, 1.6, 1.2)
+	_pad_root.add_child(_smoke_right)
+
+	# --- exhaust trail left behind in world space as the rocket climbs
+	_trail_smoke = _smoke_particles(190, 3.0, Vector3(0, -1, 0), 16.0,
+		6.0, 10.0, 1.2, 2.8, Vector3(0, 0.15, 0))
+	_trail_smoke.name = "TrailSmoke"
+	_trail_smoke.local_coords = false
+	_trail_smoke.position = Vector3(0, -3.2, 0)
+	_rocket.add_child(_trail_smoke)
+
 	_pad_cam = Camera3D.new()
 	_pad_cam.fov = 52
 	_pad_cam.position = Vector3(28, 7, 40)
 	_pad_cam.current = true
 	_pad_root.add_child(_pad_cam)
 	_pad_cam.look_at(Vector3(0, 16, 0), Vector3.UP)
+
+
+func _build_pad_surroundings() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1969
+	var concrete := Color(0.44, 0.45, 0.42)
+	var dark_concrete := Color(0.30, 0.31, 0.29)
+
+	# Light hardstand around the launch mount.
+	_pad_root.add_child(_at(_box(Vector3(40, 0.05, 40), concrete, 0.0, 0.8), Vector3(0, 0.06, 0)))
+
+	# Crawlerway: the wide diagonal concrete strip from the pad to the horizon.
+	var way := _box(Vector3(14, 0.06, 130), dark_concrete, 0.0, 0.9)
+	way.position = Vector3(-42, 0.035, -40)
+	way.rotation.y = deg_to_rad(30)
+	_pad_root.add_child(way)
+	var across := Vector3(cos(way.rotation.y), 0, -sin(way.rotation.y))
+	for side in [-1.0, 1.0]:
+		var rail := _box(Vector3(0.9, 0.08, 130), Color(0.16, 0.17, 0.16), 0.1, 0.7)
+		rail.position = way.position + across * (side * 4.6) + Vector3(0, 0.02, 0)
+		rail.rotation.y = way.rotation.y
+		_pad_root.add_child(rail)
+
+	# Perimeter service roads.
+	_pad_root.add_child(_at(_box(Vector3(120, 0.04, 3.5), dark_concrete, 0.0, 0.9), Vector3(0, 0.03, 47)))
+	_pad_root.add_child(_at(_box(Vector3(120, 0.04, 3.5), dark_concrete, 0.0, 0.9), Vector3(0, 0.03, -47)))
+	_pad_root.add_child(_at(_box(Vector3(3.5, 0.04, 94), dark_concrete, 0.0, 0.9), Vector3(-47, 0.03, 0)))
+	_pad_root.add_child(_at(_box(Vector3(3.5, 0.04, 94), dark_concrete, 0.0, 0.9), Vector3(47, 0.03, 0)))
+
+	# Scorched flame trench and its concrete lip.
+	_pad_root.add_child(_at(_box(Vector3(18, 0.10, 9), Color(0.07, 0.07, 0.06), 0.0, 1.0), Vector3(17, 0.06, 0)))
+	_pad_root.add_child(_at(_box(Vector3(1.2, 0.8, 10), concrete, 0.0, 0.8), Vector3(7.6, 0.4, 0)))
+
+	# A river/water band in the distance, then a grass bank in front of it.
+	var water := _box(Vector3(190, 0.04, 30), Color(0.02, 0.06, 0.10), 0.45, 0.25)
+	water.position = Vector3(-35, 0.02, -88)
+	var wm := water.mesh.material as StandardMaterial3D
+	wm.emission_enabled = true
+	wm.emission = Color(0.015, 0.045, 0.08)
+	_pad_root.add_child(water)
+	_pad_root.add_child(_at(_box(Vector3(200, 0.10, 8), Color(0.06, 0.12, 0.07), 0.0, 1.0), Vector3(-35, 0.04, -70)))
+
+	# Irregular grass patches to break up the flat ground plane.
+	for i in 12:
+		var px := rng.randf_range(-150.0, 150.0)
+		var pz := rng.randf_range(-120.0, 120.0)
+		if absf(px) < 62.0 and absf(pz) < 62.0:
+			continue
+		var g := rng.randf_range(0.055, 0.10)
+		var patch := _box(Vector3(rng.randf_range(26.0, 70.0), 0.02, rng.randf_range(22.0, 55.0)),
+			Color(g * 0.6, g * 1.5, g * 0.8), 0.0, 1.0)
+		patch.position = Vector3(px, 0.012, pz)
+		_pad_root.add_child(patch)
+
+	# Distant treeline. Fog takes over before the ring ends.
+	for i in 52:
+		var a := rng.randf_range(0.0, TAU)
+		var d := rng.randf_range(66.0, 150.0)
+		var pos := Vector3(cos(a) * d, 0.0, sin(a) * d - 12.0)
+		if absf(pos.x) < 58.0 and absf(pos.z) < 58.0:
+			continue
+		_pad_tree(pos, rng.randf_range(0.8, 1.7))
+
+	# Low buildings and the pad water tower.
+	_pad_building(Vector3(-58, 0, 8), Vector3(12, 5, 9), Color(0.34, 0.35, 0.36))
+	_pad_building(Vector3(-72, 0, -18), Vector3(16, 6, 12), Color(0.30, 0.31, 0.33))
+	_pad_building(Vector3(54, 0, -62), Vector3(20, 8, 16), Color(0.28, 0.29, 0.30))
+	_pad_water_tower(Vector3(-28, 0, 24))
+
+	# Lightning-protection masts with red beacons.
+	for p in [Vector3(32, 0, 32), Vector3(-34, 0, 30), Vector3(30, 0, -30)]:
+		_pad_root.add_child(_at(_box(Vector3(0.5, 34, 0.5), Color(0.17, 0.18, 0.18), 0.5, 0.5), p + Vector3(0, 17, 0)))
+		var beacon := _star(0.28, Color(1.0, 0.15, 0.08))
+		beacon.position = p + Vector3(0, 34.4, 0)
+		_pad_root.add_child(beacon)
+
+	# Warm perimeter lamps, kept low so the launch lights still own the scene.
+	for p in [Vector3(28, 2, 30), Vector3(-28, 2, 28), Vector3(26, 2, -28)]:
+		var l := OmniLight3D.new()
+		l.position = p
+		l.omni_range = 20
+		l.light_energy = 0.55
+		l.light_color = Color(1.0, 0.78, 0.52)
+		_pad_root.add_child(l)
+
+
+func _pad_tree(pos: Vector3, s: float) -> void:
+	var trunk := _box(Vector3(0.35 * s, 2.2 * s, 0.35 * s), Color(0.16, 0.12, 0.08), 0.0, 1.0)
+	trunk.position = pos + Vector3(0, 1.1 * s, 0)
+	_pad_root.add_child(trunk)
+	var canopy := MeshInstance3D.new()
+	var cone := CylinderMesh.new()
+	cone.top_radius = 0.0
+	cone.bottom_radius = 1.7 * s
+	cone.height = 4.6 * s
+	cone.radial_segments = 6
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.05, 0.13, 0.07)
+	mat.roughness = 1.0
+	mat.emission_enabled = true
+	mat.emission = Color(0.02, 0.045, 0.025)
+	cone.material = mat
+	canopy.mesh = cone
+	canopy.position = pos + Vector3(0, 3.6 * s, 0)
+	_pad_root.add_child(canopy)
+
+
+func _pad_building(pos: Vector3, size: Vector3, col: Color) -> void:
+	var body := _box(size, col, 0.0, 0.85)
+	body.position = pos + Vector3(0, size.y * 0.5, 0)
+	_pad_root.add_child(body)
+	var roof := _box(Vector3(size.x * 1.04, 0.35, size.z * 1.04), col.darkened(0.22), 0.0, 0.8)
+	roof.position = pos + Vector3(0, size.y, 0)
+	_pad_root.add_child(roof)
+	var win := _box(Vector3(size.x * 0.7, 0.5, 0.05), Color(0.7, 0.82, 1.0), 0.0, 0.3)
+	win.position = pos + Vector3(0, size.y * 0.55, size.z * 0.5 + 0.03)
+	var wmat := win.mesh.material as StandardMaterial3D
+	wmat.emission_enabled = true
+	wmat.emission = Color(0.35, 0.55, 0.9)
+	_pad_root.add_child(win)
+
+
+func _pad_water_tower(pos: Vector3) -> void:
+	_pad_root.add_child(_at(_box(Vector3(7, 0.6, 7), Color(0.32, 0.33, 0.31), 0, 0.9), pos + Vector3(0, 0.3, 0)))
+	var column := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.8
+	cyl.bottom_radius = 1.2
+	cyl.height = 20
+	cyl.radial_segments = 8
+	var cm := StandardMaterial3D.new()
+	cm.albedo_color = Color(0.42, 0.44, 0.45)
+	cm.metallic = 0.3
+	cm.roughness = 0.6
+	cyl.material = cm
+	column.mesh = cyl
+	column.position = pos + Vector3(0, 10, 0)
+	_pad_root.add_child(column)
+	var tank := MeshInstance3D.new()
+	var sph := SphereMesh.new()
+	sph.radius = 3.2
+	sph.height = 6.4
+	sph.radial_segments = 12
+	sph.rings = 6
+	var sm := StandardMaterial3D.new()
+	sm.albedo_color = Color(0.5, 0.53, 0.55)
+	sm.metallic = 0.3
+	sm.roughness = 0.5
+	sph.material = sm
+	tank.mesh = sph
+	tank.position = pos + Vector3(0, 22, 0)
+	_pad_root.add_child(tank)
+	var beacon := _star(0.35, Color(1.0, 0.15, 0.08))
+	beacon.position = pos + Vector3(0, 25.4, 0)
+	_pad_root.add_child(beacon)
 
 
 func _build_space() -> void:
@@ -415,9 +957,13 @@ func _build_space() -> void:
 	_dest = MenuPlanet.make(mid)
 	if _dest:
 		_dest.name = "Destination"
-		_dest.position = Vector3(0, 0, -18)
-		_dest.scale = Vector3.ONE * 2.4
-		_ship.add_child(_dest)
+		_dest.position = Vector3(0, 0, -60)
+		_dest.scale = Vector3.ONE * 2.6
+		_space_root.add_child(_dest)
+
+	_asteroid_root = Node3D.new()
+	_asteroid_root.name = "Asteroids"
+	_space_root.add_child(_asteroid_root)
 
 	_craft = SpacecraftModel3D.build(design)
 	_craft.name = "Spacecraft"
@@ -425,6 +971,19 @@ func _build_space() -> void:
 	_craft.rotation = Vector3(0.12, PI, 0.10)
 	_ship.add_child(_craft)
 	SpacecraftModel3D.deploy_wings(_craft, 0.0)
+
+	# Engine glow for the autopilot cutaway (behind the ship, toward camera).
+	_engine_cone = _flame_cone(0.28, 0.04, 2.6, Color(0.35, 0.85, 1.0))
+	_engine_cone.rotation.x = PI / 2.0
+	_engine_cone.position = Vector3(0, 0, 2.8)
+	_engine_cone.visible = false
+	_ship.add_child(_engine_cone)
+	_engine_glow = OmniLight3D.new()
+	_engine_glow.position = Vector3(0, 0, 2.4)
+	_engine_glow.light_color = Color(0.35, 0.85, 1.0)
+	_engine_glow.omni_range = 6.0
+	_engine_glow.light_energy = 0.0
+	_ship.add_child(_engine_glow)
 
 	_stage2 = _space_stage(1.35, 1.55, 4.5, Color(0.92, 0.93, 0.96))
 	_stage2.position = Vector3(0, 0, 4.6)
@@ -497,6 +1056,7 @@ func _build_ui() -> void:
 
 	# --- mission kicker card, top-left
 	var card := NeonUI.glass(16)
+	_mission_card = card
 	card.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	card.offset_left = 28
 	card.offset_top = 24
@@ -543,6 +1103,7 @@ func _build_ui() -> void:
 
 	# --- phase timeline, bottom-centre
 	var track := NeonUI.glass(12)
+	_phase_track = track
 	track.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	track.offset_left = -330
 	track.offset_right = 330
@@ -575,9 +1136,9 @@ func _build_ui() -> void:
 	NeonUI.ghost(_skip, 18)
 	_skip.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	_skip.offset_left = -178
-	_skip.offset_top = -76
+	_skip.offset_top = -122
 	_skip.offset_right = -28
-	_skip.offset_bottom = -28
+	_skip.offset_bottom = -74
 	_skip.mouse_filter = Control.MOUSE_FILTER_STOP
 	_skip.pressed.connect(_finish)
 	root.add_child(_skip)
@@ -587,16 +1148,187 @@ func _build_ui() -> void:
 	add_child(fade_layer)
 	_fade = ColorRect.new()
 	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_fade.color = Color.WHITE
+	_fade.color = Color.BLACK
 	_fade.modulate.a = 0.0
 	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fade_layer.add_child(_fade)
+
+	_build_cockpit_ui()
+
+
+func _build_cockpit_ui() -> void:
+	# --- cockpit visor frame (below the launch HUD, above the 3D)
+	var frame_layer := CanvasLayer.new()
+	frame_layer.layer = 4
+	add_child(frame_layer)
+	_frame_root = Control.new()
+	_frame_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_frame_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_frame_root.visible = false
+	_frame_root.modulate.a = 0.0
+	frame_layer.add_child(_frame_root)
+
+	var frame_col := Color(0.01, 0.015, 0.03, 0.94)
+	var line_col := Color(0.31, 0.84, 1.0, 0.30)
+	var top := ColorRect.new()
+	top.color = frame_col
+	top.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	top.offset_bottom = 52
+	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_frame_root.add_child(top)
+	var bottom := ColorRect.new()
+	bottom.color = frame_col
+	bottom.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom.offset_top = -64
+	bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_frame_root.add_child(bottom)
+	var left := ColorRect.new()
+	left.color = frame_col
+	left.set_anchors_preset(Control.PRESET_LEFT_WIDE)
+	left.offset_right = 46
+	left.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_frame_root.add_child(left)
+	var right := ColorRect.new()
+	right.color = frame_col
+	right.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
+	right.offset_left = -46
+	right.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_frame_root.add_child(right)
+	for spec in [[Control.PRESET_TOP_WIDE, 52, -2, 0, 2], [Control.PRESET_BOTTOM_WIDE, -66, -2, 0, 2],
+			[Control.PRESET_LEFT_WIDE, 46, 0, 2, 0], [Control.PRESET_RIGHT_WIDE, -48, 0, 2, 0]]:
+		var ln := ColorRect.new()
+		ln.color = line_col
+		ln.set_anchors_preset(spec[0])
+		if spec[0] == Control.PRESET_TOP_WIDE:
+			ln.offset_top = spec[1]
+			ln.offset_bottom = spec[1] + 2
+		elif spec[0] == Control.PRESET_BOTTOM_WIDE:
+			ln.offset_top = spec[1]
+			ln.offset_bottom = spec[1] + 2
+		elif spec[0] == Control.PRESET_LEFT_WIDE:
+			ln.offset_left = spec[1]
+			ln.offset_right = spec[1] + 2
+		else:
+			ln.offset_left = spec[1]
+			ln.offset_right = spec[1] + 2
+		ln.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_frame_root.add_child(ln)
+
+	# --- cockpit HUD
+	_cockpit_layer = CanvasLayer.new()
+	_cockpit_layer.layer = 6
+	add_child(_cockpit_layer)
+	_cockpit_root = Control.new()
+	_cockpit_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_cockpit_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cockpit_root.visible = false
+	_cockpit_root.modulate.a = 0.0
+	_cockpit_layer.add_child(_cockpit_root)
+
+	var card := NeonUI.panel("cyan", 10)
+	card.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	card.offset_left = 28
+	card.offset_top = 70
+	card.offset_right = 368
+	card.offset_bottom = 168
+	_cockpit_root.add_child(card)
+	var cv := VBoxContainer.new()
+	cv.add_theme_constant_override("separation", 2)
+	card.add_child(cv)
+	cv.add_child(NeonUI.kicker("MANUAL FLIGHT", NeonUI.CYAN, 10))
+	_co_msg = Label.new()
+	NeonUI.heading(_co_msg, 18, NeonUI.GREEN)
+	_co_msg.text = "STANDBY"
+	cv.add_child(_co_msg)
+	_co_dist = Label.new()
+	NeonUI.mono(_co_dist, 12, NeonUI.TEXT)
+	_co_dist.text = "DISTANCE  12000 KM"
+	cv.add_child(_co_dist)
+
+	var auto_card := NeonUI.panel("cyan", 8)
+	auto_card.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	auto_card.offset_left = -240
+	auto_card.offset_top = 70
+	auto_card.offset_right = -28
+	auto_card.offset_bottom = 132
+	_cockpit_root.add_child(auto_card)
+	var av := VBoxContainer.new()
+	av.add_theme_constant_override("separation", 1)
+	auto_card.add_child(av)
+	av.add_child(NeonUI.kicker("AUTOPILOT", NeonUI.MUTED, 9))
+	_co_auto = Label.new()
+	NeonUI.mono(_co_auto, 12, NeonUI.CYAN)
+	_co_auto.text = "AUTOPILOT IN  8.6s"
+	av.add_child(_co_auto)
+
+	var bottom_card := NeonUI.panel("cyan", 10)
+	bottom_card.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	bottom_card.offset_left = -330
+	bottom_card.offset_right = 330
+	bottom_card.offset_top = -144
+	bottom_card.offset_bottom = -92
+	_cockpit_root.add_child(bottom_card)
+	var bh := HBoxContainer.new()
+	bh.add_theme_constant_override("separation", 10)
+	bottom_card.add_child(bh)
+	bh.add_child(NeonUI.mono("MOUSE  ·  A/D  ·  W/S  ·  SPACE SKIP", 11, NeonUI.MUTED))
+	var sp := Control.new()
+	sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bh.add_child(sp)
+	bh.add_child(NeonUI.caption("HULL", 10))
+	for i in 3:
+		var pip := Panel.new()
+		pip.custom_minimum_size = Vector2(14, 10)
+		var psb := StyleBoxFlat.new()
+		psb.bg_color = NeonUI.GREEN
+		psb.set_corner_radius_all(2)
+		pip.add_theme_stylebox_override("panel", psb)
+		bh.add_child(pip)
+		_co_hull.append(pip)
+
+	# reticle
+	var ret_col := Color(0.31, 0.84, 1.0, 0.55)
+	for spec in [[-1, -34, 1, -18], [-1, 18, 1, 34], [-34, -1, -18, 1], [18, -1, 34, 1]]:
+		var r := ColorRect.new()
+		r.color = ret_col
+		r.set_anchors_preset(Control.PRESET_CENTER)
+		r.offset_left = spec[0]
+		r.offset_top = spec[1]
+		r.offset_right = spec[2]
+		r.offset_bottom = spec[3]
+		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_cockpit_root.add_child(r)
+
+	# --- hit flash + cinematic letterbox (above the HUD)
+	var fx_layer := CanvasLayer.new()
+	fx_layer.layer = 7
+	add_child(fx_layer)
+	_hit_flash = ColorRect.new()
+	_hit_flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_hit_flash.color = Color(1.0, 0.18, 0.12)
+	_hit_flash.modulate.a = 0.0
+	_hit_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fx_layer.add_child(_hit_flash)
+	_letterbox_top = ColorRect.new()
+	_letterbox_top.color = Color(0, 0, 0)
+	_letterbox_top.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_letterbox_top.offset_bottom = 0
+	_letterbox_top.visible = false
+	_letterbox_top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fx_layer.add_child(_letterbox_top)
+	_letterbox_bottom = ColorRect.new()
+	_letterbox_bottom.color = Color(0, 0, 0)
+	_letterbox_bottom.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	_letterbox_bottom.offset_top = 0
+	_letterbox_bottom.visible = false
+	_letterbox_bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fx_layer.add_child(_letterbox_bottom)
 
 
 func _phase_index() -> int:
 	if _t >= ARRIVE_T:
 		return 4
-	if _t >= DEPLOY_T:
+	if _t >= CONTROL_T:
 		return 3
 	if _t >= SEP_T:
 		return 2
@@ -674,6 +1406,23 @@ func _flame_cone(top_r: float, bottom_r: float, height: float, color: Color) -> 
 	mesh.material = m
 	mi.mesh = mesh
 	return mi
+
+
+func _smoke_particles(amount: int, lifetime: float, direction: Vector3, spread: float,
+		vmin: float, vmax: float, smin: float, smax: float, gravity: Vector3) -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	p.amount = amount
+	p.lifetime = lifetime
+	p.direction = direction
+	p.spread = spread
+	p.initial_velocity_min = vmin
+	p.initial_velocity_max = vmax
+	p.gravity = gravity
+	p.scale_amount_min = smin
+	p.scale_amount_max = smax
+	p.mesh = _smoke_mesh()
+	p.emitting = false
+	return p
 
 
 func _smoke_mesh() -> SphereMesh:

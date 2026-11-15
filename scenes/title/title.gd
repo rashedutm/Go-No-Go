@@ -54,7 +54,7 @@ func _ready() -> void:
 	add_child(_orbit)
 	var craft := SpacecraftModel3D.build(Sim.make_test_design("mars"))
 	craft.scale = Vector3.ONE * 0.5
-	craft.position = Vector3(7.4, 1.0, 1.4)
+	craft.position = Vector3(6.8, 2.6, 1.4)
 	craft.rotation = Vector3(0.1, 2.35, 0.05)
 	add_child(craft)
 	_hero = craft

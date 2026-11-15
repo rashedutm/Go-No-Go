@@ -12,6 +12,7 @@ signal console_closed(key: String)
 
 const SPACE_VIEW_PATH := "res://scenes/space/space_view.tscn"
 const WallViewPlaceholder := preload("res://scripts/mission_control/wall_view_placeholder.gd")
+const Props := preload("res://scripts/mission_control/mission_props.gd")
 
 ## key, sign text, color, position, rotation (radians, Y)
 const CONSOLES := [
@@ -131,8 +132,14 @@ func _build_room() -> void:
 	# decorative desks (non-interactive)
 	for p in [Vector3(-6, 0, 2.5), Vector3(-4, 0, 6.0), Vector3(4, 0, 6.0)]:
 		MCBuild.box(self, Vector3(2.4, 0.85, 1.0), p + Vector3(0, 0.425, 0), Color(0.26, 0.3, 0.4), true)
-		MCBuild.box(self, Vector3(1.3, 0.7, 0.06), p + Vector3(0, 1.25, -0.25), Color(0.08, 0.08, 0.1))
-		MCBuild.box(self, Vector3(1.2, 0.6, 0.02), p + Vector3(0, 1.25, -0.21), Color(0.12, 0.3, 0.5), false, 0.6)
+		MCBuild.box(self, Vector3(0.72, 0.035, 0.24), p + Vector3(0, 0.91, 0.18), Color(0.05, 0.06, 0.08), true)
+		MCBuild.box(self, Vector3(0.11, 0.03, 0.17), p + Vector3(0.55, 0.91, 0.18), Color(0.05, 0.06, 0.08), true)
+		var comp := Props.computer(Color(0.3, 0.8, 1.0))
+		comp.position = p + Vector3(0, 0.9, -0.30)
+		add_child(comp)
+		var chair := Props.chair()
+		chair.position = p + Vector3(0, 0, 1.0)
+		add_child(chair)
 
 
 func _build_wall_screen() -> void:
@@ -463,7 +470,7 @@ func _build_ui() -> void:
 	_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	_prompt.add_theme_constant_override("outline_size", 6)
 	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_prompt.position = Vector2(340, 420)
+	_prompt.position = Vector2(340, 468)
 	_prompt.size = Vector2(600, 40)
 	root.add_child(_prompt)
 
