@@ -5,7 +5,7 @@ Total: about 3:00. Speak calmly. About 430 words in all.
 
 | Time | On screen | Say |
 |---|---|---|
-| 0:00–0:15 | **Slide 1: Cover** | "Hi, we're team [team name]. For the Space Mission Design Game challenge, we built Go/No-Go: a game that runs in your web browser, where you design a robotic space mission, launch it, and fly it yourself, from Earth orbit all the way to Saturn." |
+| 0:00–0:15 | **Slide 1: Cover** | "Hi, we're team Kakapo. For the Space Mission Design Game challenge, we built Go/No-Go: a game that runs in your web browser, where you design a robotic space mission, launch it, and fly it yourself, from Earth orbit all the way to Saturn." |
 | 0:15–0:35 | **Slide 2: The problem** | "Real NASA missions are a balancing act. Every instrument you add means more science, but also more mass, more power, more data, and more money. Engineers learn these trade-offs over years. We wanted anyone to feel them in a few minutes, by making the decisions themselves." |
 | 0:35–0:45 | **Slide 3: How it plays** | "Here's how one mission works, in six steps." |
 | 0:45–0:50 | Gameplay: campaign map | "We pick Mars: Red Planet Weather." |
@@ -25,5 +25,5 @@ Total: about 3:00. Speak calmly. About 430 words in all.
    - In Mission Control, press **3** for top speed and wait for an alert, then fix it at the blinking console.
 2. **Record the voice separately** (phone voice recorder is fine, in a quiet room), reading the table above.
 3. **Edit in CapCut or Clipchamp:** slides (export the deck as PDF or images) → gameplay → slides. Put the voice on top, and keep the game sound low (about 20%) under the voice.
-4. Fill in **[team name]** on slide 1 and the **itch.io link** on slide 6 before exporting.
+4. Check the team name (Kakapo) on slide 1 and add the **itch.io link** on slide 6 before exporting.
 5. Export as 1080p MP4, and check that it is **3:00 or less**.
