@@ -94,7 +94,7 @@ Less text, fewer buttons, more *doing*:
 1. ✅ M1 skeleton, ✅ M2 2D design screen (fallback).
 2. **`SpacecraftModel3D`** (`scripts/shared/spacecraft_model_3d.gd`): builds a 3D spacecraft from a design using Godot primitives (bus box, solar wings, RTGs, dish, instrument boxes, vault). **Push this early.** Daniel uses it for the launch and space view, and Emon for the wall screen. → **M2a, Sat ~13:00**
 3. **3D Hangar** (`scenes/hangar/`): hangar room, the spacecraft model in the middle, an orbit camera, 4 station icons, a slim part tray, a compact icon resource bar, hover tooltips. Clicking a part updates `MissionState.design` and the 3D model. Rocket choice shows the rocket standing next to it. → **M2b**
-4. **Go/No-Go poll** (`scenes/launch_check/`): the 4 controllers report one by one from `Sim.launch_check()`. A failed station shows its reason and a "Fix it" button that returns to that station in the hangar. → **M3**
+4. **Go/No-Go poll**  (`scenes/launch_check/`): the 4 controllers report one by one from `Sim.launch_check()`. A failed station shows its reason and a "Fix it" button that returns to that station in the hangar. → **M3**
 5. Make the title, campaign map and briefing prettier (Solar System strip with planet spheres). → **M7**
 6. Merge Pull Requests, add the web export, upload to itch.io. → **M8**
 
