@@ -1,5 +1,5 @@
 # Part of Go/No-Go — written with AI assistance (Space Apps 2026).
-# Stand-in for Daniel's space_view.tscn on the big wall screen: the mission's planet with the
+# Stand-in for Danial's space_view.tscn on the big wall screen: the mission's planet with the
 # spacecraft orbiting it. Same API as the contract (setup / set_status / set_time_scale).
 # Owner: Member B (Emon). Replaced automatically once scenes/space/space_view.tscn exists.
 extends Node3D

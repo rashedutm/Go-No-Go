@@ -1,5 +1,5 @@
 # Part of Go/No-Go — written with AI assistance (Space Apps 2026).
-# Simple stand-in launch until Daniel's real 3D launch & cruise (scenes/launch_anim/launch_anim.tscn)
+# Simple stand-in launch until Danial's real 3D launch & cruise (scenes/launch_anim/launch_anim.tscn)
 # exists: countdown, liftoff with a flame, camera follows, then straight into Mission Control.
 # Click / Space / Enter skips. Owner: Member A.
 extends Node3D

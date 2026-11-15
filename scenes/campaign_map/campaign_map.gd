@@ -242,7 +242,7 @@ func _build_ui() -> void:
 
 
 func _stars(n: int) -> String:
-	return "%d/3 stars" % n   # the default font has no star glyph; Daniel's debrief draws real stars
+	return "%d/3 stars" % n   # the default font has no star glyph; Danial's debrief draws real stars
 
 
 func _select(mid: String) -> void:

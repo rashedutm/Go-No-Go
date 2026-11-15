@@ -1,7 +1,7 @@
 # Part of Go/No-Go — written with AI assistance (Space Apps 2026).
 # M6a: 3D space view for Mission Control's wall screen.
 # API: setup(design) / set_status(status) / set_time_scale(days_per_second).
-# Owner: Member C (Daniel).
+# Owner: Member C (Danial).
 extends Node3D
 class_name SpaceView
 

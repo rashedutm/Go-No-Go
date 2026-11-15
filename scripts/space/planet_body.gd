@@ -1,7 +1,7 @@
 # Part of Go/No-Go — written with AI assistance (Space Apps 2026).
 # M6a: procedural planets (radius 1, centered) for MenuPlanet and space_view.
 # No external textures: every surface is generated in code, so there is nothing to credit.
-# Owner: Member C (Daniel).
+# Owner: Member C (Danial).
 extends Node3D
 class_name PlanetBody
 

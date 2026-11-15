@@ -51,7 +51,7 @@ func _run() -> void:
 	await _step("go/no-go poll", "launch_check", "launch_check.tscn", 8.0)
 	var go := Sim.is_go(MissionState.design)
 	_log.append("%-22s -> %s" % ["poll result", "GO" if go else "NO-GO"])
-	await _step("launch (Daniel)", "launch_anim", "launch_anim.tscn", 2.0)
+	await _step("launch (Danial)", "launch_anim", "launch_anim.tscn", 2.0)
 	# let the real launch run to its end (it hands over to Mission Control by itself)
 	var t := 0.0
 	while _scene() != "mission_control.tscn" and t < 40.0:
@@ -67,7 +67,7 @@ func _run() -> void:
 		await _wait(1.5)
 	var mc = get_tree().current_scene
 	_log.append("%-22s -> difficulty %s, %d repair tools on POWER, wall view: %s" % ["mission control", mc.difficulty,
-		mc.events.tools_for("engineer").size(), mc.wall_view.get_class() + (" (Daniel's space_view)" if mc.wall_view.scene_file_path != "" else " (placeholder)")])
+		mc.events.tools_for("engineer").size(), mc.wall_view.get_class() + (" (Danial's space_view)" if mc.wall_view.scene_file_path != "" else " (placeholder)")])
 	mc.events.start_by_id("solar_storm")
 	mc.open_console("engineer")
 	await _wait(0.3)

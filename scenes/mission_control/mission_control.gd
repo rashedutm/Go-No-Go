@@ -1,6 +1,6 @@
 # Part of Go/No-Go — written with AI assistance (Space Apps 2026).
 # M4a: first-person 3D Mission Control room.
-#  - Room with tiers of desks, a big wall screen (Daniel's space_view, or a placeholder) in a SubViewport
+#  - Room with tiers of desks, a big wall screen (Danial's space_view, or a placeholder) in a SubViewport
 #  - 4 interactive consoles: POWER (engineer), SCIENCE, COMMS, DIRECTOR
 #  - Walk up to a console, press E to open its panel (contents come in M4c)
 # The live simulation (M4b) and events (M5) plug into: consoles, set_console_alert(), open_console().
@@ -26,7 +26,7 @@ const INTERACT_DIST := 1.7
 var design: Dictionary
 var mission: Dictionary
 var consoles := {}          # key -> ConsoleStation
-var wall_view: Node         # Daniel's space_view or the placeholder
+var wall_view: Node         # Danial's space_view or the placeholder
 var player: FPPlayer
 
 var _focus := ""            # console the player is looking at

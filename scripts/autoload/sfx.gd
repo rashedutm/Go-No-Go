@@ -4,7 +4,7 @@
 # back to sounds generated in code. Also
 # a global main-menu button in the top-right corner (Esc) with Sound / Fullscreen /
 # Home / Mission Select / Exit inside, and F11 / M shortcuts.
-# If a real file exists at res://audio/<name>.wav|.ogg|.mp3 it is used instead (Daniel can drop
+# If a real file exists at res://audio/<name>.wav|.ogg|.mp3 it is used instead (Danial can drop
 # files in without touching code). Every Button plays "click" automatically. Owner: Member A.
 #
 #   Sfx.play("snap")            # one-shot

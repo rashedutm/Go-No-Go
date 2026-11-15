@@ -1,6 +1,6 @@
 # Fact check — lookalikes.json & README §7.6
 
-Checked Sat 14 Nov 2026 against NASA mission pages (Member C, Daniel).
+Checked Sat 14 Nov 2026 against NASA mission pages (Member C, Danial).
 **Owner note:** `data/lookalikes.json` is Member A's file — please apply the three updates
 marked **[UPDATE]** below. Everything else already checks out.
 

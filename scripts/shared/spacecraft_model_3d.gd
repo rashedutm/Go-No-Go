@@ -1,6 +1,6 @@
 # Part of Go/No-Go — written with AI assistance (Space Apps 2026).
 # SpacecraftModel3D: builds a low-poly 3D spacecraft (and rocket) from a design using primitives.
-# Contract: README §8.1 "3D contracts". Owner: Member A. Used by the hangar, Daniel's launch/space view/debrief
+# Contract: README §8.1 "3D contracts". Owner: Member A. Used by the hangar, Danial's launch/space view/debrief
 # and Emon's wall screen.
 #
 #   var model := SpacecraftModel3D.build(MissionState.design)

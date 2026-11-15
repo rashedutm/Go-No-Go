@@ -1,7 +1,7 @@
 # Part of Go/No-Go — written with AI assistance (Space Apps 2026).
 # M6b: 3D launch & cruise — night pad, countdown, liftoff, stage separation,
 # solar-wing deploy, cruise to the destination planet, then Mission Control.
-# Skippable with the SKIP button or Space. Owner: Member C (Daniel).
+# Skippable with the SKIP button or Space. Owner: Member C (Danial).
 extends Node3D
 
 const TOTAL := 23.6

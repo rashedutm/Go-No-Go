@@ -1,7 +1,7 @@
 # Part of Go/No-Go — written with AI assistance (Space Apps 2026).
 # M6c: mission debrief — neon HUD mission report (Barlow Condensed / Barlow /
 # IBM Plex Mono), 3D spacecraft + planet, animated score, stars, flight recorder.
-# Owner: Member C (Daniel).
+# Owner: Member C (Danial).
 extends Node3D
 
 const STARS_MAP := "res://art/planets/2k_stars.jpg"

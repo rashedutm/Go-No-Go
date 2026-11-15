@@ -1,6 +1,6 @@
 # Part of Go/No-Go — written with AI assistance (Space Apps 2026).
 # MenuPlanet: quick procedural planets + starfield for the menu screens (title, campaign, briefing).
-# If Daniel's planet scenes exist (res://scenes/space/planets/<id>.tscn, radius 1, centered),
+# If Danial's planet scenes exist (res://scenes/space/planets/<id>.tscn, radius 1, centered),
 # they are used instead automatically. Owner: Member A.
 class_name MenuPlanet
 extends RefCounted
