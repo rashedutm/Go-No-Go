@@ -16,7 +16,8 @@
 </p>
 
 <p align="center">
-  <b>▶ Play it now in your browser:</b> [itch.io link] &nbsp;·&nbsp; no download, no install
+  <b>▶ <a href="https://rashedutm.github.io/Go-No-Go/">Play it now in your browser</a></b> &nbsp;·&nbsp; no download, no install<br>
+  <sub>Best on a desktop or laptop with Chrome, Edge or Firefox. Click once inside the game to start the sound.</sub>
 </p>
 
 ![Go/No-Go title screen](docs/screenshots/title.jpg)
