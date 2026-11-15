@@ -498,7 +498,7 @@ func _rebuild_tray() -> void:
 	var hint := ""
 	match sec["mode"]:
 		"multi_count":
-			hint = "   Left-click to add, right-click to remove."
+			hint = "   Click: choose / remove.  - +: how many."
 		"toggle":
 			hint = "   Click to add or remove."
 	_blurb.text = PartInfo.station(station)["blurb"] + hint
@@ -520,8 +520,10 @@ func _rebuild_tray() -> void:
 			name_text = "x%d %s" % [count, name_text]
 		var tile := _tile(name_text, PartInfo.key_stat(sec, it, mission), PartInfo.cost_stat(it), count > 0, prob)
 		tile.pressed.connect(func():
-			Sfx.play("snap")
+			Sfx.play("remove" if count > 0 else "snap", -4.0 if count > 0 else 0.0)
 			PartInfo.click(sec, id))
+		if sec["mode"] == "multi_count" and count > 0:
+			_add_count_buttons(tile, sec, id, count)
 		tile.gui_input.connect(func(ev):
 			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT:
 				Sfx.play("remove", -4.0)
@@ -529,6 +531,47 @@ func _rebuild_tray() -> void:
 		tile.mouse_entered.connect(func(): _show_tip(sec, it))
 		tile.mouse_exited.connect(func(): _tip_panel.visible = false)
 		_tiles_box.add_child(tile)
+
+
+## Small "-" / "+" buttons in the top-right corner of a selected power tile (how many of it).
+func _add_count_buttons(tile: Button, sec: Dictionary, id: String, count: int) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+	row.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	row.offset_left = -64
+	row.offset_right = -6
+	row.offset_top = -32
+	row.offset_bottom = -6
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tile.add_child(row)
+	var total: int = MissionState.design.get(sec["key"], []).size()
+	for spec in [["-", count > 1], ["+", total < PartInfo.MAX_COUNT]]:
+		var b := Button.new()
+		b.text = spec[0]
+		b.set_meta("no_click", true)
+		b.custom_minimum_size = Vector2(27, 26)
+		b.disabled = not spec[1]
+		b.focus_mode = Control.FOCUS_NONE
+		b.tooltip_text = "One fewer" if spec[0] == "-" else "One more"
+		b.add_theme_font_size_override("font_size", 16)
+		for state in ["normal", "hover", "pressed", "disabled"]:
+			var sb := StyleBoxFlat.new()
+			sb.bg_color = Color(0.05, 0.08, 0.14, 0.95) if state != "hover" else Color(0.12, 0.2, 0.32)
+			sb.border_color = Color(1, 0.8, 0.3, 0.35 if state == "disabled" else 1.0)
+			sb.set_border_width_all(1)
+			sb.set_corner_radius_all(5)
+			b.add_theme_stylebox_override(state, sb)
+		b.add_theme_color_override("font_color", Color(1, 0.85, 0.4))
+		b.add_theme_color_override("font_disabled_color", Color(0.5, 0.45, 0.35))
+		var plus: bool = spec[0] == "+"
+		b.pressed.connect(func():
+			if plus:
+				Sfx.play("snap")
+				PartInfo.add_one(sec, id)
+			else:
+				Sfx.play("remove", -4.0)
+				PartInfo.remove_one(sec, id))
+		row.add_child(b)
 
 
 func _tile(title: String, stat: String, cost: String, selected: bool, prob: String) -> Button:

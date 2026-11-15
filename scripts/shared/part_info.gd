@@ -71,10 +71,10 @@ static func click(sec: Dictionary, id: String) -> void:
 			var same: bool = MissionState.design.get(key, "") == id
 			MissionState.set_design_value(key, "" if same and key != "shielding" else id)
 		"multi_count":
+			# click = pick this power source (replacing the others); click it again = deselect.
+			# How many of it: the - / + buttons on the selected tile (add_one / remove_one).
 			var arr: Array = MissionState.design.get(key, []).duplicate()
-			if arr.size() < 4:
-				arr.append(id)
-			MissionState.set_design_value(key, arr)
+			MissionState.set_design_value(key, [] if id in arr else [id])
 		"toggle":
 			var arr: Array = MissionState.design.get(key, []).duplicate()
 			if id in arr:
@@ -82,6 +82,26 @@ static func click(sec: Dictionary, id: String) -> void:
 			else:
 				arr.append(id)
 			MissionState.set_design_value(key, arr)
+
+
+const MAX_COUNT := 4
+
+
+## "+" on a selected multi-count tile: one more of this part (max 4 in total).
+static func add_one(sec: Dictionary, id: String) -> void:
+	var arr: Array = MissionState.design.get(sec["key"], []).duplicate()
+	if arr.size() < MAX_COUNT:
+		arr.append(id)
+		MissionState.set_design_value(sec["key"], arr)
+
+
+## "-" on a selected multi-count tile: one fewer of this part.
+static func remove_one(sec: Dictionary, id: String) -> void:
+	var arr: Array = MissionState.design.get(sec["key"], []).duplicate()
+	var i := arr.find(id)
+	if i >= 0:
+		arr.remove_at(i)
+		MissionState.set_design_value(sec["key"], arr)
 
 
 ## Apply a right click (remove one).
