@@ -90,6 +90,8 @@ var _asteroid_timer := 0.0
 var _ship_vel := Vector2.ZERO
 var _mouse_steer := Vector2.ZERO
 var _hull := 3
+var _lost := false            # hull reached 0: spacecraft destroyed, flight stops
+var _ui_root: Control
 var _shake := 0.0
 var _cockpit_on := false
 var _autopilot := false
@@ -128,10 +130,15 @@ func _ready() -> void:
 	_build_space()
 	_build_ui()
 	_build_rumble()
+	MissionState.set_meta("launch_hits", 0)
 	Sfx.play("beep", -8.0)
 
 
 func _process(delta: float) -> void:
+	if _lost:
+		if _hit_flash:
+			_hit_flash.modulate.a = maxf(0.0, _hit_flash.modulate.a - delta * 1.2)
+		return
 	if _done:
 		return
 	_t += delta
@@ -206,6 +213,8 @@ func _enter_space() -> void:
 	if _env:
 		_env.fog_enabled = false
 		_env.ambient_light_energy = 0.22
+		_env.ambient_light_color = Color(0.5, 0.5, 0.52)   # neutral, so the Moon stays grey (not Earth-blue)
+	MissionState.set_meta("launch_hits", 0)
 	_ship.position = Vector3.ZERO
 	_ship_vel = Vector2.ZERO
 	_mouse_steer = Vector2.ZERO
@@ -507,20 +516,28 @@ func _update_asteroids(delta: float) -> void:
 		var d := node.position - _ship.position
 		var r := float(a["radius"])
 		if absf(d.z) < 1.1 + r and Vector2(d.x, d.y).length() < 0.9 + r:
-			_handle_hit()
 			node.queue_free()
 			_asteroids.remove_at(i)
+			_handle_hit()
+			if _lost:
+				return
 
 
 func _handle_hit() -> void:
+	if _lost:
+		return
 	_hull = maxi(_hull - 1, 0)
+	MissionState.set_meta("launch_hits", 3 - _hull)
+	if _hull <= 0:
+		_lose()
+		return
 	_shake = 0.55
 	if _hit_flash:
 		_hit_flash.modulate.a = 0.55
 	Sfx.play("explode", -2.0, randf_range(0.85, 1.1))
 	Sfx.play("alarm", -10.0)
 	if _co_msg:
-		_co_msg.text = ("IMPACT  ·  HULL %d/3" % _hull) if _hull > 0 else "HULL CRITICAL"
+		_co_msg.text = ("IMPACT  ·  HULL %d/3  ·  -15%% HEALTH" % _hull) if _hull > 0 else "HULL CRITICAL"
 		_co_msg.add_theme_color_override("font_color", NeonUI.GOLD if _hull > 0 else NeonUI.RED)
 
 
@@ -536,7 +553,7 @@ func _update_cockpit_hud() -> void:
 	if _co_dist == null:
 		return
 	var p := clampf((_t - CONTROL_T) / (CONTROL_END - CONTROL_T), 0.0, 1.0)
-	_co_dist.text = "DISTANCE  %05d KM" % int(round(lerpf(12000.0, 0.0, p)))
+	_co_dist.text = "TO %s  ·  %05d KM" % [mid.to_upper(), int(round(lerpf(12000.0, 0.0, p)))]
 	_co_auto.text = "AUTOPILOT IN  %0.1fs" % maxf(0.0, CONTROL_END - _t)
 	for i in range(_co_hull.size()):
 		_co_hull[i].modulate = Color(1, 1, 1, 1) if i < _hull else Color(1, 1, 1, 0.12)
@@ -584,8 +601,53 @@ func _update_fade() -> void:
 	_fade.modulate.a = a
 
 
+## Third asteroid hit: the spacecraft is destroyed. The flight stops and the player retries.
+func _lose() -> void:
+	_lost = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_clear_asteroids()
+	if _craft:
+		_craft.visible = false
+	if _hit_flash:
+		_hit_flash.modulate.a = 0.9
+	if _rumble:
+		_rumble.stop()
+	Sfx.play("explode", 0.0, 0.7)
+	Sfx.play("fail", -2.0)
+	_cockpit_vis = 0.0
+	_apply_cockpit_vis()
+	_skip.visible = false
+	_big.visible = true
+	_sub.visible = true
+	_big.add_theme_font_size_override("font_size", 56)
+	_big.add_theme_color_override("font_color", NeonUI.RED)
+	_big.text = "SPACECRAFT LOST"
+	_sub.text = "Three asteroid impacts broke the hull before it reached %s.\nThe mission is over. Fly more carefully and try again." % str(mission.get("destination", "the target"))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 18)
+	row.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	row.offset_left = -300
+	row.offset_right = 300
+	row.offset_top = -190
+	row.offset_bottom = -130
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_ui_root.add_child(row)
+	var retry := Button.new()
+	retry.text = "RETRY LAUNCH"
+	retry.custom_minimum_size = Vector2(260, 56)
+	NeonUI.primary(retry, 20)
+	retry.pressed.connect(func(): MissionState.go_to("launch_anim"))
+	row.add_child(retry)
+	var back := Button.new()
+	back.text = "BACK TO HANGAR"
+	back.custom_minimum_size = Vector2(260, 56)
+	NeonUI.ghost(back, 18)
+	back.pressed.connect(func(): MissionState.go_to("hangar"))
+	row.add_child(back)
+
+
 func _finish() -> void:
-	if _done:
+	if _done or _lost:
 		return
 	_done = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -946,8 +1008,8 @@ func _build_space() -> void:
 	_space_root.add_child(sun)
 	var fill := DirectionalLight3D.new()
 	fill.rotation_degrees = Vector3(15, -30, 0)
-	fill.light_color = Color(0.45, 0.60, 1.0)
-	fill.light_energy = 0.22
+	fill.light_color = Color(0.80, 0.82, 0.88)
+	fill.light_energy = 0.18
 	fill.shadow_enabled = false
 	_space_root.add_child(fill)
 
@@ -1054,6 +1116,7 @@ func _build_ui() -> void:
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(root)
+	_ui_root = root
 
 	# --- mission kicker card, top-left
 	var card := NeonUI.glass(16)

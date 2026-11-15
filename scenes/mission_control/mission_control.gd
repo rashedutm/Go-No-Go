@@ -81,6 +81,12 @@ func _ready() -> void:
 	player.interact_pressed.connect(_on_interact)
 	_build_ui()
 	sim.add_log("Arrived at %s. Science operations begin." % mission.get("destination", "the target"))
+	# Asteroid hits during the launch flight damage the spacecraft before the mission starts.
+	var hits := int(MissionState.get_meta("launch_hits", 0))
+	if hits > 0:
+		sim.health = maxf(sim.health - 15.0 * hits, 10.0)
+		sim.add_log("%d asteroid impact%s on the way: spacecraft health starts at %d%%." % [hits, "" if hits == 1 else "s", int(sim.health)])
+	MissionState.set_meta("launch_hits", 0)
 	_setup_events()
 	decor = RoomDecor.new()
 	add_child(decor)
@@ -89,7 +95,6 @@ func _ready() -> void:
 		tutorial = MCTutorial.new()
 		add_child(tutorial)
 		tutorial.setup(self, _ui_root)
-	Sfx.start_loop("hum")
 
 
 # ============================================================== room

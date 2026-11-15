@@ -1,8 +1,44 @@
 # Part of Go/No-Go — written with AI assistance (Space Apps 2026).
-# Opens the launch scene (placeholder or Daniel's). Run: godot --path . res://tests/launch_preview.tscn
+# Opens the launch scene. Run: godot --path . res://tests/launch_preview.tscn -- [mission_id] [crash|hit]
+# "crash" forces 3 asteroid hits at 13 s (spacecraft lost); "hit" forces 1 hit and checks Mission Control health.
 extends Node
 
+var _mode := ""
+
+
 func _ready() -> void:
-	MissionState.current_mission_id = "mars"
-	MissionState.design = Sim.make_test_design("mars")
-	MissionState.go_to.call_deferred("launch_anim")
+	var args := OS.get_cmdline_user_args()
+	var mid := args[0] if args.size() > 0 else "mars"
+	MissionState.current_mission_id = mid
+	MissionState.design = Sim.make_test_design(mid)
+	if args.size() < 2:
+		MissionState.go_to.call_deferred("launch_anim")
+		return
+	_mode = args[1]
+	_run.call_deferred()
+
+
+func _run() -> void:
+	# survive the scene change so we can poke the launch scene
+	var root := get_tree().root
+	get_parent().remove_child(self)
+	root.add_child(self)
+	get_tree().current_scene = null
+	MissionState.go_to("launch_anim")
+	await get_tree().create_timer(12.6).timeout
+	var scene := get_tree().current_scene
+	for i in (3 if _mode == "crash" else 1):
+		scene._handle_hit()
+	print("lost=", scene._lost, " hits=", MissionState.get_meta("launch_hits", 0))
+	if _mode == "hit":
+		# keep the (unsteered) test ship out of further hits until Mission Control opens
+		while get_tree().current_scene == scene or get_tree().current_scene == null:
+			if is_instance_valid(scene):
+				scene._clear_asteroids()
+			await get_tree().process_frame
+		await get_tree().process_frame
+		var mc := get_tree().current_scene
+		print("scene=", mc.name, " health=", mc.sim.health)
+		for e in mc.sim.event_log:
+			print("log: ", e["text"])
+		get_tree().quit()

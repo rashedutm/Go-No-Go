@@ -21,7 +21,7 @@ const GAIN_DB := 4.0          # everything a bit louder than the call sites ask 
 ## Background music level per screen (null / missing = keep the default, "off" = silent).
 const MUSIC_DB := {
 	"title": -10.0, "campaign_map": -10.0, "briefing": -11.0, "hangar": -13.0,
-	"launch_check": -16.0, "launch_anim": -80.0, "mission_control": -21.0, "debrief": -11.0,
+	"launch_check": -16.0, "launch_anim": -80.0, "mission_control": -80.0, "debrief": -11.0,
 }
 
 var muted := false

@@ -55,8 +55,12 @@ func _run() -> void:
 	# let the real launch run to its end (it hands over to Mission Control by itself)
 	var t := 0.0
 	while _scene() != "mission_control.tscn" and t < 40.0:
-		await _wait(1.0)
-		t += 1.0
+		# the test can't steer, so fly like a careful pilot: no asteroids reach the ship
+		var cs := get_tree().current_scene
+		if cs and cs.has_method("_clear_asteroids"):
+			cs._clear_asteroids()
+		await _wait(0.1)
+		t += 0.1
 	_log.append("%-22s -> %-32s %s" % ["launch auto-continues", _scene(), "OK (%d s)" % int(t) if _scene() == "mission_control.tscn" else "STUCK"])
 	if _scene() != "mission_control.tscn":
 		MissionState.go_to("mission_control")
