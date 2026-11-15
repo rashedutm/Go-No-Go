@@ -289,13 +289,12 @@ func _build_menu() -> void:
 		_menu_fs_btn.mouse_exited.connect(func(): JavaScriptBridge.eval("window.goNoGoFS = false;", true))
 	v.add_child(_menu_fs_btn)
 
-	if not OS.has_feature("web"):
-		var quit := Button.new()
-		quit.text = "EXIT GAME"
-		quit.custom_minimum_size = Vector2(0, 40)
-		Neon.danger(quit, 15)
-		quit.pressed.connect(_exit_game)
-		v.add_child(quit)
+	var quit := Button.new()
+	quit.text = "EXIT GAME"
+	quit.custom_minimum_size = Vector2(0, 40)
+	Neon.danger(quit, 15)
+	quit.pressed.connect(_exit_game)
+	v.add_child(quit)
 
 	_update_buttons()
 
@@ -341,8 +340,72 @@ func _menu_go(key: String) -> void:
 func _exit_game() -> void:
 	_menu_open = false
 	_menu_root.visible = false
+	if not OS.has_feature("web"):
+		get_tree().paused = false
+		get_tree().quit()
+		return
+	# Web: a page can't close its own tab, so stop everything instead: silence all sound, freeze
+	# the game, leave fullscreen, free the mouse, and show a "you can close this tab" screen.
+	get_tree().paused = true
+	AudioServer.set_bus_mute(0, true)
+	if _music:
+		_music.stop()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	JavaScriptBridge.eval("""
+		if (document.fullscreenElement && document.exitFullscreen) { document.exitFullscreen().catch(function () {}); }
+		if (document.exitPointerLock) { document.exitPointerLock(); }
+		try { window.close(); } catch (e) {}
+	""", true)
+	_show_goodbye()
+
+
+var _bye_root: Control
+
+
+func _show_goodbye() -> void:
+	if _bye_root == null:
+		var layer := CanvasLayer.new()
+		layer.layer = 130
+		add_child(layer)
+		_bye_root = Control.new()
+		_bye_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_bye_root.mouse_filter = Control.MOUSE_FILTER_STOP
+		layer.add_child(_bye_root)
+		var bg := ColorRect.new()
+		bg.color = Color(0.02, 0.04, 0.09)
+		bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_bye_root.add_child(bg)
+		var center := CenterContainer.new()
+		center.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_bye_root.add_child(center)
+		var v := VBoxContainer.new()
+		v.add_theme_constant_override("separation", 16)
+		v.alignment = BoxContainer.ALIGNMENT_CENTER
+		center.add_child(v)
+		var title := Neon.display("THANKS FOR PLAYING", 56, Neon.TEXT)
+		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v.add_child(title)
+		var sub := Label.new()
+		sub.text = "The game is stopped and the sound is off.\nYou can close this browser tab now."
+		Neon.body(sub, 18, Neon.MUTED)
+		sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v.add_child(sub)
+		var again := Button.new()
+		again.text = "PLAY AGAIN"
+		again.custom_minimum_size = Vector2(260, 52)
+		again.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		Neon.primary(again, 18)
+		again.pressed.connect(_play_again)
+		v.add_child(again)
+	_bye_root.get_parent().visible = true
+
+
+func _play_again() -> void:
+	_bye_root.get_parent().visible = false
 	get_tree().paused = false
-	get_tree().quit()
+	AudioServer.set_bus_mute(0, muted)
+	MissionState.go_to("title")
+	music_for("title")
 
 
 func _corner_button(icon: Texture2D) -> Button:
