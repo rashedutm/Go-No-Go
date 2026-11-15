@@ -15,22 +15,29 @@ const LEVELS := [
 
 var _buttons := {}
 var _desc: Label
+var compact := false   # narrow layout (mission select card): label above, buttons share the width
 
 
 func _ready() -> void:
 	add_theme_constant_override("separation", 6)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
-	add_child(row)
 	var cap := NeonUI.kicker("DIFFICULTY", NeonUI.MUTED, 10)
-	cap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	cap.custom_minimum_size.x = 90
-	row.add_child(cap)
+	if compact:
+		add_child(cap)
+		add_child(row)
+	else:
+		add_child(row)
+		cap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		cap.custom_minimum_size.x = 90
+		row.add_child(cap)
 	for lv in LEVELS:
 		var b := Button.new()
 		b.text = lv[1]
 		b.toggle_mode = true
-		b.custom_minimum_size = Vector2(110, 36)
+		b.custom_minimum_size = Vector2(0 if compact else 110, 36)
+		if compact:
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.tooltip_text = lv[2]
 		NeonUI.ghost(b, 15)
 		var level: String = lv[0]

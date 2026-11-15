@@ -31,6 +31,7 @@ var _info_dest: Label
 var _info_obj: Label
 var _info_meta: Label
 var _brief_btn: Button
+var _difficulty: DifficultyPicker
 var _tiles := {}
 
 
@@ -189,7 +190,7 @@ func _build_ui() -> void:
 	card.offset_left = -420
 	card.offset_top = 100
 	card.offset_right = -28
-	card.offset_bottom = 480
+	card.offset_bottom = 536
 	root.add_child(card)
 	var backing := ColorRect.new()
 	backing.color = Color(0.01, 0.02, 0.05, 0.55)
@@ -212,6 +213,9 @@ func _build_ui() -> void:
 	_info_meta = Label.new()
 	NeonUI.mono_regular(_info_meta, 11, NeonUI.MUTED)
 	v.add_child(_info_meta)
+	_difficulty = DifficultyPicker.new()
+	_difficulty.compact = true
+	v.add_child(_difficulty)
 	_brief_btn = Button.new()
 	_brief_btn.custom_minimum_size.y = 54
 	NeonUI.primary(_brief_btn, 18)
@@ -257,6 +261,7 @@ func _select(mid: String) -> void:
 	_info_meta.text = ("Best: %s  (score %d)" % [_stars(stars), best]) if stars > 0 else ("Not flown yet" if unlocked else "")
 	_brief_btn.text = "MISSION BRIEFING  >" if unlocked else "LOCKED"
 	_brief_btn.disabled = not unlocked
+	_difficulty.visible = unlocked
 
 	for id in _tiles:
 		var mm := GameData.get_mission(id)
