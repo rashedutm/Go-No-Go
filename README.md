@@ -10,6 +10,16 @@
 
 ---
 
+## ▶️ Play / run / license
+
+- **Play in the browser:** [itch.io link — added at submission]. No install needed; works in Chrome, Edge and Firefox on a desktop or laptop.
+- **Run from source:** install [Godot 4.7.2](https://godotengine.org/download) (standard version), open Godot, click **Import**, pick this folder's `project.godot`, then press **F5** (Run). Main scene: `scenes/title/title.tscn`.
+- **Build the web version:** in Godot, **Project → Export → Web → Export Project** (the "Web" preset is already set up; export templates for 4.7.2 are needed). Output: `export/web/index.html`.
+- **Controls:** mouse + keyboard. WASD to walk / steer, E to use a console, Space to pause, 1/2/3 for speed, Esc for the menu, F11 fullscreen, M mute.
+- **License:** code is released under the [MIT License](LICENSE). Third-party assets keep their own licenses: planet textures by Solar System Scope (CC BY 4.0), Kenney sounds and models (CC0), KayKit asteroids (CC0), Abstract_Duck chair (MIT), Barlow / IBM Plex Mono fonts (SIL OFL 1.1), Lucide icons (ISC), Godot Engine (MIT). Full list: [content/CREDITS.md](content/CREDITS.md).
+
+---
+
 ## 👥 TEAM SPLIT — START HERE
 
 We are 3 coders, each with an AI assistant, working in parallel and merging through **GitHub**. Each person **owns different folders**, so nobody's work overwrites anyone else's (Godot scene files merge very badly).
