@@ -1155,7 +1155,7 @@ func _build_ui() -> void:
 	var kbox := VBoxContainer.new()
 	kbox.add_theme_constant_override("separation", 2)
 	card.add_child(kbox)
-	var kick := NeonUI.kicker("◆ LAUNCH OPERATIONS")
+	var kick := NeonUI.kicker("// LAUNCH OPERATIONS")
 	kbox.add_child(kick)
 	var mname := NeonUI.heading(str(mission.get("name", "")).to_upper(), 24)
 	kbox.add_child(mname)
@@ -1221,7 +1221,7 @@ func _build_ui() -> void:
 		_phase_labels.append(pl)
 
 	_skip = Button.new()
-	_skip.text = "SKIP  ▶"
+	_skip.text = "SKIP  →"
 	NeonUI.ghost(_skip, 18)
 	_skip.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	_skip.offset_left = -178

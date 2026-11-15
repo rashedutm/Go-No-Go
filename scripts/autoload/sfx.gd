@@ -39,8 +39,21 @@ var _menu_sound_btn: Button
 var _menu_fs_btn: Button
 
 
+## Barlow has no arrows (→ ←), and web builds can't borrow symbols from system fonts, so
+## every Barlow font falls back to IBM Plex Mono (which has them). Same cached font objects as
+## the theme uses, so this covers the whole UI.
+static func _add_font_fallbacks() -> void:
+	var mono: Font = load("res://ui/fonts/IBMPlexMono-Medium.ttf")
+	for n in ["Barlow-Regular", "Barlow-Medium", "Barlow-SemiBold", "BarlowCondensed-SemiBold",
+			"BarlowCondensed-Bold", "BarlowCondensed-ExtraBold"]:
+		var f: Font = load("res://ui/fonts/%s.ttf" % n)
+		if f and mono:
+			f.fallbacks = [mono]
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_add_font_fallbacks()
 	var cfg := ConfigFile.new()
 	if cfg.load(SETTINGS_PATH) == OK:
 		muted = bool(cfg.get_value("audio", "muted", false))

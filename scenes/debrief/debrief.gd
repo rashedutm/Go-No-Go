@@ -20,7 +20,7 @@ var _score_shown := 0
 var _stars_shown := 0
 
 var _score: Label
-var _star_labels: Array[Label] = []
+var _star_labels: Array[StarIcon] = []
 var _best: Label
 
 
@@ -62,8 +62,8 @@ func _process(delta: float) -> void:
 
 func _pop_star(i: int) -> void:
 	var l := _star_labels[i]
-	l.text = "★"
-	l.add_theme_color_override("font_color", NeonUI.GOLD)
+	l.filled = true
+	l.color = NeonUI.GOLD
 	l.scale = Vector2(1.9, 1.9)
 	l.pivot_offset = l.size * 0.5
 	var tw := create_tween()
@@ -244,9 +244,8 @@ func _build_ui() -> void:
 	star_row.add_theme_constant_override("separation", 6)
 	star_v.add_child(star_row)
 	for i in 3:
-		var l := Label.new()
-		l.text = "☆"
-		NeonUI.heading(l, 32, NeonUI.DIM)
+		var l := StarIcon.new(34.0)   # drawn shape: the star characters aren't in our web fonts
+		l.color = NeonUI.DIM
 		star_row.add_child(l)
 		_star_labels.append(l)
 	_best = Label.new()

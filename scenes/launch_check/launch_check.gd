@@ -388,7 +388,7 @@ func _build_ui() -> void:
 	scol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scol.add_theme_constant_override("separation", 2)
 	srow.add_child(scol)
-	scol.add_child(NeonUI.kicker("◆ FLIGHT DIRECTOR", NeonUI.GOLD, 11))
+	scol.add_child(NeonUI.kicker("// FLIGHT DIRECTOR", NeonUI.GOLD, 11))
 	_status = Label.new()
 	NeonUI.body(_status, 19, NeonUI.TEXT, true)
 	_status.text = "All stations, go/no-go for launch."
