@@ -517,7 +517,8 @@ func _handle_hit() -> void:
 	_shake = 0.55
 	if _hit_flash:
 		_hit_flash.modulate.a = 0.55
-	Sfx.play("alarm", -6.0)
+	Sfx.play("explode", -2.0, randf_range(0.85, 1.1))
+	Sfx.play("alarm", -10.0)
 	if _co_msg:
 		_co_msg.text = ("IMPACT  ·  HULL %d/3" % _hull) if _hull > 0 else "HULL CRITICAL"
 		_co_msg.add_theme_color_override("font_color", NeonUI.GOLD if _hull > 0 else NeonUI.RED)

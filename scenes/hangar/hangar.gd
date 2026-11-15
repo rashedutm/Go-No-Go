@@ -524,7 +524,7 @@ func _rebuild_tray() -> void:
 			PartInfo.click(sec, id))
 		tile.gui_input.connect(func(ev):
 			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT:
-				Sfx.play("whoosh", -4.0, 1.3)
+				Sfx.play("remove", -4.0)
 				PartInfo.remove(sec, id))
 		tile.mouse_entered.connect(func(): _show_tip(sec, it))
 		tile.mouse_exited.connect(func(): _tip_panel.visible = false)

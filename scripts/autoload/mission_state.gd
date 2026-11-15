@@ -44,6 +44,7 @@ func go_to(screen_key: String) -> void:
 	if path == "" or not ResourceLoader.exists(path):
 		push_error("MissionState.go_to: unknown screen '%s'" % screen_key)
 		return
+	Sfx.music_for(screen_key)
 	get_tree().change_scene_to_file(path)
 
 

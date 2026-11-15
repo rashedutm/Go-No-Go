@@ -20,6 +20,7 @@ const ACTIONS := {
 var cam: Camera3D
 var controls_enabled := true
 var _pitch := 0.0
+var _step_t := 0.0
 
 
 func _ready() -> void:
@@ -82,6 +83,14 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity.y -= 9.8 * delta
 	move_and_slide()
+	# footsteps
+	if input.length() > 0.1 and is_on_floor():
+		_step_t -= delta
+		if _step_t <= 0.0:
+			_step_t = 0.42
+			Sfx.play("step", -12.0, randf_range(0.85, 1.15))
+	else:
+		_step_t = 0.1
 
 
 ## Point on the floor in front of the player's eyes (used for "which console am I facing").

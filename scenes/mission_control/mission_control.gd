@@ -212,6 +212,7 @@ func open_console(key: String) -> void:
 	close.pressed.connect(close_console)
 	_panel_buttons.add_child(close)
 	_panel.visible = true
+	Sfx.play("open", -6.0)
 	_start_hint.visible = false
 	_prompt.text = ""
 	_focus = ""
@@ -225,6 +226,7 @@ func close_console() -> void:
 	var key := _open
 	_open = ""
 	_panel.visible = false
+	Sfx.play("close", -8.0)
 	player.set_controls_enabled(true)
 	console_closed.emit(key)
 
@@ -380,9 +382,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	if k == KEY_SPACE or k == KEY_P:
 		paused = not paused
+		Sfx.play("beep", -8.0, 0.8 if paused else 1.0)
 	elif k >= KEY_1 and k <= KEY_3:
 		speed = SPEEDS[k - KEY_1]
 		paused = false
+		Sfx.play("beep", -8.0, 0.9 + 0.15 * (k - KEY_1))
 
 
 # ============================================================== HUD

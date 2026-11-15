@@ -1,5 +1,7 @@
 # Part of Go/No-Go — written with AI assistance (Space Apps 2026).
-# Sfx (autoload): sound effects generated in code (no audio files or licenses needed),
+# Sfx (autoload): sound effects + background music. Real sounds live in res://audio/
+# (Kenney CC0 packs + our own music/stingers rendered for this game); anything missing falls
+# back to sounds generated in code. Also
 # a global main-menu button in the top-right corner (Esc) with Sound / Fullscreen /
 # Home / Mission Select / Exit inside, and F11 / M shortcuts.
 # If a real file exists at res://audio/<name>.wav|.ogg|.mp3 it is used instead (Daniel can drop
@@ -13,9 +15,18 @@ extends Node
 const Neon := preload("res://scripts/ui/neon_ui.gd")
 const SETTINGS_PATH := "user://settings.cfg"
 const RATE := 22050
-const SOUNDS := ["click", "snap", "beep", "go", "nogo", "alarm", "fixed", "complete", "fail", "hum", "whoosh"]
+const SOUNDS := ["click", "snap", "beep", "go", "nogo", "alarm", "fixed", "complete", "fail", "hum", "whoosh",
+	"remove", "open", "close", "explode", "step", "music"]
+const GAIN_DB := 4.0          # everything a bit louder than the call sites ask for
+## Background music level per screen (null / missing = keep the default, "off" = silent).
+const MUSIC_DB := {
+	"title": -10.0, "campaign_map": -10.0, "briefing": -11.0, "hangar": -13.0,
+	"launch_check": -16.0, "launch_anim": -80.0, "mission_control": -21.0, "debrief": -11.0,
+}
 
 var muted := false
+var _music: AudioStreamPlayer
+var _music_tween: Tween
 var _streams := {}
 var _players: Array[AudioStreamPlayer] = []
 var _loops := {}
@@ -40,6 +51,12 @@ func _ready() -> void:
 		_players.append(p)
 	for n in SOUNDS:
 		_streams[n] = _load_or_make(n)
+	_music = AudioStreamPlayer.new()
+	_music.stream = _looping(_streams.get("music"))
+	_music.volume_db = MUSIC_DB["title"]
+	add_child(_music)
+	if _music.stream:
+		_music.play()
 	get_tree().node_added.connect(_on_node_added)
 	_build_buttons()
 	_build_menu()
@@ -81,29 +98,54 @@ func play(sound: String, volume_db := 0.0, pitch := 1.0) -> void:
 	var s: AudioStream = _streams.get(sound)
 	if s == null:
 		return
+	var player: AudioStreamPlayer = _players[0]
 	for p in _players:
 		if not p.playing:
-			p.stream = s
-			p.volume_db = volume_db
-			p.pitch_scale = pitch
-			p.play()
-			return
-	_players[0].stream = s
-	_players[0].play()
+			player = p
+			break
+	player.stream = s
+	player.volume_db = volume_db + GAIN_DB
+	player.pitch_scale = pitch
+	player.play()
+
+
+## Background music: fades to this screen's level (see MUSIC_DB). Called by MissionState.go_to.
+func music_for(screen_key: String) -> void:
+	if _music == null or _music.stream == null:
+		return
+	var target: float = MUSIC_DB.get(screen_key, -12.0)
+	if _music_tween:
+		_music_tween.kill()
+	if not _music.playing and target > -60.0:
+		_music.volume_db = -60.0
+		_music.play()
+	_music_tween = create_tween()
+	_music_tween.tween_property(_music, "volume_db", target, 1.5)
+	if target <= -60.0:
+		_music_tween.tween_callback(_music.stop)
+
+
+## Returns a looping copy of a stream (ogg or 16-bit wav).
+func _looping(src: AudioStream) -> AudioStream:
+	if src == null:
+		return null
+	var s: AudioStream = src.duplicate()
+	if s is AudioStreamOggVorbis or s is AudioStreamMP3:
+		s.loop = true
+	elif s is AudioStreamWAV and s.loop_mode == AudioStreamWAV.LOOP_DISABLED:
+		s.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		s.loop_begin = 0
+		if s.format == AudioStreamWAV.FORMAT_16_BITS:
+			s.loop_end = s.data.size() / (4 if s.stereo else 2)
+	return s
 
 
 func start_loop(sound: String, volume_db := -14.0) -> void:
 	if _loops.has(sound):
 		return
-	var src: AudioStream = _streams.get(sound)
-	if src == null:
+	var s := _looping(_streams.get(sound))
+	if s == null:
 		return
-	var s: AudioStream = src
-	if src is AudioStreamWAV:
-		s = src.duplicate()
-		s.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		s.loop_begin = 0
-		s.loop_end = s.data.size() / 2
 	var p := AudioStreamPlayer.new()
 	p.stream = s
 	p.volume_db = volume_db

@@ -6,6 +6,12 @@
 - The menu starfields (outside the space view) still use Godot primitive stars from `MenuPlanet.add_space`.
 - If any texture file is missing, `scripts/space/planet_body.gd` falls back to fully procedural surfaces, so the game still runs with no art at all.
 
+## Sound effects and music
+
+- **UI, sci-fi and impact sounds** (`audio/click, beep, whoosh, remove, open, close, nogo, fixed, snap, explode, step, hum .ogg`) — from Kenney's [Interface Sounds](https://kenney.nl/assets/interface-sounds), [Sci-fi Sounds](https://kenney.nl/assets/sci-fi-sounds) and [Impact Sounds](https://kenney.nl/assets/impact-sounds). **CC0 1.0 Universal**; license in `audio/KENNEY_LICENSE.txt`. Files were renamed only.
+- **Background music and the go / alarm / mission complete / mission failed stingers** (`audio/music.wav`, `go.wav`, `alarm.wav`, `complete.wav`, `fail.wav`) — composed and rendered in code for this game (no third-party material).
+- If any file is missing, `scripts/autoload/sfx.gd` falls back to sounds generated in code.
+
 ## M6b — launch sounds
 
 - **Launch rumble:** `audio/jerryblessed-space-rocket-launch-rumble-544846.wav` (drop-in file; confirm source + license here). If the file is missing, `scenes/launch_anim/launch_anim.gd` falls back to a procedural brown-noise rumble, so the game still runs with no audio at all.

@@ -33,6 +33,7 @@ Less text, fewer buttons, more *doing*:
 ### 🆕 Latest changes (read this first after every `git pull`)
 | When | What changed | Who it affects |
 |---|---|---|
+| Sun 15 Nov — sound & music | **New sound pass (Member A).** Real sounds from Kenney's CC0 packs replace most code beeps, everything is louder, and there is now calm background music on every screen (quieter in Mission Control, off during the launch). New: footsteps, console open/close, part-remove in the hangar, asteroid-hit explosion, speed-key beeps, and new alarm / mission-complete / mission-failed stingers. Files in `audio/`, credits in `content/CREDITS.md`. | everyone |
 | Sun 15 Nov — Go/No-Go pad | **Poll pad updated (Member C).** The Go/No-Go screen now shares the grass, concrete, roads, buildings and treeline, and the floating floodlight boxes are proper light masts. | everyone |
 | Sun 15 Nov — title satellite | **Title orbit fixed (Member C).** The spacecraft now sits at a safe radius above Earth, so its solar wings no longer clip through the planet. | everyone |
 | Sun 15 Nov — launchpad surroundings | **KSC-style launch complex (Member C).** The pad now sits on green grass with a light concrete hardstand, a diagonal crawlerway, perimeter roads, a flame trench, a distant water band, low buildings, a water tower, lightning masts and a fogged treeline. | everyone |

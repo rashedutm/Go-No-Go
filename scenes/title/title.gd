@@ -31,6 +31,7 @@ const CREDITS := """[b]Go/No-Go[/b]: made for the NASA Space Apps Challenge 2026
 • Real missions in the debrief: Landsat 9, PACE, LRO, MRO, MAVEN, Juno, Europa Clipper, Cassini (science.nasa.gov)
 
 [b]Built with[/b] Godot Engine 4.7 (MIT license).
+[b]Sounds[/b]: Kenney (kenney.nl, CC0). Music made for this game. Full list in content/CREDITS.md.
 [b]AI use[/b]: code, design text and documentation were written with the help of AI assistants (Claude by Anthropic). Each code file is marked.
 
 Numbers are simplified for gameplay but kept in realistic proportion. Not an official NASA product."""
