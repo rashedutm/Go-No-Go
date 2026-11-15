@@ -268,9 +268,17 @@ func _console_text(key: String) -> String:
 				int(100.0 * sim.data_returned_gb / maxf(float(sim.mission.get("data_goal_gb", 1)), 1.0)),
 				"\n[color=#ffb74d]SAFE MODE is on: instruments are off.[/color]" if sim.safe_mode else ""]
 		"comms":
-			return "[b]Communications[/b]\nSending %.1f Gb/day%s\nMemory: %d%% full  (%s / %s Gb)\nData lost: %s Gb   ·   Signal delay: %.1f min" % [
-				sim.downlink_gb_day, "   ·   [color=#ff8a80]BLACKOUT[/color]" if sim.blackout_days > 0.0 else "", sim.storage_pct(),
-				f.call(sim.storage_gb), f.call(sim.storage_max), f.call(sim.data_lost_gb), float(mission.get("signal_delay_min", 0))]
+			var txt := "[b]Communications[/b]\nInstruments make %.1f Gb/day   ·   Antenna sends %.1f Gb/day%s\nGoal needs %.1f Gb/day   ·   Memory: %d%% full  (%s / %s Gb)\nData dropped: %s Gb   ·   Signal delay: %.1f min" % [
+				sim.data_rate_gb_day, sim.downlink_gb_day, "   ·   [color=#ff8a80]BLACKOUT[/color]" if sim.blackout_days > 0.0 else "",
+				_goal_rate_needed(), sim.storage_pct(), f.call(sim.storage_gb), f.call(sim.storage_max), f.call(sim.data_lost_gb),
+				float(mission.get("signal_delay_min", 0))]
+			if sim.blackout_days > 0.0:
+				txt += "\n\n[color=#ff8a80]No signal: nothing can be sent until contact comes back.[/color]"
+			elif sim.storage_pct() > 85.0 and _downlink_short():
+				txt += "\n\n[color=#ff8a80]Memory full and the antenna sends too little to reach the goal.[/color]\nFix: rent more antenna time below, or switch an instrument off at the Science console."
+			elif sim.storage_pct() > 85.0:
+				txt += "\n\n[color=#7ee08a]Memory full, but that's OK.[/color] Far from Earth the instruments make more data than the antenna can send, so the extra is dropped. You still send enough to reach the goal."
+			return txt
 		"director":
 			var recent: Array = []
 			for i in range(maxi(sim.event_log.size() - 5, 0), sim.event_log.size()):
@@ -308,7 +316,7 @@ func _process(delta: float) -> void:
 	if sim == null:
 		return
 	if events:
-		events.update(delta, paused, _open != "" and _open == events.active.get("console", "-"))
+		events.update(delta, paused, _open != "" and _open == events.active.get("console", "-"), speed)
 		_update_event_fx(delta)
 	if not paused and not sim.finished:
 		sim.tick(delta * days_per_second * speed)
@@ -328,10 +336,24 @@ func _process(delta: float) -> void:
 
 
 ## Simple condition-based alerts (events in M5 add more).
+## Gb/day still needed to reach the science goal in the days left (0 when already reached).
+func _goal_rate_needed() -> float:
+	var left_gb := float(mission.get("data_goal_gb", 0)) - sim.data_returned_gb
+	var left_days := maxf(sim.total_days - sim.day, 1.0)
+	return maxf(left_gb, 0.0) / left_days
+
+
+## True when the antenna sends less per day than the goal still needs.
+func _downlink_short() -> bool:
+	return _goal_rate_needed() > 0.0 and sim.downlink_gb_day < _goal_rate_needed()
+
+
 func _auto_alerts() -> void:
 	var cond := {
 		"engineer": sim.battery_pct() < 25.0 or sim.health < 30.0 or sim.power_load_w > sim.power_gen_w,
-		"comms": sim.storage_pct() > 85.0 or sim.blackout_days > 0.0,
+		# Memory filling up is normal far from Earth (instruments make more than the antenna can
+		# send). It's only a problem when what we CAN send is too little to reach the science goal.
+		"comms": (sim.storage_pct() > 85.0 and _downlink_short()) or sim.blackout_days > 0.0,
 		"science": false,
 		"director": false,
 	}

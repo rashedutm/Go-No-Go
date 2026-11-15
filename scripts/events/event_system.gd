@@ -83,11 +83,13 @@ func _pick() -> Dictionary:
 
 
 ## Called every frame by Mission Control. `frozen` = the player is at the right console.
-func update(real_dt: float, paused: bool, frozen: bool) -> void:
+## game_speed: the 1x/2x/4x time speed. The gap between problems counts in mission time (so every
+## speed gets the same number of problems per mission); the time to react stays in real seconds.
+func update(real_dt: float, paused: bool, frozen: bool, game_speed := 1.0) -> void:
 	if sim == null or sim.finished or paused:
 		return
 	if active.is_empty():
-		_until_next -= real_dt
+		_until_next -= real_dt * game_speed
 		if _until_next <= 0.0:
 			var ev := _pick()
 			if not ev.is_empty():
