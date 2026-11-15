@@ -492,7 +492,7 @@ func _build_ui() -> void:
 	root.add_child(hint)
 
 	_start_hint = Label.new()
-	_start_hint.text = "Click to look around"
+	_start_hint.text = "Move the mouse to look  ·  WASD to walk"
 	NeonUI.heading(_start_hint, 28, NeonUI.TEXT)
 	_start_hint.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	_start_hint.add_theme_constant_override("outline_size", 8)

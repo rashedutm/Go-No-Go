@@ -365,12 +365,13 @@ func _update_space(delta: float) -> void:
 		if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
 			ix += 1.0
 		if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
-			iy -= 1.0
+			iy += 1.0      # W / up = climb
 		if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
-			iy += 1.0
-		_ship_vel = _ship_vel.lerp(Vector2(clampf(ix, -1.0, 1.0), clampf(iy, -1.0, 1.0)) * Vector2(3.4, 2.2), 1.0 - exp(-delta * 6.5))
-		_ship.position.x = clampf(_ship.position.x + _ship_vel.x * delta, -3.2, 3.2)
-		_ship.position.y = clampf(_ship.position.y + _ship_vel.y * delta, -1.9, 1.9)
+			iy -= 1.0      # S / down = dive
+		# fast, snappy response so a key press clearly moves the ship
+		_ship_vel = _ship_vel.lerp(Vector2(clampf(ix, -1.0, 1.0), clampf(iy, -1.0, 1.0)) * Vector2(7.5, 5.0), 1.0 - exp(-delta * 10.0))
+		_ship.position.x = clampf(_ship.position.x + _ship_vel.x * delta, -4.6, 4.6)
+		_ship.position.y = clampf(_ship.position.y + _ship_vel.y * delta, -2.8, 2.8)
 		_ship.position.z = 0.0
 
 		# --- asteroid field
@@ -385,7 +386,10 @@ func _update_space(delta: float) -> void:
 		_space_cam.fov = 70.0
 		_space_cam.position = _ship.position + Vector3(0.0, 0.55, -2.8) + sh
 		_space_cam.look_at(_ship.position + Vector3(0.0, 0.55, -25.0), Vector3.UP)
-		_space_cam.rotate_object_local(Vector3(0, 0, 1), -_ship_vel.x * 0.02)
+		# bank and nose into the turn so movement is easy to feel
+		_space_cam.rotate_object_local(Vector3(0, 1, 0), -_ship_vel.x * 0.012)
+		_space_cam.rotate_object_local(Vector3(1, 0, 0), _ship_vel.y * 0.012)
+		_space_cam.rotate_object_local(Vector3(0, 0, 1), -_ship_vel.x * 0.035)
 		_update_cockpit_hud()
 	else:
 		if not _autopilot:
@@ -486,7 +490,7 @@ func _spawn_asteroid() -> void:
 			frag.position = Vector3(randf_range(-1.2, 1.2), randf_range(-0.9, 0.9), randf_range(-1.2, 1.2))
 			node.add_child(frag)
 
-	node.position = Vector3(randf_range(-4.6, 4.6), randf_range(-2.8, 2.8), -randf_range(48.0, 68.0))
+	node.position = Vector3(randf_range(-5.8, 5.8), randf_range(-3.6, 3.6), -randf_range(48.0, 68.0))
 	node.rotation = Vector3(randf_range(0, TAU), randf_range(0, TAU), randf_range(0, TAU))
 	_asteroid_root.add_child(node)
 	_asteroids.append({

@@ -27,6 +27,18 @@ func _run() -> void:
 	MissionState.go_to("launch_anim")
 	await get_tree().create_timer(12.6).timeout
 	var scene := get_tree().current_scene
+	if _mode == "steer":
+		for key in [KEY_W, KEY_D]:
+			var ev := InputEventKey.new()
+			ev.keycode = key
+			ev.physical_keycode = key
+			ev.pressed = true
+			Input.parse_input_event(ev)
+		var start: Vector3 = scene._ship.position
+		await get_tree().create_timer(1.0).timeout
+		print("steer W+D for 1 s: moved x=%.2f y=%.2f (up and right should both be > 2)" % [scene._ship.position.x - start.x, scene._ship.position.y - start.y])
+		get_tree().quit()
+		return
 	for i in (3 if _mode == "crash" else 1):
 		scene._handle_hit()
 	print("lost=", scene._lost, " hits=", MissionState.get_meta("launch_hits", 0))

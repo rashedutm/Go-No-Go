@@ -37,6 +37,9 @@ func _ready() -> void:
 	cam.fov = 72
 	cam.current = true
 	add_child(cam)
+	# Lock the mouse right away (works on desktop; in a browser it works when the page allows it,
+	# otherwise the first key press or click locks it — mouse-look already works before that).
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 static func _ensure_actions() -> void:
@@ -56,16 +59,26 @@ func set_controls_enabled(on: bool) -> void:
 	controls_enabled = on
 
 
+var _released := false   # player pressed the release key: leave the mouse alone until they click
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not controls_enabled:
 		return
-	if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
-		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	elif event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	# Mouse-look works straight away: moving the mouse turns the view even before the pointer is
+	# locked. Browsers only allow pointer lock after a click or key press, so the first click or
+	# key (e.g. W to walk) locks it silently for unlimited turning; no "click to start" needed.
+	if event is InputEventMouseMotion:
 		rotate_y(-event.relative.x * mouse_sensitivity)
 		_pitch = clampf(_pitch - event.relative.y * mouse_sensitivity, -1.3, 1.3)
 		cam.rotation.x = _pitch
+	elif (event is InputEventMouseButton or event is InputEventKey) and event.pressed \
+			and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not event.is_action("mc_release"):
+		if not _released or event is InputEventMouseButton:
+			_released = false
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	if event.is_action_pressed("mc_release"):
+		_released = true
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	if event.is_action_pressed("mc_interact"):
 		interact_pressed.emit()
