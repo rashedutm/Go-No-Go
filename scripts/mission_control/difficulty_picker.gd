@@ -47,6 +47,10 @@ func _ready() -> void:
 	_desc = Label.new()
 	NeonUI.caption(_desc, 12, NeonUI.MUTED)
 	_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# always reserve two lines, so the buttons don't jump when a shorter description is shown
+	var f := _desc.get_theme_font("font")
+	var fs := _desc.get_theme_font_size("font_size")
+	_desc.custom_minimum_size.y = ceilf(f.get_height(fs) * 2.0 + 4.0) if f else 40.0
 	add_child(_desc)
 	_refresh()
 
