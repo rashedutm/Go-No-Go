@@ -23,12 +23,28 @@ body { color: white; background-color: #050a17; overflow: hidden; touch-action: 
 	visibility: hidden; transition: opacity 0.5s ease;
 }
 #status.done { opacity: 0; }
-#status-logo { width: min(16vh, 22vw); height: auto; margin-bottom: 1.5vh; filter: drop-shadow(0 0 18px rgba(79, 214, 255, 0.35)); }
-#status-logo.show-image--false { display: none; }
-#liquid { width: min(78vw, 1000px); height: auto; overflow: visible; }
+#stars { position: absolute; inset: 0; width: 100%; height: 100%; }
+#status > *:not(#stars) { position: relative; }
+#kicker {
+	font-family: 'GNGMono', 'Courier New', monospace; font-size: clamp(10px, 1.3vw, 14px);
+	letter-spacing: 0.5em; padding-left: 0.5em; color: #4fd6ff; margin-bottom: 2.5vh; opacity: 0.85; text-align: center;
+}
+#kicker i { color: #f5b83d; font-style: normal; letter-spacing: 0.1em; margin-right: 0.8em; }
+#title-frame { padding: 2.2vh 3.2vw; margin: 0 auto; }
+#title-frame .c { position: absolute; width: 34px; height: 34px; border: 0 solid #4fd6ff; opacity: 0.8;
+	filter: drop-shadow(0 0 6px rgba(79, 214, 255, 0.8)); animation: corner 2.4s ease-in-out infinite; }
+#title-frame .tl { top: 0; left: 0; border-top-width: 3px; border-left-width: 3px; }
+#title-frame .tr { top: 0; right: 0; border-top-width: 3px; border-right-width: 3px; }
+#title-frame .bl { bottom: 0; left: 0; border-bottom-width: 3px; border-left-width: 3px; }
+#title-frame .br { bottom: 0; right: 0; border-bottom-width: 3px; border-right-width: 3px; }
+@keyframes corner { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+#liquid { display: block; width: min(76vw, 960px); height: auto; overflow: visible; }
+/* bubbles rising through the water */
+.bubble { fill: rgba(220, 248, 255, 0.55); animation: rise linear infinite; }
+@keyframes rise { from { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 0.8; } to { transform: translateY(-230px); opacity: 0; } }
 #status-line {
 	font-family: 'GNGMono', 'Courier New', monospace; font-size: clamp(11px, 1.6vw, 16px);
-	letter-spacing: 0.35em; color: #a9bcd9; margin-top: 2.2vh; text-transform: uppercase;
+	letter-spacing: 0.35em; padding-left: 0.35em; color: #a9bcd9; margin-top: 2.2vh; text-transform: uppercase; text-align: center;
 }
 #status-line b { color: #f5b83d; font-weight: normal; }
 #fact-box {
@@ -38,7 +54,7 @@ body { color: white; background-color: #050a17; overflow: hidden; touch-action: 
 #fact-box.fading { opacity: 0; }
 #fact-kicker {
 	font-family: 'GNGMono', 'Courier New', monospace; font-size: clamp(10px, 1.2vw, 13px);
-	letter-spacing: 0.35em; color: #f5b83d; margin-bottom: 0.8em;
+	letter-spacing: 0.35em; padding-left: 0.35em; color: #f5b83d; margin-bottom: 0.8em;
 }
 #fact-text {
 	font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: clamp(14px, 1.9vw, 19px);
@@ -65,7 +81,10 @@ body { color: white; background-color: #050a17; overflow: hidden; touch-action: 
 		<noscript>Your browser does not support JavaScript.</noscript>
 
 		<div id="status">
-			<img id="status-logo" class="show-image--true fullsize--false use-filter--true" src="index.png" alt="Team Kakapo logo">
+			<canvas id="stars"></canvas>
+			<div id="kicker"><i>///</i>SPACE MISSION DESIGN GAME</div>
+			<div id="title-frame">
+			<span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
 			<svg id="liquid" viewBox="0 0 1000 300" role="img" aria-label="Go/No-Go is loading">
 				<defs>
 					<clipPath id="letters">
@@ -92,6 +111,7 @@ body { color: white; background-color: #050a17; overflow: hidden; touch-action: 
 							d="M0 10 Q 50 -8 100 10 T 200 10 T 300 10 T 400 10 T 500 10 T 600 10 T 700 10 T 800 10 T 900 10 T 1000 10 T 1100 10 T 1200 10 T 1300 10 T 1400 10 V 400 H 0 Z"/>
 						<path class="wave-front" fill="url(#water-grad)"
 							d="M0 16 Q 50 2 100 16 T 200 16 T 300 16 T 400 16 T 500 16 T 600 16 T 700 16 T 800 16 T 900 16 T 1000 16 T 1100 16 T 1200 16 T 1300 16 T 1400 16 V 400 H 0 Z"/>
+						<g id="bubbles"></g>
 					</g>
 				</g>
 				<!-- letter outlines on top -->
@@ -102,6 +122,7 @@ body { color: white; background-color: #050a17; overflow: hidden; touch-action: 
 				<!-- gold slash (a slanted bar, a different shape from the letters) -->
 				<polygon id="slash" points="0,0 0,0 0,0 0,0" fill="#f5b83d" filter="url(#glow)"/>
 			</svg>
+			</div>
 			<div id="status-line">Loading mission data <b id="status-pct">0%</b></div>
 			<div id="fact-box">
 				<div id="fact-kicker">DID YOU KNOW?</div>
@@ -165,14 +186,76 @@ const engine = new Engine(GODOT_CONFIG);
 		}, 600);
 	}, 7000);
 
-	// ---- water level eases toward the real download progress
-	let target = 0.04, shown = 0;
+	// ---- bubbles rising inside the water
+	const bubbleGroup = document.getElementById('bubbles');
+	for (let i = 0; i < 18; i++) {
+		const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+		c.setAttribute('class', 'bubble');
+		c.setAttribute('cx', (Math.random() * 1000).toFixed(0));
+		c.setAttribute('cy', (250 + Math.random() * 40).toFixed(0));
+		c.setAttribute('r', (2 + Math.random() * 4.5).toFixed(1));
+		c.style.animationDuration = (2.4 + Math.random() * 2.8).toFixed(2) + 's';
+		c.style.animationDelay = (-Math.random() * 5).toFixed(2) + 's';
+		bubbleGroup.appendChild(c);
+	}
+
+	// ---- twinkling, slowly drifting starfield
+	const starCanvas = document.getElementById('stars');
+	const sctx = starCanvas.getContext('2d');
+	let stars = [];
+	function resizeStars() {
+		const dpr = Math.min(window.devicePixelRatio || 1, 2);
+		starCanvas.width = innerWidth * dpr;
+		starCanvas.height = innerHeight * dpr;
+		stars = [];
+		const n = Math.floor(innerWidth * innerHeight / 5000);
+		for (let i = 0; i < n; i++) {
+			stars.push({ x: Math.random(), y: Math.random(), r: (Math.random() * 1.3 + 0.3) * dpr,
+				s: Math.random() * 0.012 + 0.002, p: Math.random() * 6.28, gold: Math.random() < 0.08 });
+		}
+	}
+	resizeStars();
+	addEventListener('resize', resizeStars);
+	function drawStars(t) {
+		sctx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+		for (const st of stars) {
+			st.x -= st.s * 0.02;
+			if (st.x < 0) st.x += 1;
+			const a = 0.35 + 0.65 * Math.abs(Math.sin(t * 0.0012 + st.p));
+			sctx.fillStyle = st.gold ? `rgba(245,184,61,${a})` : `rgba(200,225,255,${a})`;
+			sctx.beginPath();
+			sctx.arc(st.x * starCanvas.width, st.y * starCanvas.height, st.r, 0, 6.283);
+			sctx.fill();
+		}
+	}
+
+	// ---- water level: follows the real download, but never fills faster than MIN_MS,
+	//      so even on fast internet there's time to see the animation and read a fact
+	const MIN_MS = 6000;
+	const t0 = performance.now();
+	let target = 0.04, shown = 0, loaded = false, finishing = false;
 	function frame() {
-		shown += (target - shown) * 0.08;
+		const now = performance.now();
+		const elapsed = (now - t0) / MIN_MS;
+		const goal = Math.min(target, elapsed);
+		shown += (goal - shown) * 0.1;
 		const y = BOTTOM + 10 - (BOTTOM + 10 - TOP + 14) * shown;   // 0 = below letters, 1 = above them
 		water.setAttribute('transform', `translate(0 ${y.toFixed(1)})`);
-		pctLabel.textContent = Math.round(shown * 100) + '%';
-		if (!initializing) { clearInterval(frameTimer); clearInterval(factTimer); }
+		pctLabel.textContent = Math.min(100, Math.round(shown * 100)) + '%';
+		drawStars(now);
+		if (loaded && !finishing && elapsed >= 1 && shown > 0.985) {
+			finishing = true;
+			pctLabel.textContent = '100%';
+			setTimeout(() => {
+				statusOverlay.classList.add('done');
+				setTimeout(() => {
+					clearInterval(frameTimer);
+					clearInterval(factTimer);
+					statusOverlay.remove();
+					initializing = false;
+				}, 500);
+			}, 400);
+		}
 	}
 	let frameTimer = 0;
 
@@ -181,12 +264,8 @@ const engine = new Engine(GODOT_CONFIG);
 	function setStatusMode(mode) {
 		if (statusMode === mode || !initializing) return;
 		if (mode === 'hidden') {
+			loaded = true;     // the frame loop finishes the fill (at least MIN_MS) and fades out
 			target = 1;
-			// let the letters fill to the top, then fade the page away
-			setTimeout(() => {
-				statusOverlay.classList.add('done');
-				setTimeout(() => { statusOverlay.remove(); initializing = false; }, 500);
-			}, 450);
 			return;
 		}
 		statusOverlay.style.visibility = 'visible';
@@ -205,6 +284,7 @@ const engine = new Engine(GODOT_CONFIG);
 
 	function displayFailureNotice(err) {
 		console.error(err);
+		clearInterval(frameTimer);
 		if (err instanceof Error) setStatusNotice(err.message);
 		else if (typeof err === 'string') setStatusNotice(err);
 		else setStatusNotice('An unknown error occurred.');
