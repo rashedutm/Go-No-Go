@@ -252,7 +252,7 @@ func _select(mid: String) -> void:
 	var stars := int(MissionState.campaign["stars"].get(mid, 0))
 	var best := int(MissionState.campaign["best_score"].get(mid, 0))
 	_info_name.text = "%d. %s" % [int(m.get("order", 0)), m.get("name", "")]
-	_info_dest.text = "%s   ·   difficulty %d/5" % [m.get("destination", ""), int(m.get("difficulty", 1))]
+	_info_dest.text = str(m.get("destination", ""))   # difficulty is chosen on the briefing screen
 	_info_obj.text = m.get("objective", "") if unlocked else "LOCKED. Earn at least 1 star on the previous mission to unlock it."
 	_info_meta.text = ("Best: %s  (score %d)" % [_stars(stars), best]) if stars > 0 else ("Not flown yet" if unlocked else "")
 	_brief_btn.text = "MISSION BRIEFING  >" if unlocked else "LOCKED"
