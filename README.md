@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>Design it. Launch it. Fly it.</b><br>
-  A space mission design game made for the <b>NASA Space Apps Challenge 2026</b> (challenge: <i>Space Mission Design Game</i>).
+  A space mission design game by <b>Team Kakapo</b> for the <b>NASA Space Apps Challenge 2026</b> (challenge: <i>Space Mission Design Game</i>).
 </p>
 
 <p align="center">
@@ -122,7 +122,7 @@ docs/         Screenshots and our development notes
 
 ## Team
 
-Made in one weekend for NASA Space Apps Challenge 2026 by:
+Made in one weekend for NASA Space Apps Challenge 2026 by **Team Kakapo** 🦜:
 
 - **Rashed** (team lead)
 - **Emon**
