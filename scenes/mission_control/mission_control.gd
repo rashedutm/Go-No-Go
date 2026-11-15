@@ -221,7 +221,6 @@ func open_console(key: String) -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE   # free cursor so the panel buttons can be clicked
 	if tutorial and is_instance_valid(tutorial):
 		tutorial.set_panel_open(true)
-	Sfx.play("open", -6.0)
 	_start_hint.visible = false
 	_prompt.text = ""
 	_focus = ""
@@ -235,7 +234,6 @@ func close_console() -> void:
 	var key := _open
 	_open = ""
 	_panel.visible = false
-	Sfx.play("close", -8.0)
 	player.set_controls_enabled(true)
 	if tutorial and is_instance_valid(tutorial):
 		tutorial.set_panel_open(false)
